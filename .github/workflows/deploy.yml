@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Get the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -32,7 +32,7 @@ jobs:
           version: 10
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: pnpm
@@ -53,11 +53,24 @@ jobs:
           mkdir -p deploy/tmp
           echo "${{ github.sha }} $(date -u +%FT%TZ)" > deploy/tmp/restart.txt
 
+      - name: Clean up FTP server name
+        id: ftp
+        if: env.FTP_SERVER != ''
+        # Accepts "ftp://host/", "host:21", stray spaces etc. and keeps just the hostname
+        run: |
+          host="$(printf '%s' "$FTP_SERVER" | tr -d '[:space:]' | sed -E 's#^[a-zA-Z]+://##; s#[/:].*$##')"
+          echo "host=$host" >> "$GITHUB_OUTPUT"
+          if ! getent hosts "$host" > /dev/null; then
+            echo "::error::The FTP_SERVER secret ('$host') is not a real server name. Use the server hostname from cPanel, e.g. server123.web-hosting.com"
+            exit 1
+          fi
+          echo "FTP server: $host"
+
       - name: Upload to Namecheap
         if: env.FTP_SERVER != ''
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}
+          server: ${{ steps.ftp.outputs.host }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftps

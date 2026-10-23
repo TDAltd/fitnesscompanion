@@ -1,0 +1,714 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Fitness accountability app API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: weight
+    description: Weight log operations
+  - name: workouts
+    description: Workout log operations
+  - name: habits
+    description: Daily habit tracking
+  - name: stats
+    description: Progress stats and summaries
+  - name: profile
+    description: User profile and stats
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /weight:
+    get:
+      operationId: listWeightLogs
+      tags: [weight]
+      summary: List weight logs
+      responses:
+        "200":
+          description: List of weight entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeightLog"
+    post:
+      operationId: createWeightLog
+      tags: [weight]
+      summary: Log a weight entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WeightLogInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeightLog"
+
+  /weight/{id}:
+    delete:
+      operationId: deleteWeightLog
+      tags: [weight]
+      summary: Delete a weight entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /workouts:
+    get:
+      operationId: listWorkouts
+      tags: [workouts]
+      summary: List workout logs
+      responses:
+        "200":
+          description: List of workout logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkoutLog"
+    post:
+      operationId: createWorkout
+      tags: [workouts]
+      summary: Log a completed workout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutLogInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutLog"
+
+  /workouts/{id}:
+    delete:
+      operationId: deleteWorkout
+      tags: [workouts]
+      summary: Delete a workout log
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /habits:
+    get:
+      operationId: listHabits
+      tags: [habits]
+      summary: List daily habit logs
+      responses:
+        "200":
+          description: List of habit logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HabitLog"
+    post:
+      operationId: upsertHabit
+      tags: [habits]
+      summary: Log or update today's habits
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HabitLogInput"
+      responses:
+        "200":
+          description: Upserted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HabitLog"
+
+  /habits/today:
+    get:
+      operationId: getTodayHabits
+      tags: [habits]
+      summary: Get today's habit log
+      responses:
+        "200":
+          description: Today's habits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HabitLog"
+
+  /stats/summary:
+    get:
+      operationId: getProgressSummary
+      tags: [stats]
+      summary: Get overall progress summary
+      responses:
+        "200":
+          description: Progress summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressSummary"
+
+  /stats/streak:
+    get:
+      operationId: getWorkoutStreak
+      tags: [stats]
+      summary: Get current workout streak
+      responses:
+        "200":
+          description: Streak data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StreakData"
+
+  /meal-plan:
+    get:
+      operationId: getMealPlan
+      tags: [habits]
+      summary: Get meal plan entries for a date
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Date in YYYY-MM-DD format, defaults to today
+      responses:
+        "200":
+          description: Meal plan entries for the date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MealPlanEntry"
+    post:
+      operationId: addMealPlan
+      tags: [habits]
+      summary: Add a meal to the plan for a date
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealPlanInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealPlanEntry"
+
+  /meal-plan/{id}:
+    delete:
+      operationId: removeMealPlan
+      tags: [habits]
+      summary: Remove a meal from the plan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /measurements:
+    get:
+      operationId: listMeasurements
+      tags: [stats]
+      summary: List body measurement entries
+      responses:
+        "200":
+          description: List of body measurements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BodyMeasurement"
+    post:
+      operationId: addMeasurement
+      tags: [stats]
+      summary: Log a body measurement entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BodyMeasurementInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BodyMeasurement"
+
+  /nutrition-lookup:
+    post:
+      operationId: nutritionLookup
+      tags: [habits]
+      summary: Estimate meal calories and macros from a description or photo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NutritionLookupInput"
+      responses:
+        "200":
+          description: Estimated macros
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NutritionLookupResult"
+
+  /measurements/{id}:
+    delete:
+      operationId: deleteMeasurement
+      tags: [stats]
+      summary: Delete a body measurement entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [profile]
+      summary: Get user profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+    post:
+      operationId: upsertProfile
+      tags: [profile]
+      summary: Create or update user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileInput"
+      responses:
+        "200":
+          description: Upserted profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    WeightLog:
+      type: object
+      required: [id, weightKg, loggedAt]
+      properties:
+        id:
+          type: integer
+        weightKg:
+          type: number
+        notes:
+          type: ["string", "null"]
+        loggedAt:
+          type: string
+
+    WeightLogInput:
+      type: object
+      required: [weightKg]
+      properties:
+        weightKg:
+          type: number
+        notes:
+          type: string
+        loggedAt:
+          type: string
+
+    WorkoutLog:
+      type: object
+      required: [id, name, type, loggedAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+        durationMins:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+        loggedAt:
+          type: string
+
+    WorkoutLogInput:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        durationMins:
+          type: integer
+        notes:
+          type: string
+        loggedAt:
+          type: string
+
+    HabitLog:
+      type: object
+      required: [id, date, stepsGoal, stepsDone, waterGoalLitres, waterDoneLitres, biscuitsAvoided]
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+        stepsGoal:
+          type: integer
+        stepsDone:
+          type: integer
+        waterGoalLitres:
+          type: number
+        waterDoneLitres:
+          type: number
+        biscuitsAvoided:
+          type: boolean
+        caloriesConsumed:
+          type: ["integer", "null"]
+        proteinGrams:
+          type: ["integer", "null"]
+
+    HabitLogInput:
+      type: object
+      required: [date]
+      properties:
+        date:
+          type: string
+        stepsDone:
+          type: integer
+        waterDoneLitres:
+          type: number
+        biscuitsAvoided:
+          type: boolean
+        caloriesConsumed:
+          type: integer
+        proteinGrams:
+          type: integer
+
+    ProgressSummary:
+      type: object
+      required: [startWeight, currentWeight, goalWeight, totalWorkouts, daysSinceStart, weightLost, percentToGoal]
+      properties:
+        startWeight:
+          type: number
+        currentWeight:
+          type: number
+        goalWeight:
+          type: number
+        weightLost:
+          type: number
+        percentToGoal:
+          type: number
+        totalWorkouts:
+          type: integer
+        daysSinceStart:
+          type: integer
+        avgStepsLast7Days:
+          type: ["number", "null"]
+        avgWaterLast7Days:
+          type: ["number", "null"]
+        habitCompliancePercent:
+          type: ["number", "null"]
+
+    StreakData:
+      type: object
+      required: [currentStreak, longestStreak, totalDaysLogged]
+      properties:
+        currentStreak:
+          type: integer
+        longestStreak:
+          type: integer
+        totalDaysLogged:
+          type: integer
+
+    UserProfile:
+      type: object
+      required: [id, updatedAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: ["string", "null"]
+        ageYears:
+          type: ["integer", "null"]
+        heightCm:
+          type: ["number", "null"]
+        currentWeightKg:
+          type: ["number", "null"]
+        goalWeightKg:
+          type: ["number", "null"]
+        sex:
+          type: ["string", "null"]
+        activityLevel:
+          type: ["string", "null"]
+        fitnessGoal:
+          type: ["string", "null"]
+        dietaryPreference:
+          type: ["string", "null"]
+        guiltyPleasure:
+          type: ["string", "null"]
+        workoutDaysPerWeek:
+          type: ["integer", "null"]
+        workoutLocation:
+          type: ["string", "null"]
+        trainingExperience:
+          type: ["string", "null"]
+        sleepHoursPerNight:
+          type: ["number", "null"]
+        mealSchedule:
+          type: ["string", "null"]
+        waterIntakeLiters:
+          type: ["number", "null"]
+        dailySchedule:
+          type: ["string", "null"]
+        workoutTimePreference:
+          type: ["string", "null"]
+        workoutDurationMinutes:
+          type: ["integer", "null"]
+        updatedAt:
+          type: string
+
+    UserProfileInput:
+      type: object
+      properties:
+        name:
+          type: string
+        ageYears:
+          type: integer
+        heightCm:
+          type: number
+        currentWeightKg:
+          type: number
+        goalWeightKg:
+          type: number
+        sex:
+          type: string
+        activityLevel:
+          type: string
+        fitnessGoal:
+          type: string
+          enum: [Weight loss, Build strength, Improve endurance, General fitness]
+        dietaryPreference:
+          type: string
+          enum: [No preference, Vegetarian, Vegan, Pescatarian, High-protein]
+        guiltyPleasure:
+          type: ["string", "null"]
+        workoutDaysPerWeek:
+          type: integer
+          enum: [2, 3, 4, 5, 6]
+        workoutLocation:
+          type: string
+          enum: [Home, Gym, Outdoors, Mixed]
+        trainingExperience:
+          type: string
+          enum: [Beginner, Intermediate, Advanced]
+        sleepHoursPerNight:
+          type: ["number", "null"]
+        mealSchedule:
+          type: ["string", "null"]
+        waterIntakeLiters:
+          type: ["number", "null"]
+        dailySchedule:
+          type: ["string", "null"]
+        workoutTimePreference:
+          type: ["string", "null"]
+          enum: [Morning, Midday, Evening, Flexible, null]
+        workoutDurationMinutes:
+          type: ["integer", "null"]
+          enum: [15, 30, 45, 60, null]
+
+    BodyMeasurement:
+      type: object
+      required: [id, date, createdAt]
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+        neckCm:
+          type: ["number", "null"]
+        chestCm:
+          type: ["number", "null"]
+        waistCm:
+          type: ["number", "null"]
+        hipsCm:
+          type: ["number", "null"]
+        leftArmCm:
+          type: ["number", "null"]
+        rightArmCm:
+          type: ["number", "null"]
+        leftThighCm:
+          type: ["number", "null"]
+        rightThighCm:
+          type: ["number", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    BodyMeasurementInput:
+      type: object
+      required: [date]
+      properties:
+        date:
+          type: string
+        neckCm:
+          type: number
+        chestCm:
+          type: number
+        waistCm:
+          type: number
+        hipsCm:
+          type: number
+        leftArmCm:
+          type: number
+        rightArmCm:
+          type: number
+        leftThighCm:
+          type: number
+        rightThighCm:
+          type: number
+        notes:
+          type: string
+
+    MealPlanEntry:
+      type: object
+      required: [id, date, mealName, category, calories, protein, carbs, fat, createdAt]
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+        mealName:
+          type: string
+        category:
+          type: string
+        calories:
+          type: integer
+        protein:
+          type: integer
+        carbs:
+          type: integer
+        fat:
+          type: integer
+        createdAt:
+          type: string
+
+    MealPlanInput:
+      type: object
+      required: [date, mealName, category, calories, protein, carbs, fat]
+      properties:
+        date:
+          type: string
+        mealName:
+          type: string
+        category:
+          type: string
+        calories:
+          type: integer
+        protein:
+          type: integer
+        carbs:
+          type: integer
+        fat:
+          type: integer
+
+    NutritionLookupInput:
+      type: object
+      properties:
+        mealName:
+          type: string
+          maxLength: 300
+          description: Optional meal name, ingredients, or portion description
+        imageData:
+          type: string
+          maxLength: 2800000
+          description: Optional compressed JPEG, PNG, or WebP data URL. Used for this estimate and not stored.
+
+    NutritionLookupResult:
+      type: object
+      required: [mealName, calories, protein, carbs, fat]
+      properties:
+        mealName:
+          type: string
+        calories:
+          type: integer
+        protein:
+          type: integer
+        carbs:
+          type: integer
+        fat:
+          type: integer
+        notes:
+          type: string

@@ -72,6 +72,34 @@ Turn on **SSL** for the domain (cPanel → SSL/TLS Status → Run AutoSSL) so lo
 
 Run `pnpm run build` again, upload the new `deploy/` contents over the old ones, and click **Restart**. Database changes apply automatically on startup.
 
+### Automatic deployment (after the first manual setup)
+
+Once Steps 1–5 work, every push to `main` builds the app on GitHub and uploads the changed files to Namecheap. The app restarts itself, so you don't need to click Restart.
+
+**One-time setup:**
+
+1. **Create an FTP account just for the app.** cPanel → **FTP Accounts** → *Add FTP Account*:
+   - Log in: e.g. `deploy` (it becomes `deploy@yourdomain.com`)
+   - Password: generate a strong one and copy it
+   - **Directory:** your application root, e.g. `fitness-app` (cPanel pre-fills `public_html/deploy`; change it). This locks the account to that one folder.
+2. **Add the secrets on GitHub.** Repo → **Settings** → **Secrets and variables** → **Actions** → *New repository secret*. Add:
+
+| Secret | Value |
+|---|---|
+| `FTP_SERVER` | `ftp.yourdomain.com` (or the server hostname shown in cPanel → FTP Accounts → *Configure FTP Client*) |
+| `FTP_USERNAME` | the full FTP login, e.g. `deploy@yourdomain.com` |
+| `FTP_PASSWORD` | the password from step 1 |
+| `FTP_SERVER_DIR` | *Optional.* Leave it out if the FTP account is locked to the app folder. If you use your main cPanel FTP login instead, set it to `fitness-app/` |
+
+3. **Run it once by hand:** repo → **Actions** → *Build & deploy to Namecheap* → **Run workflow**. A green tick means it's live.
+
+**Good to know:**
+- The first upload sends every file and takes a few minutes. Later uploads only send what changed.
+- If the "Check for code errors" step fails, nothing is uploaded and the live site stays as it was.
+- Your environment variables in cPanel are never touched; they stay in Setup Node.js App.
+- If a deploy uploads but the site still shows the old version, click **Restart** in Setup Node.js App once. Some servers ignore the automatic restart marker.
+- The upload uses encrypted FTP (FTPS). If it fails with a TLS or certificate error, change `protocol: ftps` to `protocol: ftp` in `.github/workflows/deploy.yml`.
+
 ---
 
 ## 2. Bring over your data from Replit

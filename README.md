@@ -26,7 +26,7 @@ You need Node 20.12+ and pnpm (`npm i -g pnpm`) on your own computer:
 
 ```bash
 pnpm install
-pnpm run build
+BASE_PATH=/fitnesscompanion/ pnpm run build
 ```
 
 This creates a `deploy/` folder. Zip **the contents** of `deploy/` (`app.js`, `public/`, `migrations/`, `package.json`).
@@ -36,8 +36,8 @@ This creates a `deploy/` folder. Zip **the contents** of `deploy/` (`app.js`, `p
 1. cPanel → **Setup Node.js App** → **Create Application**
 2. **Node.js version:** 22 (or 20.12+)
 3. **Application mode:** Production
-4. **Application root:** e.g. `fitness-app` (a folder in your home directory, *not* inside `public_html`)
-5. **Application URL:** your domain or a subdomain, e.g. `fit.yourdomain.com`. Use the root of a domain or subdomain, not a sub-path like `/fitness`
+4. **Application root:** e.g. `fitnesscompanion_app`. This is a folder in your home directory, **not** inside `public_html`. cPanel creates `public_html/fitnesscompanion` itself, with only a `.htaccess` in it; don't upload the app there
+5. **Application URL:** `tdaproducthub.com` + `fitnesscompanion`. The app is built for **https://tdaproducthub.com/fitnesscompanion/**. To host it elsewhere, change `BASE_PATH` in `.github/workflows/deploy.yml` (use `/` for a domain's root) and rebuild
 6. **Application startup file:** `app.js`
 7. Under **Environment variables**, add:
 
@@ -54,7 +54,7 @@ This creates a `deploy/` folder. Zip **the contents** of `deploy/` (`app.js`, `p
 
 ### Step 4 — Upload the files
 
-cPanel → **File Manager** → open the application root folder (e.g. `~/fitness-app`) → **Upload** the zip → **Extract**. You should see `app.js` directly inside that folder. There is **no need** to click "Run NPM Install", because everything is bundled into `app.js`.
+cPanel → **File Manager** → open the application root folder (e.g. `~/fitnesscompanion_app`) → **Upload** the zip → **Extract**. You should see `app.js` directly inside that folder. There is **no need** to click "Run NPM Install", because everything is bundled into `app.js`.
 
 ### Step 5 — Start it
 
@@ -70,7 +70,7 @@ Turn on **SSL** for the domain (cPanel → SSL/TLS Status → Run AutoSSL) so lo
 
 ### Updating later
 
-Run `pnpm run build` again, upload the new `deploy/` contents over the old ones, and click **Restart**. Database changes apply automatically on startup.
+Run `BASE_PATH=/fitnesscompanion/ pnpm run build` again, upload the new `deploy/` contents over the old ones, and click **Restart**. Database changes apply automatically on startup.
 
 ### Automatic deployment (after the first manual setup)
 
@@ -81,7 +81,7 @@ Once Steps 1–5 work, every push to `main` builds the app on GitHub and uploads
 1. **Create an FTP account just for the app.** cPanel → **FTP Accounts** → *Add FTP Account*:
    - Log in: e.g. `deploy` (it becomes `deploy@yourdomain.com`)
    - Password: generate a strong one and copy it
-   - **Directory:** your application root, e.g. `fitness-app` (cPanel pre-fills `public_html/deploy`; change it). This locks the account to that one folder.
+   - **Directory:** your application root, e.g. `fitnesscompanion_app` (cPanel pre-fills `public_html/deploy`; change it). This locks the account to that one folder.
 2. **Add the secrets on GitHub.** Repo → **Settings** → **Secrets and variables** → **Actions** → *New repository secret*. Add:
 
 | Secret | Value |
@@ -89,7 +89,7 @@ Once Steps 1–5 work, every push to `main` builds the app on GitHub and uploads
 | `FTP_SERVER` | `ftp.yourdomain.com` (or the server hostname shown in cPanel → FTP Accounts → *Configure FTP Client*) |
 | `FTP_USERNAME` | the full FTP login, e.g. `deploy@yourdomain.com` |
 | `FTP_PASSWORD` | the password from step 1 |
-| `FTP_SERVER_DIR` | *Optional.* Leave it out if the FTP account is locked to the app folder. If you use your main cPanel FTP login instead, set it to `fitness-app/` |
+| `FTP_SERVER_DIR` | *Optional.* Leave it out if the FTP account is locked to the app folder. If you use your main cPanel FTP login instead, set it to `fitnesscompanion_app/` |
 
 3. **Run it once by hand:** repo → **Actions** → *Build & deploy to Namecheap* → **Run workflow**. A green tick means it's live.
 
@@ -121,7 +121,7 @@ SELECT json_build_object(
 3. Copy the single result value (it starts with `{"user_profile"`) into a plain text file and save it as `replit-export.json`.
    *Alternative if the result is too long to copy:* in the Replit **Shell**, run
    `psql "$DATABASE_URL" -At -c "<the query above>" > replit-export.json` and download the file. Note: the Shell uses the *development* database.
-4. In the new app: sign up → **Account** (the last icon in the menu) → **Import data** → choose the file.
+4. In the new app: sign up → on the setup screen click **"Have data from the old app? Import it"** (or open **Account**, the last icon in the menu) → **Import data** → choose the file. Importing your profile skips the setup questions.
 
 Import **replaces** that account's data, so running it twice won't create duplicates.
 

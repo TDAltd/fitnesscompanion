@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 import type { Request, Response, NextFunction } from "express";
 import { and, eq, gt } from "drizzle-orm";
 import { db, sessionsTable, usersTable } from "@workspace/db";
+import { COOKIE_PATH } from "./config";
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, keylen: number) => Promise<Buffer>;
 
@@ -38,7 +39,7 @@ export async function createSession(res: Response, userId: number, secure: boole
     sameSite: "lax",
     secure,
     expires: expiresAt,
-    path: "/",
+    path: COOKIE_PATH,
   });
 }
 
@@ -47,7 +48,7 @@ export async function destroySession(req: Request, res: Response) {
   if (typeof token === "string" && token) {
     await db.delete(sessionsTable).where(eq(sessionsTable.id, hashToken(token)));
   }
-  res.clearCookie(SESSION_COOKIE, { path: "/" });
+  res.clearCookie(SESSION_COOKIE, { path: COOKIE_PATH });
 }
 
 export async function getSessionUser(req: Request) {

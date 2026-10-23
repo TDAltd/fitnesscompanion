@@ -5,6 +5,7 @@ import path from "node:path";
 import fs from "node:fs";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { BASE_PATH } from "./lib/config";
 
 export function createApp(staticDir?: string): Express {
   const app: Express = express();
@@ -12,6 +13,21 @@ export function createApp(staticDir?: string): Express {
   // cPanel/Passenger (and most hosts) sit behind a proxy; this makes req.secure / req.ip correct
   app.set("trust proxy", 1);
   app.disable("x-powered-by");
+
+  // When hosted in a folder (e.g. https://tdaproducthub.com/fitnesscompanion/), requests may
+  // arrive with the folder at the front. Strip it so the routes below work either way.
+  if (BASE_PATH) {
+    app.use((req, res, next) => {
+      if (req.url === BASE_PATH) {
+        res.redirect(301, `${BASE_PATH}/`);
+        return;
+      }
+      if (req.url.startsWith(`${BASE_PATH}/`) || req.url.startsWith(`${BASE_PATH}?`)) {
+        req.url = req.url.slice(BASE_PATH.length) || "/";
+      }
+      next();
+    });
+  }
 
   app.use(
     pinoHttp({

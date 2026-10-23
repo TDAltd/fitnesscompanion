@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -264,6 +264,13 @@ export default function OnboardingPage() {
           <div className="hidden items-center gap-2 rounded-full border border-border/80 bg-card/75 px-3 py-2 text-xs font-medium text-muted-foreground sm:flex">
             <Sparkles className="h-3.5 w-3.5 text-primary" /> A few details, then we get moving
           </div>
+          <Link
+            href="/account"
+            className="text-xs font-semibold text-primary hover:underline"
+            data-testid="link-import-instead"
+          >
+            Have data from the old app? Import it
+          </Link>
         </div>
 
         <div className="mb-8 max-w-2xl">

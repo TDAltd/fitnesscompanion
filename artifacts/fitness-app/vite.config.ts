@@ -7,8 +7,13 @@ import path from "path";
 // In production the API server also serves this built frontend, so /api is same-origin.
 const apiTarget = process.env.API_URL ?? "http://localhost:3000";
 
+// Folder the app lives under, e.g. "/fitnesscompanion/" for https://tdaproducthub.com/fitnesscompanion/
+// Must start and end with "/". Use "/" when the app has its own domain or subdomain.
+const rawBase = process.env.BASE_PATH ?? "/";
+const base = `/${rawBase.replace(/^\/+|\/+$/g, "")}/`.replace("//", "/");
+
 export default defineConfig({
-  base: "/",
+  base,
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -23,6 +28,6 @@ export default defineConfig({
   },
   server: {
     port: Number(process.env.PORT ?? 5173),
-    proxy: { "/api": { target: apiTarget, changeOrigin: true } },
+    proxy: { [`${base}api`]: { target: apiTarget, changeOrigin: true } },
   },
 });

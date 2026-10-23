@@ -14,6 +14,7 @@ import OnboardingPage from "@/pages/onboarding";
 import AuthPage from "@/pages/auth";
 import AccountPage from "@/pages/account";
 import { AUTH_QUERY_KEY, useCurrentUser } from "@/lib/auth";
+import { BASE } from "@/lib/base-path";
 import { AppLayout } from "@/components/layout/app-layout";
 
 // If any API call says "not logged in" (e.g. session expired), send the user back to the login screen
@@ -73,6 +74,15 @@ function Router() {
       </main>
     );
   }
+  // Account (import / logout) stays reachable before onboarding is finished,
+  // so someone moving from the old app can import their data straight away
+  if (location === "/account" && !profileComplete) {
+    return (
+      <main className="mx-auto w-full max-w-3xl p-4 md:p-8">
+        <AccountPage />
+      </main>
+    );
+  }
   if (!isOnboarding && !isError && !profileComplete) {
     return <Redirect to="/onboarding" />;
   }
@@ -101,7 +111,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter>
+        <WouterRouter base={BASE}>
           <AuthGate />
         </WouterRouter>
         <Toaster />

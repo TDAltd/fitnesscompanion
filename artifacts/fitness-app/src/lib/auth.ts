@@ -1,11 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { withBase } from "./base-path";
 
 export type AuthUser = { id: number; email: string };
 
 export const AUTH_QUERY_KEY = ["auth", "me"] as const;
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
+  const res = await fetch(withBase(url), {
     credentials: "same-origin",
     headers: { "content-type": "application/json" },
     ...init,

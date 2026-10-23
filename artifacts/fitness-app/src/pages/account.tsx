@@ -1,9 +1,11 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Download, LogOut, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { withBase } from "@/lib/base-path";
 import { AUTH_QUERY_KEY, importData, useAuthActions, useCurrentUser } from "@/lib/auth";
 
 const TABLE_LABELS: Record<string, string> = {
@@ -22,6 +24,7 @@ export default function AccountPage() {
   const { toast } = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
+  const [, navigate] = useLocation();
 
   async function onFile(file: File | undefined) {
     if (!file) return;
@@ -38,6 +41,7 @@ export default function AccountPage() {
       // Refresh every screen's data, but keep the user logged in
       await qc.invalidateQueries({ predicate: (q) => q.queryKey[0] !== AUTH_QUERY_KEY[0] });
       toast({ title: "Import complete", description: summary });
+      if (counts.user_profile) navigate("/dashboard");
     } catch (err) {
       toast({
         title: "Import failed",
@@ -66,7 +70,7 @@ export default function AccountPage() {
         </CardHeader>
         <CardContent>
           <Button asChild variant="outline" className="gap-2">
-            <a href="/api/export" download data-testid="link-export">
+            <a href={withBase("/api/export")} download data-testid="link-export">
               <Download className="h-4 w-4" /> Download backup
             </a>
           </Button>

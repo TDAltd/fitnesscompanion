@@ -51,7 +51,7 @@ export function HydrationReminder() {
     if ("Notification" in window && Notification.permission === "granted") {
       new Notification("💧 Hydration Check!", {
         body: "Time to drink a glass of water. Stay hydrated!",
-        icon: "/favicon.ico",
+        icon: `${import.meta.env.BASE_URL}favicon.svg`,
         tag: "hydration",
       });
     } else {

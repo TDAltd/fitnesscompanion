@@ -32,6 +32,8 @@ await esbuild({
   outfile: path.join(out, "app.js"),
   // optional native add-ons that some libraries try to load; not needed
   external: ["pg-native", "bufferutil", "utf-8-validate"],
+  // Folder the app is hosted under; must match the frontend build (BASE_PATH env var)
+  define: { __BUILD_BASE_PATH__: JSON.stringify(process.env.BASE_PATH ?? "") },
   minify: false,
   legalComments: "none",
   logLevel: "info",

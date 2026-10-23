@@ -18,6 +18,9 @@ jobs:
     env:
       # Read the secret into an env var so we can skip the upload step when it isn't set yet
       FTP_SERVER: ${{ secrets.FTP_SERVER }}
+      # The folder the app is served from: https://tdaproducthub.com/fitnesscompanion/
+      # Use "/" if the app ever moves to its own domain or subdomain.
+      BASE_PATH: /fitnesscompanion/
 
     steps:
       - name: Get the code

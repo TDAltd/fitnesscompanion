@@ -26,7 +26,7 @@ async function main() {
 
   const app = createApp(staticDir);
   app.listen(port, () => {
-    logger.info({ port }, "Server listening");
+    logger.info({ port, basePath: process.env.BASE_PATH }, "Server listening");
   });
 }
 

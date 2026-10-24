@@ -90,7 +90,27 @@ healthSyncPublicRouter.post("/health-sync", async (req, res) => {
     return;
   }
   const userId = link.userId;
-  const body = (req.body ?? {}) as Record<string, unknown>;
+  const rawBody = (req.body ?? {}) as Record<string, unknown>;
+  // Shortcut field names are typed by hand: accept "steps ", "Active Energy", "active_energy", "heart-rate"...
+  const canonical: Record<string, string> = {
+    date: "date",
+    steps: "steps",
+    sleep: "sleep",
+    sleepminutes: "sleepMinutes",
+    sleephours: "sleepHours",
+    heartrate: "heartRate",
+    avgheartrate: "avgHeartRate",
+    activeenergy: "activeEnergy",
+    activeenergykcal: "activeEnergyKcal",
+    energy: "activeEnergy",
+    activecalories: "activeEnergy",
+    calories: "activeEnergy",
+  };
+  const body: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(rawBody)) {
+    const key = canonical[k.toLowerCase().replace(/[\s_\-]/g, "")] ?? k;
+    if (body[key] === undefined || body[key] === "") body[key] = v;
+  }
 
   const date = parseDate(body.date) ?? new Date().toISOString().slice(0, 10);
   const steps = inRange(sum(toNumbers(body.steps)), 0, 150_000);
@@ -133,7 +153,7 @@ healthSyncPublicRouter.post("/health-sync", async (req, res) => {
 
     await tx
       .update(healthSyncTable)
-      .set({ lastSyncAt: new Date(), lastPayload: JSON.stringify(body).slice(0, 2000) })
+      .set({ lastSyncAt: new Date(), lastPayload: JSON.stringify(rawBody).slice(0, 2000) })
       .where(eq(healthSyncTable.userId, userId));
   });
 

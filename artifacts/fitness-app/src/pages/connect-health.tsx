@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Check, Copy, HeartPulse, KeyRound, Loader2, Smartphone, TriangleAlert, Unplug } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -11,7 +12,7 @@ function CopyField({ label, value, testId }: { label: string; value: string; tes
   const [copied, setCopied] = useState(false);
   return (
     <div className="space-y-1">
-      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-xs font-bold text-muted-foreground">{label}</p>
       <div className="flex items-center gap-2">
         <code className="flex-1 break-all rounded-md border bg-muted/50 px-3 py-2 text-xs" data-testid={testId}>
           {value}
@@ -32,7 +33,7 @@ function CopyField({ label, value, testId }: { label: string; value: string; tes
             }
           }}
         >
-          {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+          {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
         </Button>
       </div>
     </div>
@@ -42,7 +43,7 @@ function CopyField({ label, value, testId }: { label: string; value: string; tes
 function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
   return (
     <li className="flex gap-4">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-black text-primary-foreground">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
         {n}
       </span>
       <div className="min-w-0 flex-1 space-y-2 pb-2">
@@ -82,16 +83,11 @@ export default function ConnectHealthPage() {
   };
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <header>
-        <h1 className="flex items-center gap-2 text-3xl font-black uppercase tracking-tight">
-          <HeartPulse className="h-7 w-7 text-primary" /> Apple Health sync
-        </h1>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Send your daily <Q>steps</Q>, <Q>sleep</Q> and <Q>active calories</Q> from your iPhone
-          (and any watch that saves to Apple Health, like Oraimo) to this app automatically every night.
-        </p>
-      </header>
+    <div className="space-y-6 pb-20">
+      <PageHeader
+        title="Apple Health"
+        description="Send your daily steps, sleep and active calories from your iPhone (and any watch that saves to Apple Health, like Oraimo) to this app every night."
+      />
 
       {/* Status */}
       <Card>
@@ -104,7 +100,7 @@ export default function ConnectHealthPage() {
               ) : status?.connected ? (
                 <>
                   <p className="font-bold">
-                    Connected <Badge className="ml-1 bg-green-600 hover:bg-green-600">On</Badge>
+                    Connected <Badge className="ml-1 bg-primary hover:bg-primary">On</Badge>
                   </p>
                   <p className="text-sm text-muted-foreground" data-testid="text-last-sync">
                     {status.lastSyncAt
@@ -143,8 +139,8 @@ export default function ConnectHealthPage() {
           {key ? (
             <>
               <CopyField label="Authorization value (includes your key)" value={`Bearer ${key}`} testId="text-sync-key" />
-              <div className="flex gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
-                <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+              <div className="flex gap-2 rounded-lg border border-dusk/30 bg-dusk/10 p-3 text-sm">
+                <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-dusk" />
                 <p>
                   Copy it into your Shortcut now: it's only shown once. Keep it private; anyone with it can add
                   health data to your account (but can't read anything).
@@ -216,7 +212,7 @@ export default function ConnectHealthPage() {
                 <li>
                   <Q>Request Body:</Q> <Q>JSON</Q>. Tap <Q>Add new field</Q> → <Q>Text</Q> four times. Type the key
                   exactly, then tap the value box and pick the variable:
-                  <div className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 font-mono text-xs">
+                  <div className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
                     <span>date</span><span>→ Formatted Date</span>
                     <span>steps</span><span>→ Steps</span>
                     <span>sleep</span><span>→ Sleep</span>

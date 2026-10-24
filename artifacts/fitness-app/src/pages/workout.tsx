@@ -3,17 +3,11 @@ import { Link } from "wouter";
 import { useGetProfile, getGetProfileQueryKey } from "@workspace/api-client-react";
 import { usePlan } from "@/lib/plan";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-const BADGE_COLORS = [
-  "bg-orange-500/10 text-orange-500 border-orange-500/20",
-  "bg-green-500/10 text-green-500 border-green-500/20",
-  "bg-purple-500/10 text-purple-500 border-purple-500/20",
-  "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  "bg-sky-500/10 text-sky-500 border-sky-500/20",
-  "bg-rose-500/10 text-rose-500 border-rose-500/20",
-];
+const BADGE_COLORS = ["bg-primary/10 text-primary border-primary/20", "bg-dusk/15 text-foreground border-dusk/30"];
 
 const CHANNELS = [
   {
@@ -59,22 +53,15 @@ export default function WorkoutPage() {
   }));
 
   return (
-    <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-      <header>
-        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground">
-          CIRCUITS
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm font-mono">
-          Your weekly sessions, built from your answers
-        </p>
-      </header>
+    <div className="space-y-6 md:space-y-8 pb-20">
+      <PageHeader title="Train" description="Your sessions for the week. Each one matches a day in your plan." />
 
       {profile && (
         <Card className="overflow-hidden border-primary/20 bg-primary/5">
           <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between md:p-6">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Your training setup</p>
-              <h2 className="mt-1 text-lg font-black">{profile.fitnessGoal || "General fitness"}</h2>
+              <p className="text-[10px] font-bold text-primary">Your training setup</p>
+              <h2 className="mt-1 text-lg font-semibold">{profile.fitnessGoal || "General fitness"}</h2>
               <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 {profile.workoutDaysPerWeek ?? 3} training days per week · {profile.workoutLocation || "Flexible location"} · {profile.trainingExperience || "Beginner"} level.
                 {" "}Each session below matches a day in your weekly plan. Adjust around how you feel and recover.
@@ -104,20 +91,20 @@ export default function WorkoutPage() {
           <Card key={circuit.id} className="shadow-sm flex flex-col overflow-hidden">
             <CardHeader className="pb-4 bg-muted/20 border-b border-border">
               <div className="flex justify-between items-start gap-4 mb-2">
-                <Badge variant="outline" className={`font-bold uppercase tracking-wider ${circuit.badgeColor}`}>
+                <Badge variant="outline" className={`font-bold ${circuit.badgeColor}`}>
                   Session {circuit.id}
                 </Badge>
               </div>
-              <CardTitle className="text-xl uppercase tracking-tight leading-tight">{circuit.title}</CardTitle>
+              <CardTitle className="text-xl tracking-tight leading-tight">{circuit.title}</CardTitle>
               <div className="space-y-1 mt-3">
-                <p className="text-xs font-mono text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   <strong className="text-foreground">When:</strong> {circuit.when}
                 </p>
-                <p className="text-xs font-mono text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   <strong className="text-foreground">Goal:</strong> {circuit.goal}
                 </p>
                 {circuit.note && (
-                  <p className="text-xs font-mono text-muted-foreground mt-2 italic border-l-2 border-primary/50 pl-2">
+                  <p className="text-xs text-muted-foreground mt-2 border-l-2 border-primary/50 pl-2">
                     Note: {circuit.note}
                   </p>
                 )}
@@ -129,10 +116,10 @@ export default function WorkoutPage() {
                   <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-muted/30 rounded-lg border border-border/50">
                     <span className="font-bold text-sm text-foreground/90">{exercise.name}</span>
                     <div className="flex items-center gap-3">
-                      <Badge variant="secondary" className="font-mono text-xs px-2 py-0.5 whitespace-nowrap">
+                      <Badge variant="secondary" className="text-xs px-2 py-0.5 whitespace-nowrap">
                         {exercise.sets} × {exercise.reps}
                       </Badge>
-                      <Button variant="ghost" size="sm" className="h-7 px-2 text-xs uppercase font-bold text-muted-foreground hover:text-primary shrink-0" asChild>
+                      <Button variant="ghost" size="sm" className="h-7 px-2 text-xs font-bold text-muted-foreground hover:text-primary shrink-0" asChild>
                         <a href={exercise.url} target="_blank" rel="noopener noreferrer">
                           Watch <ExternalLink className="ml-1.5 h-3 w-3" />
                         </a>
@@ -146,21 +133,21 @@ export default function WorkoutPage() {
         ))}
       </div>
 
-      <div className="bg-card border-l-4 border-l-orange-500 rounded-r-lg p-4 shadow-sm flex items-start gap-3 my-8">
-        <Info className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
+      <div className="bg-card border-l-4 border-l-primary rounded-r-lg p-4 shadow-sm flex items-start gap-3 my-8">
+        <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
         <p className="text-sm font-medium leading-relaxed">
-          <strong className="uppercase text-orange-500 font-black mr-2 tracking-wide">Non-negotiable:</strong>
+          <strong className="text-primary font-semibold mr-2 tracking-wide">Daily steps:</strong>
           {(plan?.targets.steps ?? 8000).toLocaleString()} steps every single day. Daily walking adds up to more calories burned than most single workouts.
         </p>
       </div>
 
       <section className="space-y-4">
         <header>
-          <h2 className="text-xl font-black uppercase tracking-tight text-foreground flex items-center gap-2">
-            <Youtube className="h-5 w-5 text-red-500" />
-            Learn From The Best
+          <h2 className="text-xl font-semibold tracking-tight text-foreground flex items-center gap-2">
+            <Youtube className="h-5 w-5 text-primary" />
+            Learn from the best
           </h2>
-          <p className="text-muted-foreground mt-1 text-xs font-mono">
+          <p className="text-muted-foreground mt-1 text-xs">
             Recommended fitness channels for form and home workouts
           </p>
         </header>
@@ -173,9 +160,9 @@ export default function WorkoutPage() {
                 <CardDescription className="text-xs mt-1">{channel.description}</CardDescription>
               </CardHeader>
               <CardContent className="mt-auto pt-2 pb-4">
-                <Button variant="outline" size="sm" className="w-full text-xs font-bold uppercase tracking-wider" asChild>
+                <Button variant="outline" size="sm" className="w-full text-xs font-bold" asChild>
                   <a href={channel.url} target="_blank" rel="noopener noreferrer">
-                    Visit Channel <ExternalLink className="ml-2 h-3 w-3" />
+                    Visit channel <ExternalLink className="ml-2 h-3 w-3" />
                   </a>
                 </Button>
               </CardContent>

@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { useGetProfile, getGetProfileQueryKey } from "@workspace/api-client-react";
 import { Activity, ArrowRight, Calculator, HeartPulse, RefreshCw, Scale, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const DEFICITS = [250, 350, 500] as const;
@@ -55,24 +56,11 @@ export default function CalorieCalculatorPage() {
   const weeklyChange = deficit * 7 / 7700;
 
   return (
-    <div className="space-y-7 pb-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
-      <header className="relative overflow-hidden rounded-2xl border border-primary/20 bg-card px-6 py-7 md:px-9 md:py-9">
-        <div className="absolute -right-10 -top-16 h-64 w-64 rounded-full border-[28px] border-primary/5" aria-hidden="true" />
-        <div className="absolute right-10 top-8 hidden h-28 w-28 items-center justify-center rounded-full bg-primary/10 md:flex" aria-hidden="true">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full border border-primary/30 bg-background text-primary">
-            <Activity className="h-9 w-9" strokeWidth={1.5} />
-          </div>
-        </div>
-        <div className="relative max-w-2xl">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
-            <Sparkles className="h-3 w-3" /> A steady starting point
-          </div>
-          <h1 className="text-3xl font-black uppercase leading-[0.95] tracking-tight md:text-5xl">Calorie<br className="sm:hidden" /> calculator</h1>
-          <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-            A practical estimate to support your training, meals, and everyday life. Choose a gentle pace that feels sustainable.
-          </p>
-        </div>
-      </header>
+    <div className="space-y-7 pb-4">
+      <PageHeader
+        title="Calorie calculator"
+        description="A practical estimate to support your training, meals and everyday life. Choose a pace that feels sustainable."
+      />
 
       {isLoading ? (
         <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
@@ -99,7 +87,7 @@ export default function CalorieCalculatorPage() {
                 <Calculator className="h-6 w-6" />
               </div>
               <div>
-                <h2 className="text-lg font-black">Let’s complete your profile first</h2>
+                <h2 className="text-lg font-semibold">Let’s complete your profile first</h2>
                 <p className="mt-1 max-w-lg text-sm leading-relaxed text-muted-foreground">
                   Add your age, sex, height, current weight, and activity level in Stats. We’ll use those saved details to make an estimate.
                 </p>
@@ -118,7 +106,7 @@ export default function CalorieCalculatorPage() {
               <HeartPulse className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-xl font-black">Your wellbeing comes first</h2>
+              <h2 className="text-xl font-semibold">Your wellbeing comes first</h2>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 Because you’re under 18, we don’t calculate a weight-loss calorie target here. Your body is still growing and has changing needs. Please talk with a trusted adult and a clinician or registered dietitian about nutrition and activity that support you.
               </p>
@@ -142,7 +130,7 @@ export default function CalorieCalculatorPage() {
             <CardContent className="space-y-5 p-5 md:p-6">
               {profile?.fitnessGoal && profile.fitnessGoal !== "Weight loss" && (
                 <div className="rounded-xl border border-primary/15 bg-primary/5 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wider text-primary">
+                  <p className="text-xs font-bold text-primary">
                     Your focus: {profile.fitnessGoal}
                   </p>
                   <p className="mt-1.5 text-sm leading-relaxed text-foreground/80">
@@ -163,13 +151,13 @@ export default function CalorieCalculatorPage() {
                         : "border-border bg-background hover:border-primary/50 hover:bg-primary/5"
                     }`}
                   >
-                    <span className="block text-xl font-black tabular-nums">{option}</span>
-                    <span className={`mt-1 block text-[10px] font-bold uppercase tracking-wider ${deficit === option ? "text-primary-foreground/80" : "text-muted-foreground"}`}>kcal / day</span>
+                    <span className="block text-xl font-semibold tabular-nums">{option}</span>
+                    <span className={`mt-1 block text-[10px] font-bold ${deficit === option ? "text-primary-foreground/80" : "text-muted-foreground"}`}>kcal / day</span>
                   </button>
                 ))}
               </div>
               <div className="rounded-xl border border-primary/15 bg-primary/5 p-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-primary">Keep it flexible</p>
+                <p className="text-xs font-bold text-primary">Keep it flexible</p>
                 <p className="mt-1.5 text-sm leading-relaxed text-foreground/80">
                   These are options, not rules. Energy needs shift day to day, and you can choose a smaller deficit or focus on maintenance whenever that feels right.
                 </p>
@@ -187,8 +175,8 @@ export default function CalorieCalculatorPage() {
             <Card className="overflow-hidden border-primary/30">
               <div className="flex items-center justify-between gap-4 bg-primary px-5 py-4 text-primary-foreground md:px-7">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary-foreground/75">Estimated daily target</p>
-                  <p className="mt-1 text-4xl font-black tabular-nums md:text-5xl">
+                  <p className="text-[10px] font-bold text-primary-foreground/75">Estimated daily target</p>
+                  <p className="mt-1 text-4xl font-semibold tabular-nums md:text-5xl">
                     {targetIsPositive ? formatNumber(target) : "Review"}
                     {targetIsPositive && <span className="text-base font-bold"> kcal</span>}
                   </p>
@@ -200,13 +188,13 @@ export default function CalorieCalculatorPage() {
               </div>
               <CardContent className="grid grid-cols-2 divide-x p-0">
                 <div className="p-5 md:p-6">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Resting estimate</p>
-                  <p className="mt-2 text-2xl font-black tabular-nums">{formatNumber(bmr ?? 0)} <span className="text-xs font-bold text-muted-foreground">kcal</span></p>
+                  <p className="text-[10px] font-bold text-muted-foreground">Resting estimate</p>
+                  <p className="mt-2 text-2xl font-semibold tabular-nums">{formatNumber(bmr ?? 0)} <span className="text-xs font-bold text-muted-foreground">kcal</span></p>
                   <p className="mt-1 text-xs text-muted-foreground">BMR · energy at rest</p>
                 </div>
                 <div className="p-5 md:p-6">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Daily maintenance</p>
-                  <p className="mt-2 text-2xl font-black tabular-nums">{formatNumber(maintenance ?? 0)} <span className="text-xs font-bold text-muted-foreground">kcal</span></p>
+                  <p className="text-[10px] font-bold text-muted-foreground">Daily maintenance</p>
+                  <p className="mt-2 text-2xl font-semibold tabular-nums">{formatNumber(maintenance ?? 0)} <span className="text-xs font-bold text-muted-foreground">kcal</span></p>
                   <p className="mt-1 text-xs text-muted-foreground">Estimated total daily energy</p>
                 </div>
               </CardContent>
@@ -215,12 +203,12 @@ export default function CalorieCalculatorPage() {
             <Card className="bg-card">
               <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between md:p-6">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Selected daily deficit</p>
-                  <p className="mt-1 text-2xl font-black tabular-nums">−{deficit} <span className="text-sm font-bold text-muted-foreground">kcal / day</span></p>
+                  <p className="text-[10px] font-bold text-muted-foreground">Selected daily deficit</p>
+                  <p className="mt-1 text-2xl font-semibold tabular-nums">−{deficit} <span className="text-sm font-bold text-muted-foreground">kcal / day</span></p>
                 </div>
                 <div className="rounded-xl bg-muted/60 px-4 py-3 sm:min-w-48 sm:text-right">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Approx. weekly pace</p>
-                  <p className="mt-1 text-lg font-black tabular-nums">−{weeklyChange.toFixed(2)} <span className="text-xs font-bold text-muted-foreground">kg / week</span></p>
+                  <p className="text-[10px] font-bold text-muted-foreground">Approx. weekly pace</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums">−{weeklyChange.toFixed(2)} <span className="text-xs font-bold text-muted-foreground">kg / week</span></p>
                 </div>
               </CardContent>
             </Card>

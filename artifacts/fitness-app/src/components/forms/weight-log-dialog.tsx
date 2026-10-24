@@ -86,13 +86,13 @@ export function WeightLogDialog({ currentWeight }: WeightLogDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="flex-1 font-bold h-12 border-primary/20 hover:bg-primary/5 hover:text-primary transition-colors">
-          <Scale className="mr-2 h-4 w-4" /> Log Weight
+        <Button variant="outline" className="h-10 gap-2 font-semibold">
+          <Scale className="mr-2 h-4 w-4" /> Log weight
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="uppercase tracking-tight text-xl">Log Weight</DialogTitle>
+          <DialogTitle className="tracking-tight text-xl">Log weight</DialogTitle>
           <DialogDescription>
             Record your weight today. Morning weigh-ins (fasted) are most accurate.
           </DialogDescription>
@@ -104,11 +104,11 @@ export function WeightLogDialog({ currentWeight }: WeightLogDialogProps) {
               name="weightKg"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="uppercase text-xs font-bold text-muted-foreground">Weight (kg)</FormLabel>
+                  <FormLabel className="text-xs font-bold text-muted-foreground">Weight (kg)</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input type="number" step="0.1" className="font-mono text-lg font-bold pl-4 pr-12 h-12" {...field} />
-                      <div className="absolute right-4 top-3 font-bold text-muted-foreground font-mono">kg</div>
+                      <Input type="number" step="0.1" className="text-lg font-bold pl-4 pr-12 h-12" {...field} />
+                      <div className="absolute right-4 top-3 font-bold text-muted-foreground">kg</div>
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -120,7 +120,7 @@ export function WeightLogDialog({ currentWeight }: WeightLogDialogProps) {
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="uppercase text-xs font-bold text-muted-foreground">Notes (Optional)</FormLabel>
+                  <FormLabel className="text-xs font-bold text-muted-foreground">Notes (Optional)</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="e.g. After a heavy meal, feeling bloated..."
@@ -133,7 +133,7 @@ export function WeightLogDialog({ currentWeight }: WeightLogDialogProps) {
               )}
             />
             <DialogFooter className="pt-4">
-              <Button type="submit" className="w-full font-bold uppercase tracking-wider" disabled={createWeightLog.isPending}>
+              <Button type="submit" className="w-full font-bold" disabled={createWeightLog.isPending}>
                 {createWeightLog.isPending ? "Saving..." : "Save Log"}
               </Button>
             </DialogFooter>

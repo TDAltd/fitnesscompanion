@@ -7,6 +7,7 @@ import {
 import { format } from "date-fns";
 import { Activity, Dumbbell, Flame, TrendingDown, Target, Zap, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/page-header";
 import { useListWorkouts, getListWorkoutsQueryKey, useDeleteWorkout } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,26 +48,19 @@ export default function ProgressPage() {
   };
 
   return (
-    <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <header>
-        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground">
-          PROGRESS & STATS
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm font-mono">
-          Data doesn't lie. Track the trend.
-        </p>
-      </header>
+    <div className="space-y-6 md:space-y-8">
+      <PageHeader title="Progress" description="Judge the trend over weeks, not single days." />
 
       {/* STATS ROW */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card className="bg-card">
           <CardContent className="p-6 space-y-2">
             <TrendingDown className="h-5 w-5 text-primary mb-2" />
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Weight Lost</p>
+            <p className="text-xs font-bold text-muted-foreground">Weight lost</p>
             {isLoadingSummary || !summary ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <p className="text-3xl font-black">{summary.weightLost.toFixed(1)}<span className="text-lg text-muted-foreground">kg</span></p>
+              <p className="text-3xl font-semibold">{summary.weightLost.toFixed(1)}<span className="text-lg text-muted-foreground">kg</span></p>
             )}
           </CardContent>
         </Card>
@@ -74,23 +68,23 @@ export default function ProgressPage() {
         <Card className="bg-card">
           <CardContent className="p-6 space-y-2">
             <Dumbbell className="h-5 w-5 text-primary mb-2" />
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Workouts</p>
+            <p className="text-xs font-bold text-muted-foreground">Workouts</p>
             {isLoadingSummary || !summary ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <p className="text-3xl font-black">{summary.totalWorkouts}</p>
+              <p className="text-3xl font-semibold">{summary.totalWorkouts}</p>
             )}
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-orange-500/20">
+        <Card className="bg-card border-primary/20">
           <CardContent className="p-6 space-y-2">
-            <Flame className="h-5 w-5 text-orange-500 mb-2" />
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Current Streak</p>
+            <Flame className="h-5 w-5 text-primary mb-2" />
+            <p className="text-xs font-bold text-muted-foreground">Current streak</p>
             {isLoadingStreak || !streak ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <p className="text-3xl font-black text-orange-500">{streak.currentStreak} <span className="text-lg text-muted-foreground">days</span></p>
+              <p className="text-3xl font-semibold text-primary">{streak.currentStreak} <span className="text-lg text-muted-foreground">days</span></p>
             )}
           </CardContent>
         </Card>
@@ -98,11 +92,11 @@ export default function ProgressPage() {
         <Card className="bg-card">
           <CardContent className="p-6 space-y-2">
             <Activity className="h-5 w-5 text-primary mb-2" />
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Habit Comp.</p>
+            <p className="text-xs font-bold text-muted-foreground">Habit score</p>
             {isLoadingSummary || !summary ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <p className="text-3xl font-black">{summary.habitCompliancePercent ? `${summary.habitCompliancePercent.toFixed(0)}%` : 'N/A'}</p>
+              <p className="text-3xl font-semibold">{summary.habitCompliancePercent ? `${summary.habitCompliancePercent.toFixed(0)}%` : 'N/A'}</p>
             )}
           </CardContent>
         </Card>
@@ -118,7 +112,7 @@ export default function ProgressPage() {
       <Card className="overflow-hidden">
         <CardHeader className="bg-muted/30 pb-4 border-b">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Target className="h-5 w-5 text-primary" /> Weight Trend
+            <Target className="h-5 w-5 text-primary" /> Weight trend
           </CardTitle>
           <CardDescription>
             {summary?.goalWeight ? `Target: ${summary.goalWeight}kg` : "Your weigh-ins over time"}
@@ -135,7 +129,7 @@ export default function ProgressPage() {
       <Card>
         <CardHeader className="bg-muted/30 pb-4 border-b">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Zap className="h-5 w-5 text-primary" /> Training History
+            <Zap className="h-5 w-5 text-primary" /> Training history
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -150,7 +144,7 @@ export default function ProgressPage() {
                 <div key={workout.id} className="p-4 md:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/10 transition-colors group">
                   <div className="space-y-1">
                     <p className="font-bold text-lg leading-tight">{workout.name}</p>
-                    <div className="flex gap-3 text-xs font-mono text-muted-foreground font-bold uppercase tracking-wider">
+                    <div className="flex gap-3 text-xs text-muted-foreground font-bold">
                       <span>{format(new Date(workout.loggedAt), "MMM do, HH:mm")}</span>
                       <span>•</span>
                       <span className="text-primary">{workout.type}</span>

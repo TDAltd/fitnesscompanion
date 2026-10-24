@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "wouter";
 import { CalendarDays, Flame, Footprints, Droplets, Beef, Loader2, RotateCcw, UserRoundPen, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,23 +93,23 @@ export default function MyPlanPage() {
   const anyOverride = Object.values(t.overridden).some(Boolean);
 
   return (
-    <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-black uppercase tracking-tight">My plan</h1>
-          <p className="mt-1 font-mono text-sm text-muted-foreground">Built from your answers. Change them any time.</p>
-        </div>
-        <Button asChild variant="outline" className="gap-2" data-testid="link-edit-answers">
-          <Link href="/onboarding">
-            <UserRoundPen className="h-4 w-4" /> Update my answers
-          </Link>
-        </Button>
-      </header>
+    <div className="space-y-6 md:space-y-8 pb-20">
+      <PageHeader
+        title="My plan"
+        description="Built from your answers. Change them any time."
+        action={
+          <Button asChild variant="outline" className="gap-2" data-testid="link-edit-answers">
+            <Link href="/onboarding">
+              <UserRoundPen className="h-4 w-4" /> Update my answers
+            </Link>
+          </Button>
+        }
+      />
 
       {/* Weekly schedule */}
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide text-primary">
+          <CardTitle className="flex items-center gap-2 text-sm tracking-wide text-primary">
             <CalendarDays className="h-4 w-4" /> Your week
           </CardTitle>
         </CardHeader>
@@ -122,7 +123,7 @@ export default function MyPlanPage() {
                   className={`rounded-lg border p-3 ${day.rest ? "border-border bg-card" : "border-primary/20 bg-background"}`}
                   data-testid={`schedule-day-${d}`}
                 >
-                  <p className={`text-xs font-bold uppercase ${day.rest ? "text-muted-foreground" : "text-primary"}`}>
+                  <p className={`text-xs font-bold ${day.rest ? "text-muted-foreground" : "text-primary"}`}>
                     {day.label.slice(0, 3)}
                   </p>
                   <p className="mt-1 text-sm font-bold leading-snug">{day.workout}</p>
@@ -162,7 +163,7 @@ export default function MyPlanPage() {
                       <Badge variant="outline" className="text-[10px]">Suggested</Badge>
                     )}
                   </div>
-                  <p className="text-2xl font-black" data-testid={`target-${targetKey}`}>
+                  <p className="text-2xl font-semibold" data-testid={`target-${targetKey}`}>
                     {t[targetKey].toLocaleString()} <span className="text-sm font-medium text-muted-foreground">{unit}</span>
                   </p>
                   <Input
@@ -206,8 +207,8 @@ export default function MyPlanPage() {
         {plan.guidelines.filter((g) => g.id !== "workout").map((g) => (
           <Card key={g.id} className="flex flex-col">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base uppercase tracking-tight">{g.title}</CardTitle>
-              <CardDescription className="font-mono text-xs">{g.description}</CardDescription>
+              <CardTitle className="text-base tracking-tight">{g.title}</CardTitle>
+              <CardDescription className="text-xs">{g.description}</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 rounded-b-xl border-t bg-muted/20 pt-3">
               <ul className="space-y-2">

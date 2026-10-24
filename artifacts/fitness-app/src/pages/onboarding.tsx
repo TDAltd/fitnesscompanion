@@ -25,6 +25,7 @@ import {
   type UserProfileInput,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/brand/logo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -236,7 +237,7 @@ export default function OnboardingPage() {
             <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
               <CircleAlert className="h-7 w-7" />
             </div>
-            <p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">One small pause</p>
+            <p className="mb-2 text-xs text-muted-foreground">One small pause</p>
             <h1 className="text-2xl font-bold">We couldn’t load your profile.</h1>
             <p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">Your answers are still here when the connection is ready. Try again in a moment.</p>
             <Button className="mt-7 gap-2" onClick={() => void refetch()} data-testid="button-retry-profile">
@@ -252,15 +253,7 @@ export default function OnboardingPage() {
     <main className="onboarding-page min-h-[100dvh] px-4 py-8 sm:px-8 sm:py-12">
       <div className="mx-auto max-w-5xl">
         <div className="mb-9 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20">
-              <Activity className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-sm font-extrabold tracking-tight">F90</p>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Your pace, your plan</p>
-            </div>
-          </div>
+          <Logo showTagline />
           <div className="hidden items-center gap-2 rounded-full border border-border/80 bg-card/75 px-3 py-2 text-xs font-medium text-muted-foreground sm:flex">
             <Sparkles className="h-3.5 w-3.5 text-primary" /> A few details, then we get moving
           </div>
@@ -274,11 +267,11 @@ export default function OnboardingPage() {
         </div>
 
         <div className="mb-8 max-w-2xl">
-          <div className="mb-4 flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-primary">
+          <div className="mb-4 flex items-center gap-2 text-[11px] font-bold text-primary">
             <span className="h-px w-7 bg-primary" /> A plan that fits real life
           </div>
-          <h1 className="max-w-xl text-4xl font-black leading-[1.03] tracking-[-0.045em] sm:text-5xl">
-            Let’s make this <span className="text-primary">feel doable.</span>
+          <h1 className="max-w-xl text-4xl font-semibold leading-[1.03] tracking-[-0.045em] sm:text-5xl">
+            Let’s make this feel doable
           </h1>
           <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
             Tell us what you’re working toward and what your week really looks like. We’ll use it to shape a routine you can come back to.
@@ -289,7 +282,7 @@ export default function OnboardingPage() {
           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-foreground/10">
             <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${Math.round((completedCount / 12) * 100)}%` }} />
           </div>
-          <span className="font-mono text-xs font-bold text-muted-foreground" data-testid="text-profile-progress">{completedCount}/12</span>
+          <span className="text-xs font-bold text-muted-foreground" data-testid="text-profile-progress">{completedCount}/12</span>
         </div>
 
         <Form {...form}>
@@ -302,7 +295,7 @@ export default function OnboardingPage() {
                       <UserRound className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-primary">01 / The basics</p>
+                      <p className="text-[10px] font-bold text-primary">01 / The basics</p>
                       <h2 className="mt-1 text-xl font-bold">A little about you</h2>
                       <p className="mt-1 text-sm text-muted-foreground">Just enough context to make your starting point useful.</p>
                     </div>
@@ -381,7 +374,7 @@ export default function OnboardingPage() {
                   <div className="flex items-start gap-4 border-b border-border/70 px-5 py-5 sm:px-7">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Leaf className="h-5 w-5" /></div>
                     <div>
-                      <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-primary">02 / What matters</p>
+                      <p className="text-[10px] font-bold text-primary">02 / What matters</p>
                       <h2 className="mt-1 text-xl font-bold">Your direction and food style</h2>
                       <p className="mt-1 text-sm text-muted-foreground">There’s no perfect answer. Pick the one that feels most like you right now.</p>
                     </div>
@@ -443,7 +436,7 @@ export default function OnboardingPage() {
                   <div className="flex items-start gap-4 border-b border-border/70 px-5 py-5 sm:px-7">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Clock3 className="h-5 w-5" /></div>
                     <div>
-                      <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-primary">03 / Your daily rhythm</p>
+                      <p className="text-[10px] font-bold text-primary">03 / Your routine</p>
                       <h2 className="mt-1 text-xl font-bold">Make the plan fit your day</h2>
                       <p className="mt-1 text-sm text-muted-foreground">These are optional—rough estimates are fine, and you can leave anything blank.</p>
                     </div>
@@ -513,7 +506,7 @@ export default function OnboardingPage() {
                   <div className="flex items-start gap-4 border-b border-border/70 px-5 py-5 sm:px-7">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Dumbbell className="h-5 w-5" /></div>
                     <div>
-                      <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-primary">04 / Your real week</p>
+                      <p className="text-[10px] font-bold text-primary">04 / Your real week</p>
                       <h2 className="mt-1 text-xl font-bold">Make room for movement</h2>
                       <p className="mt-1 text-sm text-muted-foreground">A steady rhythm beats an ambitious plan you can’t keep.</p>
                     </div>
@@ -573,7 +566,7 @@ export default function OnboardingPage() {
                   </div>
                 )}
                 {saved && (
-                  <div className="flex items-center gap-3 rounded-xl border border-emerald-800/15 bg-emerald-800/[0.06] p-4 text-sm text-emerald-900 dark:text-emerald-200" role="status" data-testid="status-profile-saved">
+                  <div className="flex items-center gap-3 rounded-xl border border-primary/15 bg-primary/[0.06] p-4 text-sm text-foreground dark:text-primary" role="status" data-testid="status-profile-saved">
                     <Check className="h-5 w-5" />
                     <span className="font-semibold">Saved. Your first step is already in motion.</span>
                   </div>
@@ -594,10 +587,10 @@ export default function OnboardingPage() {
                   <div className="absolute -right-9 -top-10 h-36 w-36 rounded-full border border-primary/30" />
                   <div className="absolute -right-2 -top-3 h-24 w-24 rounded-full border border-primary/25" />
                   <div className="relative">
-                    <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-secondary-foreground/15 bg-secondary-foreground/5 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.15em] text-secondary-foreground/75">
+                    <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-secondary-foreground/15 bg-secondary-foreground/5 px-3 py-1.5 text-[10px] text-secondary-foreground/75">
                       <Sparkles className="h-3 w-3 text-primary" /> Keep it human
                     </div>
-                    <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary">A note from your coach</p>
+                    <p className="text-[10px] text-primary">A note from your coach</p>
                     <p className="mt-3 text-2xl font-bold leading-tight tracking-tight">Small steps still move you forward.</p>
                     <p className="mt-3 text-sm leading-6 text-secondary-foreground/65">
                       We’ll start with the time, space, and habits you actually have. You can adjust your plan whenever life changes.
@@ -609,7 +602,7 @@ export default function OnboardingPage() {
                   </div>
                 </div>
                 <div className="rounded-2xl border border-border/80 bg-card/80 p-5">
-                  <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Your setup</p>
+                  <p className="text-[10px] font-bold text-muted-foreground">Your setup</p>
                   <div className="mt-4 space-y-3">
                     {[
                       { label: "Starting point", done: Boolean(form.watch("name") && form.watch("ageYears") && form.watch("sex")) },

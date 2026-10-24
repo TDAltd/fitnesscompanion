@@ -146,8 +146,8 @@ export function HydrationReminder() {
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm uppercase tracking-wider flex items-center gap-2">
-          <Droplets className="h-4 w-4 text-blue-500" /> Hydration Reminder
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Droplets className="h-4 w-4 text-dusk" /> Water reminders
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -159,13 +159,13 @@ export function HydrationReminder() {
                 onValueChange={handleIntervalChange}
                 disabled={!settings.enabled}
               >
-                <SelectTrigger className="w-[148px] font-mono text-sm">
+                <SelectTrigger className="w-[148px] text-sm">
                   <Clock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {INTERVAL_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value} className="font-mono text-sm">
+                    <SelectItem key={opt.value} value={opt.value} className="text-sm">
                       {opt.label}
                     </SelectItem>
                   ))}
@@ -173,7 +173,7 @@ export function HydrationReminder() {
               </Select>
 
               {settings.enabled && nextReminderIn !== null && (
-                <Badge variant="outline" className="font-mono text-xs text-blue-600 border-blue-400/40 bg-blue-500/5 gap-1">
+                <Badge variant="outline" className="text-xs text-dusk border-dusk/40 bg-dusk/5 gap-1">
                   <Clock className="h-3 w-3" />
                   {formatCountdown(nextReminderIn)}
                 </Badge>
@@ -184,7 +184,7 @@ export function HydrationReminder() {
               variant={settings.enabled ? "default" : "outline"}
               size="sm"
               onClick={handleToggle}
-              className={`gap-2 font-bold uppercase tracking-wider text-xs ${settings.enabled ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+              className={`gap-2 text-xs font-semibold ${settings.enabled ? "bg-primary hover:bg-primary/90" : ""}`}
             >
               {settings.enabled ? (
                 <><Bell className="h-3.5 w-3.5" /> On</>
@@ -194,7 +194,7 @@ export function HydrationReminder() {
             </Button>
           </div>
 
-          <p className="text-xs text-muted-foreground font-mono">
+          <p className="text-xs text-muted-foreground">
             {settings.enabled
               ? `Reminders every ${settings.intervalMins} min — drink up!`
               : "Turn on to get reminders to drink water throughout the day."}

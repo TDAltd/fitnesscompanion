@@ -159,10 +159,10 @@ export function HabitChecklist() {
     <Card className="shadow-sm overflow-hidden">
       <CardHeader className="bg-muted/30 pb-4">
         <CardTitle className="flex items-center gap-2">
-          <CheckCircle className="h-5 w-5 text-primary" /> Daily Checklist
+          <CheckCircle className="h-5 w-5 text-primary" /> Daily checklist
         </CardTitle>
         <CardDescription>
-          Execute the plan. Consistency over intensity.
+          Tick things off as you go.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0">
@@ -170,12 +170,12 @@ export function HabitChecklist() {
           {/* Biscuits Avoided */}
           <div className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
             <div className="flex items-center gap-3">
-              <div className="bg-orange-500/10 p-2 rounded-md">
-                <Cookie className="h-5 w-5 text-orange-500" />
+              <div className="bg-primary/10 p-2 rounded-md">
+                <Cookie className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <Label htmlFor="biscuits" className="font-bold text-base cursor-pointer">{plan?.avoidHabit.label ?? "No sugary snacks"}</Label>
-                <p className="text-xs text-muted-foreground font-mono mt-0.5">Stay disciplined</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Keep it for planned treats</p>
               </div>
             </div>
             <Checkbox 
@@ -189,12 +189,12 @@ export function HabitChecklist() {
           {/* Water */}
           <div className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors">
             <div className="flex items-center gap-3">
-              <div className="bg-blue-500/10 p-2 rounded-md">
-                <Droplets className="h-5 w-5 text-blue-500" />
+              <div className="bg-dusk/10 p-2 rounded-md">
+                <Droplets className="h-5 w-5 text-dusk" />
               </div>
               <div className="flex-1">
-                <Label className="font-bold text-base">Water Intake</Label>
-                <p className="text-xs text-muted-foreground font-mono mt-0.5">Goal: {waterGoal}L</p>
+                <Label className="font-bold text-base">Water</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">Goal: {waterGoal}L</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -207,7 +207,7 @@ export function HabitChecklist() {
               >
                 -
               </Button>
-              <div className="w-16 text-center font-bold font-mono">
+              <div className="w-16 text-center font-bold">
                 {localState.waterDoneLitres.toFixed(1)}L
               </div>
               <Button 
@@ -224,12 +224,12 @@ export function HabitChecklist() {
           {/* Steps */}
           <div className="p-4 flex items-center justify-between hover:bg-muted/10 transition-colors flex-wrap gap-4">
             <div className="flex items-center gap-3 min-w-[200px]">
-              <div className="bg-green-500/10 p-2 rounded-md">
-                <Activity className="h-5 w-5 text-green-500" />
+              <div className="bg-primary/10 p-2 rounded-md">
+                <Activity className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <Label className="font-bold text-base">Steps</Label>
-                <p className="text-xs text-muted-foreground font-mono mt-0.5">Goal: {stepsGoal.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Goal: {stepsGoal.toLocaleString()}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -238,7 +238,7 @@ export function HabitChecklist() {
                 value={localState.stepsDone || ''} 
                 onChange={(e) => setLocalState({ ...localState, stepsDone: Number(e.target.value) })}
                 onBlur={() => updateHabits({ stepsDone: localState.stepsDone })}
-                className="w-full sm:w-24 text-right font-mono font-bold"
+                className="w-full sm:w-24 text-right font-bold"
                 placeholder="0"
               />
               <span className="text-sm font-bold text-muted-foreground">steps</span>
@@ -249,20 +249,20 @@ export function HabitChecklist() {
           <div className="p-4 flex flex-col gap-3 hover:bg-muted/10 transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="bg-purple-500/10 p-2 rounded-md">
-                  <Utensils className="h-5 w-5 text-purple-500" />
+                <div className="bg-dusk/10 p-2 rounded-md">
+                  <Utensils className="h-5 w-5 text-dusk" />
                 </div>
                 <div>
-                  <Label className="font-bold text-base">Macros Log</Label>
-                  <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                  <Label className="font-bold text-base">Food logged</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {isSyncedFromPlan ? `${mealPlanEntries?.length} meal${mealPlanEntries?.length === 1 ? '' : 's'} planned` : 'End of day input'}
                   </p>
                 </div>
               </div>
               {isSyncedFromPlan && (
-                <Badge variant="outline" className="text-xs gap-1 text-green-600 border-green-600/30 bg-green-500/5">
+                <Badge variant="outline" className="text-xs gap-1 text-primary border-primary/30 bg-primary/5">
                   <RefreshCw className="h-3 w-3" />
-                  Synced from planner
+                  From your meal plan
                 </Badge>
               )}
             </div>
@@ -273,7 +273,7 @@ export function HabitChecklist() {
                   value={localState.caloriesConsumed}
                   onChange={(e) => setLocalState({ ...localState, caloriesConsumed: e.target.value })}
                   onBlur={() => updateHabits({ caloriesConsumed: localState.caloriesConsumed })}
-                  className="w-24 text-right font-mono"
+                  className="w-24 text-right"
                   placeholder="kcal"
                 />
                 <span className="text-xs font-bold text-muted-foreground">kcal</span>
@@ -284,13 +284,13 @@ export function HabitChecklist() {
                   value={localState.proteinGrams}
                   onChange={(e) => setLocalState({ ...localState, proteinGrams: e.target.value })}
                   onBlur={() => updateHabits({ proteinGrams: localState.proteinGrams })}
-                  className="w-20 text-right font-mono"
+                  className="w-20 text-right"
                   placeholder="g"
                 />
                 <span className="text-xs font-bold text-muted-foreground">protein</span>
               </div>
               {isSyncedFromPlan && (
-                <p className="text-xs text-muted-foreground font-mono self-center">
+                <p className="text-xs text-muted-foreground self-center">
                   Edit to override
                 </p>
               )}

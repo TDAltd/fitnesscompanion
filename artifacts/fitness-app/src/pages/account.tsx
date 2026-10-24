@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { Download, LogOut, Upload, Loader2, HeartPulse } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { withBase } from "@/lib/base-path";
@@ -57,12 +58,10 @@ export default function AccountPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-black tracking-tight">Account</h1>
-        <p className="mt-1 text-sm text-muted-foreground" data-testid="text-account-email">
-          Logged in as {user?.email}
-        </p>
-      </div>
+      <PageHeader
+        title="Account & data"
+        description={<span data-testid="text-account-email">Logged in as {user?.email}</span>}
+      />
 
       <Card>
         <CardHeader>

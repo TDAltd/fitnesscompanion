@@ -47,11 +47,11 @@ function StatusDot({ status }: { status: Status }) {
   return (
     <div className={cn(
       "flex items-center justify-center w-7 h-7 rounded-full",
-      status === "met" ? "bg-green-500/15" : "bg-red-500/10"
+      status === "met" ? "bg-primary/15" : "bg-destructive/10"
     )}>
       {status === "met"
-        ? <Check className="h-3.5 w-3.5 text-green-500" strokeWidth={3} />
-        : <X className="h-3.5 w-3.5 text-red-400" strokeWidth={3} />
+        ? <Check className="h-3.5 w-3.5 text-primary" strokeWidth={3} />
+        : <X className="h-3.5 w-3.5 text-destructive" strokeWidth={3} />
       }
     </div>
   );
@@ -61,9 +61,9 @@ function ScoreBar({ score }: { score: number }) {
   const max = 5;
   const pct = (score / max) * 100;
   const color =
-    score === 5 ? "bg-green-500" :
+    score === 5 ? "bg-primary" :
     score >= 3  ? "bg-primary"   :
-    score >= 1  ? "bg-amber-500" : "bg-red-400";
+    score >= 1  ? "bg-dusk" : "bg-destructive";
 
   return (
     <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
@@ -165,7 +165,7 @@ export function WeeklySummary() {
         <div className="flex items-start justify-between flex-wrap gap-2">
           <div>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <CalendarDays className="h-5 w-5 text-primary" /> Week at a Glance
+              <CalendarDays className="h-5 w-5 text-primary" /> Week at a glance
             </CardTitle>
             <CardDescription className="mt-1">
               Last 7 days — habits, workouts, and nutrition targets
@@ -174,12 +174,12 @@ export function WeeklySummary() {
           {!isLoading && (
             <div className="flex gap-4 text-right">
               <div>
-                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">Strong days</p>
-                <p className="text-2xl font-black text-primary">{metDays}<span className="text-sm text-muted-foreground font-normal"> / 7</span></p>
+                <p className="text-xs text-muted-foreground">Strong days</p>
+                <p className="text-2xl font-semibold text-primary">{metDays}<span className="text-sm text-muted-foreground font-normal"> / 7</span></p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">Avg score</p>
-                <p className="text-2xl font-black">{avgScore}<span className="text-sm text-muted-foreground font-normal"> / 5</span></p>
+                <p className="text-xs text-muted-foreground">Avg score</p>
+                <p className="text-2xl font-semibold">{avgScore}<span className="text-sm text-muted-foreground font-normal"> / 5</span></p>
               </div>
             </div>
           )}
@@ -200,14 +200,14 @@ export function WeeklySummary() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider w-28">Habit</th>
+                    <th className="text-left p-4 text-xs font-bold text-muted-foreground w-28">Habit</th>
                     {days.map(d => (
                       <th key={d.date} className={cn(
-                        "text-center p-3 text-xs font-bold uppercase tracking-wider",
+                        "text-center p-3 text-xs font-bold",
                         d.isToday ? "text-primary" : "text-muted-foreground"
                       )}>
                         <div>{d.label}</div>
-                        <div className="font-mono font-normal normal-case text-[10px] mt-0.5 opacity-70">{d.shortDate}</div>
+                        <div className="font-normal normal-case text-[10px] mt-0.5 opacity-70">{d.shortDate}</div>
                       </th>
                     ))}
                   </tr>
@@ -218,7 +218,7 @@ export function WeeklySummary() {
                       "border-b border-border/50 last:border-0",
                       ci % 2 === 0 ? "bg-muted/5" : ""
                     )}>
-                      <td className="p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">{col.key === "biscuits" ? avoidLabel : col.label}</td>
+                      <td className="p-4 text-xs font-bold text-muted-foreground">{col.key === "biscuits" ? avoidLabel : col.label}</td>
                       {days.map(d => (
                         <td key={d.date} className={cn(
                           "text-center p-3",
@@ -232,10 +232,10 @@ export function WeeklySummary() {
                     </tr>
                   ))}
                   <tr className="bg-muted/10">
-                    <td className="p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Score</td>
+                    <td className="p-4 text-xs font-bold text-muted-foreground">Score</td>
                     {days.map(d => (
                       <td key={d.date} className={cn("p-3", d.isToday ? "bg-primary/5" : "")}>
-                        <div className="text-center font-black text-sm mb-1">{d.score}<span className="text-xs text-muted-foreground font-normal">/5</span></div>
+                        <div className="text-center font-semibold text-sm mb-1">{d.score}<span className="text-xs text-muted-foreground font-normal">/5</span></div>
                         <ScoreBar score={d.score} />
                       </td>
                     ))}
@@ -253,10 +253,10 @@ export function WeeklySummary() {
                 )}>
                   <div className="text-center">
                     <p className={cn(
-                      "text-[10px] font-black uppercase tracking-wide",
+                      "text-[10px] font-semibold tracking-wide",
                       d.isToday ? "text-primary" : "text-foreground"
                     )}>{d.label.slice(0, 3)}</p>
-                    <p className="text-[9px] font-mono text-muted-foreground">{format(parseISO(d.date), "d/M")}</p>
+                    <p className="text-[9px] text-muted-foreground">{format(parseISO(d.date), "d/M")}</p>
                   </div>
                   <div className="space-y-1">
                     {columns.map(col => (
@@ -264,7 +264,7 @@ export function WeeklySummary() {
                     ))}
                   </div>
                   <div className="text-center">
-                    <span className="text-xs font-black">{d.score}</span>
+                    <span className="text-xs font-semibold">{d.score}</span>
                     <span className="text-[9px] text-muted-foreground">/5</span>
                   </div>
                   <ScoreBar score={d.score} />
@@ -275,14 +275,14 @@ export function WeeklySummary() {
             {/* Legend */}
             <div className="px-4 md:px-6 pb-4 flex flex-wrap gap-4 text-xs text-muted-foreground border-t border-border/50 pt-4">
               <div className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded-full bg-green-500/15 flex items-center justify-center">
-                  <Check className="h-2.5 w-2.5 text-green-500" strokeWidth={3} />
+                <div className="w-4 h-4 rounded-full bg-primary/15 flex items-center justify-center">
+                  <Check className="h-2.5 w-2.5 text-primary" strokeWidth={3} />
                 </div>
                 <span>Target met</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded-full bg-red-500/10 flex items-center justify-center">
-                  <X className="h-2.5 w-2.5 text-red-400" strokeWidth={3} />
+                <div className="w-4 h-4 rounded-full bg-destructive/10 flex items-center justify-center">
+                  <X className="h-2.5 w-2.5 text-destructive" strokeWidth={3} />
                 </div>
                 <span>Missed</span>
               </div>
@@ -292,7 +292,7 @@ export function WeeklySummary() {
                 </div>
                 <span>No data logged</span>
               </div>
-              <span className="ml-auto font-mono">Score = workout + steps + water + {avoidLabel.toLowerCase()} + cal + protein</span>
+              <span className="ml-auto">Score = workout + steps + water + {avoidLabel.toLowerCase()} + cal + protein</span>
             </div>
           </>
         )}
@@ -305,8 +305,8 @@ function MobileDot({ status }: { status: Status }) {
   return (
     <div className={cn(
       "h-2 w-full rounded-sm",
-      status === "met"    ? "bg-green-500/70" :
-      status === "missed" ? "bg-red-400/50"   : "bg-muted/40"
+      status === "met"    ? "bg-primary/70" :
+      status === "missed" ? "bg-destructive/50"   : "bg-muted/40"
     )} />
   );
 }

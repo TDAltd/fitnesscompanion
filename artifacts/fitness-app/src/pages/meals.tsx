@@ -2,6 +2,7 @@ import { useState, useMemo, useRef } from "react";
 import { Link } from "wouter";
 import { UtensilsCrossed, Clock, Flame, Plus, Check, Trash2, ChevronLeft, ChevronRight, Calendar as CalendarIcon, PenLine, Sparkles, Loader2, Camera, Image as ImageIcon, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -818,21 +819,17 @@ export default function MealsPage() {
   );
 
   return (
-    <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-      <header>
-        <h1 className="text-3xl font-black uppercase tracking-tight text-foreground">
-          HEALTHY MEALS
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm font-mono">
-          Fuel your progress. {targetCalories.toLocaleString()} kcal and {targetProtein}g protein a day.
-        </p>
-      </header>
+    <div className="space-y-6 md:space-y-8 pb-20">
+      <PageHeader
+        title="Eat"
+        description={<>Plan your day around {targetCalories.toLocaleString()} kcal and {targetProtein}g protein.</>}
+      />
 
       {profile && (profile.mealSchedule || profile.waterIntakeLiters != null || profile.sleepHoursPerNight != null) && (
         <Card className="border-primary/15 bg-primary/5">
           <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Your daily rhythm</p>
+              <p className="text-[10px] font-bold text-primary">Your routine</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {profile.mealSchedule && <Badge variant="secondary">Meals: {profile.mealSchedule}</Badge>}
                 {profile.waterIntakeLiters != null && (
@@ -852,8 +849,8 @@ export default function MealsPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6 grid w-full grid-cols-2 bg-muted/50 p-1">
-          <TabsTrigger value="plan" className="font-bold uppercase tracking-wider text-xs">Meal Plan</TabsTrigger>
-          <TabsTrigger value="recipes" className="font-bold uppercase tracking-wider text-xs">Recipes</TabsTrigger>
+          <TabsTrigger value="plan" className="font-bold text-xs">Meal plan</TabsTrigger>
+          <TabsTrigger value="recipes" className="font-bold text-xs">Recipes</TabsTrigger>
         </TabsList>
 
         <TabsContent value="plan" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -861,7 +858,7 @@ export default function MealsPage() {
             <Button variant="outline" size="icon" onClick={() => setDate(subDays(date, 1))}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <div className="flex items-center gap-2 font-mono font-bold text-lg">
+            <div className="flex items-center gap-2 font-bold text-lg">
               <CalendarIcon className="h-5 w-5 text-primary" />
               {format(date, "EEEE, d MMM")}
             </div>
@@ -872,37 +869,37 @@ export default function MealsPage() {
 
           <Card className="bg-card">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg">Daily Targets</CardTitle>
+              <CardTitle className="text-lg">Daily targets</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <div className="flex justify-between text-sm font-bold font-mono">
+                <div className="flex justify-between text-sm font-bold">
                   <span>Calories</span>
-                  <span className={isCaloriesOver ? "text-red-500" : ""}>{totals.calories} / {targetCalories} kcal</span>
+                  <span className={isCaloriesOver ? "text-destructive" : ""}>{totals.calories} / {targetCalories} kcal</span>
                 </div>
                 <Progress 
                   value={caloriesPercent} 
-                  className={`h-2 ${isCaloriesOver ? "[&>div]:bg-red-500" : ""}`}
+                  className={`h-2 ${isCaloriesOver ? "[&>div]:bg-destructive" : ""}`}
                 />
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between text-sm font-bold font-mono">
+                <div className="flex justify-between text-sm font-bold">
                   <span>Protein</span>
-                  <span className={isProteinMet ? "text-green-500" : ""}>{totals.protein} / {targetProtein} g</span>
+                  <span className={isProteinMet ? "text-primary" : ""}>{totals.protein} / {targetProtein} g</span>
                 </div>
                 <Progress 
                   value={proteinPercent} 
-                  className={`h-2 ${isProteinMet ? "[&>div]:bg-green-500" : ""}`}
+                  className={`h-2 ${isProteinMet ? "[&>div]:bg-primary" : ""}`}
                 />
               </div>
               <div className="flex gap-4 pt-2">
                 <div className="flex-1 space-y-1">
-                  <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Carbs</span>
-                  <p className="font-mono font-bold">{totals.carbs}g</p>
+                  <span className="text-xs text-muted-foreground font-bold">Carbs</span>
+                  <p className="font-bold">{totals.carbs}g</p>
                 </div>
                 <div className="flex-1 space-y-1">
-                  <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Fat</span>
-                  <p className="font-mono font-bold">{totals.fat}g</p>
+                  <span className="text-xs text-muted-foreground font-bold">Fat</span>
+                  <p className="font-bold">{totals.fat}g</p>
                 </div>
               </div>
             </CardContent>
@@ -910,9 +907,9 @@ export default function MealsPage() {
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black uppercase tracking-tight">Today's Meals</h3>
-              <Button variant="outline" size="sm" onClick={() => setCustomOpen(true)} className="gap-2 font-bold text-xs uppercase tracking-wider">
-                <PenLine className="h-3.5 w-3.5" /> Log Custom Meal
+              <h3 className="text-lg font-semibold tracking-tight">Today's meals</h3>
+              <Button variant="outline" size="sm" onClick={() => setCustomOpen(true)} className="gap-2 font-bold text-xs">
+                <PenLine className="h-3.5 w-3.5" /> Log a custom meal
               </Button>
             </div>
             
@@ -932,17 +929,17 @@ export default function MealsPage() {
                           <p className="font-bold leading-tight line-clamp-1">{entry.mealName}</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <Badge variant="outline" className="font-mono text-[10px] py-0 h-5 bg-background">
-                            <Flame className="w-3 h-3 mr-1 text-orange-500" /> {entry.calories}
+                          <Badge variant="outline" className="text-[10px] py-0 h-5 bg-background">
+                            <Flame className="w-3 h-3 mr-1 text-primary" /> {entry.calories}
                           </Badge>
-                          <Badge variant="outline" className="font-mono text-[10px] py-0 h-5 bg-background">
-                            <span className="text-blue-500 font-black mr-1">P</span> {entry.protein}g
+                          <Badge variant="outline" className="text-[10px] py-0 h-5 bg-background">
+                            <span className="text-dusk font-semibold mr-1">P</span> {entry.protein}g
                           </Badge>
-                          <Badge variant="outline" className="font-mono text-[10px] py-0 h-5 bg-background">
-                            <span className="text-green-500 font-black mr-1">C</span> {entry.carbs}g
+                          <Badge variant="outline" className="text-[10px] py-0 h-5 bg-background">
+                            <span className="text-primary font-semibold mr-1">C</span> {entry.carbs}g
                           </Badge>
-                          <Badge variant="outline" className="font-mono text-[10px] py-0 h-5 bg-background">
-                            <span className="text-yellow-500 font-black mr-1">F</span> {entry.fat}g
+                          <Badge variant="outline" className="text-[10px] py-0 h-5 bg-background">
+                            <span className="text-dusk font-semibold mr-1">F</span> {entry.fat}g
                           </Badge>
                         </div>
                       </div>
@@ -976,7 +973,7 @@ export default function MealsPage() {
           <Tabs defaultValue="All" onValueChange={setFilter} className="w-full">
             <TabsList className="mb-4 flex flex-wrap h-auto p-1 bg-muted/50 w-full justify-start overflow-x-auto">
               {["All", "Breakfast", "Lunch", "Dinner", "Snack", "Fruit"].map((f) => (
-                <TabsTrigger key={f} value={f} className="font-bold text-xs uppercase tracking-wider">
+                <TabsTrigger key={f} value={f} className="font-bold text-xs">
                   {f}
                 </TabsTrigger>
               ))}
@@ -1021,7 +1018,7 @@ export default function MealsPage() {
                           <div className="flex gap-2 items-center">
                             <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">{meal.category}</Badge>
                             {meal.cuisine !== "Any" && <Badge variant="outline" className="text-[10px] font-medium">{meal.cuisine}</Badge>}
-                            <span className="text-xs text-muted-foreground font-mono flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
                               <Clock className="w-3 h-3" /> {meal.prepMins}m
                             </span>
                           </div>
@@ -1030,30 +1027,30 @@ export default function MealsPage() {
                         <Button 
                           size="sm" 
                           variant={isAdded ? "default" : "outline"}
-                          className={isAdded ? "bg-green-500 hover:bg-green-600 text-white shrink-0" : "shrink-0"}
+                          className={isAdded ? "bg-primary hover:bg-primary text-white shrink-0" : "shrink-0"}
                           onClick={() => !isAdded && handleAddMeal(meal)}
                           disabled={isAdded || addMealPlan.isPending}
                         >
                           {isAdded ? (
                             <><Check className="w-4 h-4 mr-1" /> Added</>
                           ) : (
-                            <><Plus className="w-4 h-4 mr-1" /> Add to Plan</>
+                            <><Plus className="w-4 h-4 mr-1" /> Add to plan</>
                           )}
                         </Button>
                       </div>
                       
                       <div className="flex flex-wrap gap-2 pt-2">
-                        <Badge variant="outline" className="font-mono bg-background">
-                          <Flame className="w-3 h-3 mr-1 text-orange-500" /> {meal.calories} kcal
+                        <Badge variant="outline" className="bg-background">
+                          <Flame className="w-3 h-3 mr-1 text-primary" /> {meal.calories} kcal
                         </Badge>
-                        <Badge variant="outline" className="font-mono bg-background">
-                          <span className="text-blue-500 font-black mr-1">P</span> {meal.protein}g
+                        <Badge variant="outline" className="bg-background">
+                          <span className="text-dusk font-semibold mr-1">P</span> {meal.protein}g
                         </Badge>
-                        <Badge variant="outline" className="font-mono bg-background">
-                          <span className="text-green-500 font-black mr-1">C</span> {meal.carbs}g
+                        <Badge variant="outline" className="bg-background">
+                          <span className="text-primary font-semibold mr-1">C</span> {meal.carbs}g
                         </Badge>
-                        <Badge variant="outline" className="font-mono bg-background">
-                          <span className="text-yellow-500 font-black mr-1">F</span> {meal.fat}g
+                        <Badge variant="outline" className="bg-background">
+                          <span className="text-dusk font-semibold mr-1">F</span> {meal.fat}g
                         </Badge>
                       </div>
                     </CardHeader>
@@ -1065,7 +1062,7 @@ export default function MealsPage() {
                           </AccordionTrigger>
                           <AccordionContent className="pb-4 space-y-4">
                             <div className="space-y-2">
-                              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Ingredients</h4>
+                              <h4 className="text-xs font-bold text-muted-foreground">Ingredients</h4>
                               <ul className="text-sm space-y-1 font-medium pl-4 list-disc marker:text-primary">
                                 {meal.ingredients.map((ing, i) => (
                                   <li key={i}>{ing}</li>
@@ -1073,8 +1070,8 @@ export default function MealsPage() {
                               </ul>
                             </div>
                             <div className="space-y-2">
-                              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Instructions</h4>
-                              <ol className="text-sm space-y-2 font-medium pl-4 list-decimal marker:text-primary marker:font-black">
+                              <h4 className="text-xs font-bold text-muted-foreground">Instructions</h4>
+                              <ol className="text-sm space-y-2 font-medium pl-4 list-decimal marker:text-primary marker:font-semibold">
                                 {meal.steps.map((step, i) => (
                                   <li key={i}>{step}</li>
                                 ))}
@@ -1118,11 +1115,11 @@ export default function MealsPage() {
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-black uppercase tracking-tight">Log Custom Meal</DialogTitle>
+            <DialogTitle className="font-semibold tracking-tight">Log a custom meal</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="custom-name" className="text-xs font-bold uppercase tracking-wider">Meal or portion description</Label>
+              <Label htmlFor="custom-name" className="text-xs font-bold">Meal or portion description</Label>
               <div className="flex gap-2">
                 <Input
                   id="custom-name"
@@ -1205,7 +1202,7 @@ export default function MealsPage() {
               </Button>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase tracking-wider">Category</Label>
+              <Label className="text-xs font-bold">Category</Label>
               <Select value={custom.category} onValueChange={v => setCustom(p => ({ ...p, category: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -1217,28 +1214,28 @@ export default function MealsPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="custom-cal" className="text-xs font-bold uppercase tracking-wider">Calories (kcal)</Label>
+                <Label htmlFor="custom-cal" className="text-xs font-bold">Calories (kcal)</Label>
                 <Input id="custom-cal" type="number" placeholder="0" value={custom.calories} onChange={e => setCustom(p => ({ ...p, calories: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="custom-prot" className="text-xs font-bold uppercase tracking-wider">Protein (g)</Label>
+                <Label htmlFor="custom-prot" className="text-xs font-bold">Protein (g)</Label>
                 <Input id="custom-prot" type="number" placeholder="0" value={custom.protein} onChange={e => setCustom(p => ({ ...p, protein: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="custom-carbs" className="text-xs font-bold uppercase tracking-wider">Carbs (g)</Label>
+                <Label htmlFor="custom-carbs" className="text-xs font-bold">Carbs (g)</Label>
                 <Input id="custom-carbs" type="number" placeholder="0" value={custom.carbs} onChange={e => setCustom(p => ({ ...p, carbs: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="custom-fat" className="text-xs font-bold uppercase tracking-wider">Fat (g)</Label>
+                <Label htmlFor="custom-fat" className="text-xs font-bold">Fat (g)</Label>
                 <Input id="custom-fat" type="number" placeholder="0" value={custom.fat} onChange={e => setCustom(p => ({ ...p, fat: e.target.value }))} />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground font-mono">Describe your meal or add a photo to estimate its calories and macros. Review and edit the values before adding it to your plan.</p>
+            <p className="text-xs text-muted-foreground">Describe your meal or add a photo to estimate its calories and macros. Review and edit the values before adding it to your plan.</p>
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => { clearCustomMeal(); setCustomOpen(false); }}>Cancel</Button>
             <Button onClick={handleAddCustomMeal} disabled={addMealPlan.isPending}>
-              {addMealPlan.isPending ? "Adding…" : "Add to Plan"}
+              {addMealPlan.isPending ? "Adding…" : "Add to plan"}
             </Button>
           </DialogFooter>
         </DialogContent>

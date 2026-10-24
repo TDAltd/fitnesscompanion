@@ -15,6 +15,7 @@ import AuthPage from "@/pages/auth";
 import AccountPage from "@/pages/account";
 import MyPlanPage from "@/pages/my-plan";
 import ConnectHealthPage from "@/pages/connect-health";
+import MePage from "@/pages/me";
 import { AUTH_QUERY_KEY, useCurrentUser } from "@/lib/auth";
 import { BASE } from "@/lib/base-path";
 import { AppLayout } from "@/components/layout/app-layout";
@@ -102,6 +103,7 @@ function Router() {
         <Route path="/meals" component={MealsPage} />
         <Route path="/stats" component={StatsPage} />
         <Route path="/calorie-calculator" component={CalorieCalculatorPage} />
+        <Route path="/me" component={MePage} />
         <Route path="/plan" component={MyPlanPage} />
         <Route path="/connect-health" component={ConnectHealthPage} />
         <Route path="/account" component={AccountPage} />

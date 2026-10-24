@@ -51,13 +51,13 @@ export function HealthTrends() {
       </CardHeader>
       <CardContent className="grid gap-6 md:grid-cols-2">
         <div>
-          <p className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground">
+          <p className="mb-1 flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
             <Moon className="h-3.5 w-3.5" /> Sleep (hours)
           </p>
           {chart("sleep", "hsl(var(--primary))", 7, "h")}
         </div>
         <div>
-          <p className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground">
+          <p className="mb-1 flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
             <Footprints className="h-3.5 w-3.5" /> Steps
           </p>
           {chart("steps", "hsl(var(--primary) / 0.7)", stepsGoal, "")}

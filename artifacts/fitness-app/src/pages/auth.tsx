@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Activity, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/brand/logo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,21 +37,13 @@ export default function AuthPage() {
   return (
     <main className="onboarding-page flex min-h-[100dvh] items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20">
-            <Activity className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm font-extrabold tracking-tight">F90</p>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Your pace, your plan</p>
-          </div>
-        </div>
+        <Logo showTagline className="mb-8" />
 
-        <h1 className="text-3xl font-black leading-tight tracking-[-0.04em]">
+        <h1 className="text-3xl font-semibold leading-tight tracking-[-0.04em]">
           {isSignup ? (
-            <>Start your <span className="text-primary">plan.</span></>
+            "Start your plan"
           ) : (
-            <>Welcome <span className="text-primary">back.</span></>
+            "Welcome back"
           )}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">

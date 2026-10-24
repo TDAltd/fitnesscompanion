@@ -72,10 +72,10 @@ export function HealthCard() {
   return (
     <Card className="shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wider">
+        <CardTitle className="flex items-center gap-2 text-sm">
           <Activity className="h-4 w-4 text-primary" /> From Apple Health
         </CardTitle>
-        <span className="font-mono text-xs text-muted-foreground" data-testid="text-health-date">
+        <span className="text-xs text-muted-foreground" data-testid="text-health-date">
           {latest ? format(parseISO(latest.date), "EEE d MMM") : "waiting for first sync"}
         </span>
       </CardHeader>
@@ -83,11 +83,11 @@ export function HealthCard() {
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           {tiles.map(({ icon: Icon, label, value, sub, good }) => (
             <div key={label} className="space-y-1" data-testid={`health-${label.toLowerCase().replace(/\s+/g, "-")}`}>
-              <p className="flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground">
+              <p className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
                 <Icon className="h-3.5 w-3.5" /> {label}
               </p>
-              <p className="text-2xl font-black">{value}</p>
-              <p className={`font-mono text-xs ${good ? "text-green-600" : "text-muted-foreground"}`}>{sub}</p>
+              <p className="text-2xl font-semibold">{value}</p>
+              <p className={`text-xs ${good ? "text-primary" : "text-muted-foreground"}`}>{sub}</p>
             </div>
           ))}
         </div>

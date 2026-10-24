@@ -32,7 +32,7 @@ export function WeightChart() {
 
   if (!logs || logs.length === 0) {
     return (
-      <div className="h-full w-full flex items-center justify-center text-muted-foreground font-mono text-sm">
+      <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm">
         No weight data logged yet.
       </div>
     );
@@ -58,9 +58,9 @@ export function WeightChart() {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-card border border-border shadow-lg p-3 rounded-lg font-mono text-sm">
+        <div className="bg-card border border-border shadow-lg p-3 rounded-lg text-sm">
           <p className="font-bold text-foreground mb-1">{payload[0].payload.fullDate}</p>
-          <p className="text-primary font-black text-lg">
+          <p className="text-primary font-semibold text-lg">
             {payload[0].value} kg
           </p>
         </div>

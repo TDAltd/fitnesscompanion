@@ -105,13 +105,13 @@ export function WorkoutLogDialog({ defaultName, isRest }: WorkoutLogDialogProps)
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="flex-1 font-bold h-12 uppercase tracking-wider">
+        <Button className="h-10 gap-2 font-semibold">
           <Dumbbell className="mr-2 h-4 w-4" /> Log Workout
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="uppercase tracking-tight text-xl">Log Workout</DialogTitle>
+          <DialogTitle className="tracking-tight text-xl">Log workout</DialogTitle>
           <DialogDescription>
             {isRest ? "It's a rest day, but active recovery is okay to log." : "Did you finish today's training? Let's log it."}
           </DialogDescription>
@@ -123,7 +123,7 @@ export function WorkoutLogDialog({ defaultName, isRest }: WorkoutLogDialogProps)
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="uppercase text-xs font-bold text-muted-foreground">Workout Name</FormLabel>
+                  <FormLabel className="text-xs font-bold text-muted-foreground">Workout Name</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. Die-Hard Leg Day" className="font-bold h-10" {...field} />
                   </FormControl>
@@ -138,7 +138,7 @@ export function WorkoutLogDialog({ defaultName, isRest }: WorkoutLogDialogProps)
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="uppercase text-xs font-bold text-muted-foreground">Type</FormLabel>
+                    <FormLabel className="text-xs font-bold text-muted-foreground">Type</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger className="h-10">
@@ -163,11 +163,11 @@ export function WorkoutLogDialog({ defaultName, isRest }: WorkoutLogDialogProps)
                 name="durationMins"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="uppercase text-xs font-bold text-muted-foreground">Duration</FormLabel>
+                    <FormLabel className="text-xs font-bold text-muted-foreground">Duration</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Input type="number" className="font-mono font-bold pr-12 h-10" {...field} />
-                        <div className="absolute right-3 top-2.5 text-xs font-bold text-muted-foreground uppercase">min</div>
+                        <Input type="number" className="font-bold pr-12 h-10" {...field} />
+                        <div className="absolute right-3 top-2.5 text-xs font-bold text-muted-foreground">min</div>
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -181,7 +181,7 @@ export function WorkoutLogDialog({ defaultName, isRest }: WorkoutLogDialogProps)
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="uppercase text-xs font-bold text-muted-foreground">Notes (Optional)</FormLabel>
+                  <FormLabel className="text-xs font-bold text-muted-foreground">Notes (Optional)</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="e.g. Pushed harder on squats, felt good."
@@ -194,7 +194,7 @@ export function WorkoutLogDialog({ defaultName, isRest }: WorkoutLogDialogProps)
               )}
             />
             <DialogFooter className="pt-4">
-              <Button type="submit" className="w-full font-bold uppercase tracking-wider" disabled={createWorkout.isPending}>
+              <Button type="submit" className="w-full font-bold" disabled={createWorkout.isPending}>
                 {createWorkout.isPending ? "Saving..." : "Save Workout"}
               </Button>
             </DialogFooter>

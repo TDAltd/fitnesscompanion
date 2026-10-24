@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { format, parseISO } from "date-fns";
-import { Activity, Flame, HeartPulse, Moon, Footprints, Smartphone } from "lucide-react";
+import { Activity, Flame, Moon, Footprints, Smartphone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,13 +61,6 @@ export function HealthCard() {
       good: latest?.steps != null && latest.steps >= stepsGoal,
     },
     {
-      icon: HeartPulse,
-      label: "Avg heart rate",
-      value: latest?.avgHeartRate != null ? `${latest.avgHeartRate}` : "—",
-      sub: "bpm",
-      good: false,
-    },
-    {
       icon: Flame,
       label: "Active energy",
       value: latest?.activeEnergyKcal != null ? latest.activeEnergyKcal.toLocaleString() : "—",
@@ -87,7 +80,7 @@ export function HealthCard() {
         </span>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           {tiles.map(({ icon: Icon, label, value, sub, good }) => (
             <div key={label} className="space-y-1" data-testid={`health-${label.toLowerCase().replace(/\s+/g, "-")}`}>
               <p className="flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground">

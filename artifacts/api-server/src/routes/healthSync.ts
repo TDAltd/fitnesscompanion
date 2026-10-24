@@ -96,7 +96,9 @@ healthSyncPublicRouter.post("/health-sync", async (req, res) => {
   const steps = inRange(sum(toNumbers(body.steps)), 0, 150_000);
   const sleepMinutes = inRange(parseSleepMinutes(body.sleep ?? body.sleepMinutes ?? body.sleepHours), 1, 1440);
   const avgHeartRate = inRange(avg(toNumbers(body.heartRate ?? body.avgHeartRate)), 25, 230);
-  const activeEnergyKcal = inRange(sum(toNumbers(body.activeEnergy ?? body.activeEnergyKcal)), 0, 10_000);
+  // If the Shortcut's unit was left on "cal" (small calories) the number is ~1000x too big; convert it
+  const rawEnergy = sum(toNumbers(body.activeEnergy ?? body.activeEnergyKcal));
+  const activeEnergyKcal = inRange(rawEnergy != null && rawEnergy > 10_000 ? rawEnergy / 1000 : rawEnergy, 0, 10_000);
 
   // Only overwrite fields the Shortcut actually sent this time
   const values = {

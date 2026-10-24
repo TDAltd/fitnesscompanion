@@ -88,7 +88,7 @@ export default function ConnectHealthPage() {
           <HeartPulse className="h-7 w-7 text-primary" /> Apple Health sync
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Send your daily <Q>steps</Q>, <Q>sleep</Q>, <Q>heart rate</Q> and <Q>active calories</Q> from your iPhone
+          Send your daily <Q>steps</Q>, <Q>sleep</Q> and <Q>active calories</Q> from your iPhone
           (and any watch that saves to Apple Health, like Oraimo) to this app automatically every night.
         </p>
       </header>
@@ -165,93 +165,79 @@ export default function ConnectHealthPage() {
         <CardHeader>
           <CardTitle className="text-base">Set up the Shortcut on your iPhone (about 10 minutes, once)</CardTitle>
           <CardDescription>
-            Open the <Q>Shortcuts</Q> app (pre-installed on iPhone). Tap <Q>+</Q> to make a new shortcut and name it{" "}
-            <Q>Sync Fitness</Q>. Then add these actions in order, using the search bar at the bottom to find each one.
+            Open the <Q>Shortcuts</Q> app, tap <Q>+</Q> and name the new shortcut <Q>Sync Fitness</Q>. Add every action
+            below to this one shortcut, in order, using <Q>Search Actions</Q> at the bottom. Shortcuts saves as you go;
+            to come back later, tap <Q>⋯</Q> on the Sync Fitness tile (tapping the middle runs it instead).
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-5 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+            Every health item uses the same three actions: <Q>Find Health Samples</Q> → <Q>Calculate Statistics</Q> →{" "}
+            <Q>Set Variable</Q>. On newer iPhones the result is called <Q>Sum</Q>; that's the one to pick. Add the
+            filter <Q>Source is oraimo health</Q> each time, so steps your phone also counted aren't added twice.
+          </div>
           <ol className="space-y-5">
-            <Step n={1} title="Today's steps">
-              <p>
-                Add <Q>Find Health Samples</Q>. Set it to: <Q>Type is Steps</Q>, then tap <Q>Add Filter</Q> →{" "}
-                <Q>Start Date is Today</Q>.
-              </p>
-              <p>
-                Add <Q>Calculate Statistics</Q> right after it and choose <Q>Sum</Q>. Long-press the result and{" "}
-                <Q>Rename</Q> it to <Q>Steps</Q>.
-              </p>
+            <Step n={1} title="Steps">
+              <ul className="list-disc space-y-1 pl-5">
+                <li><Q>Find Health Samples</Q>: Type is <Q>Steps</Q>, Start Date is <Q>today</Q>, Source is <Q>oraimo health</Q>. Leave Unit, Group by, Sort by and Limit as they are.</li>
+                <li><Q>Calculate Statistics</Q>: <Q>Sum</Q></li>
+                <li><Q>Set Variable</Q>: name <Q>Steps</Q>, to <Q>Sum</Q></li>
+              </ul>
             </Step>
-            <Step n={2} title="Last night's sleep">
-              <p>
-                Add <Q>Find Health Samples</Q>: <Q>Type is Sleep</Q> (may be called Sleep Analysis), filter{" "}
-                <Q>Start Date is in the last 1 day</Q>. If you're offered a <Q>Value</Q> filter, add{" "}
-                <Q>Value is not In Bed</Q> and <Q>Value is not Awake</Q>.
-              </p>
-              <p>
-                Add <Q>Get Details of Health Samples</Q> → <Q>Duration</Q>. Then <Q>Calculate Statistics</Q> →{" "}
-                <Q>Sum</Q>. Rename the result <Q>Sleep</Q>.
-              </p>
+            <Step n={2} title="Sleep">
+              <ul className="list-disc space-y-1 pl-5">
+                <li><Q>Find Health Samples</Q>: Type is <Q>Sleep</Q>, Start Date is <Q>in the last 1 days</Q>, Source is <Q>oraimo health</Q>. If a <Q>Value</Q> filter is offered, add <Q>Value is not In Bed</Q>.</li>
+                <li><Q>Get Details of Health Samples</Q>: <Q>Duration</Q></li>
+                <li><Q>Calculate Statistics</Q>: <Q>Sum</Q> (it reads "Sum of Duration")</li>
+                <li><Q>Set Variable</Q>: name <Q>Sleep</Q>, to the <Q>Sum</Q> directly above</li>
+              </ul>
             </Step>
-            <Step n={3} title="Heart rate and active calories">
-              <p>
-                <Q>Find Health Samples</Q>: <Q>Type is Heart Rate</Q>, <Q>Start Date is Today</Q> →{" "}
-                <Q>Calculate Statistics</Q> → <Q>Average</Q>. Rename it <Q>HeartRate</Q>.
-              </p>
-              <p>
-                <Q>Find Health Samples</Q>: <Q>Type is Active Energy</Q>, <Q>Start Date is Today</Q> →{" "}
-                <Q>Calculate Statistics</Q> → <Q>Sum</Q>. Rename it <Q>Energy</Q>.
-              </p>
+            <Step n={3} title="Active calories">
+              <ul className="list-disc space-y-1 pl-5">
+                <li><Q>Find Health Samples</Q>: Type is <Q>Active Energy</Q>, Start Date is <Q>today</Q>, Source is <Q>oraimo health</Q>. Set <Q>Unit</Q> to <Q>kcal</Q> (not "cal").</li>
+                <li><Q>Calculate Statistics</Q>: <Q>Sum</Q></li>
+                <li><Q>Set Variable</Q>: name <Q>Energy</Q>, to the <Q>Sum</Q> directly above</li>
+              </ul>
             </Step>
             <Step n={4} title="Today's date">
               <p>
-                Add <Q>Format Date</Q>: date <Q>Current Date</Q>, Date Format <Q>Custom</Q>, format string{" "}
-                <code className="rounded bg-muted px-1">yyyy-MM-dd</code>.
+                <Q>Format Date</Q>: tap the date and choose <Q>Current Date</Q>. Tap the arrow for more options → Date
+                Format <Q>Custom</Q> → type <code className="rounded bg-muted px-1">yyyy-MM-dd</code> (capital MM).
               </p>
             </Step>
             <Step n={5} title="Send it to the app">
-              <p>
-                Add <Q>Get Contents of URL</Q>. Paste the <Q>Web address</Q> from above. Tap the arrow to show more
-                options:
-              </p>
+              <p>Add <Q>Get Contents of URL</Q> and paste the <Q>Web address</Q> from above. Tap the arrow for more options:</p>
               <ul className="list-disc space-y-1 pl-5">
+                <li><Q>Method:</Q> POST</li>
                 <li>
-                  <Q>Method:</Q> POST
+                  <Q>Headers:</Q> tap <Q>Add new header</Q>. Key <code className="rounded bg-muted px-1">Authorization</code>,
+                  value: paste the <Q>Authorization value</Q> from above (starts with "Bearer").
                 </li>
                 <li>
-                  <Q>Headers:</Q> add one. Key <code className="rounded bg-muted px-1">Authorization</code>, value: paste
-                  the <Q>Authorization value</Q> from above (it starts with "Bearer").
-                </li>
-                <li>
-                  <Q>Request Body:</Q> JSON. Add 5 fields (type <Q>Text</Q>), and for each value tap and pick the
-                  variable:
+                  <Q>Request Body:</Q> <Q>JSON</Q>. Tap <Q>Add new field</Q> → <Q>Text</Q> four times. Type the key
+                  exactly, then tap the value box and pick the variable:
                   <div className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 font-mono text-xs">
                     <span>date</span><span>→ Formatted Date</span>
                     <span>steps</span><span>→ Steps</span>
                     <span>sleep</span><span>→ Sleep</span>
-                    <span>heartRate</span><span>→ HeartRate</span>
                     <span>activeEnergy</span><span>→ Energy</span>
                   </div>
                 </li>
               </ul>
-              <p>
-                Finally add <Q>Show Notification</Q> with <Q>Contents of URL</Q>, so you can see what was synced.
-              </p>
+              <p>Last, add <Q>Show Notification</Q> and set it to <Q>Contents of URL</Q>, so you see what was synced.</p>
             </Step>
             <Step n={6} title="Test it">
               <p>
-                Tap <Q>▶</Q> to run the shortcut. Allow access to Health when asked (turn on all the types). You should
-                see a notification like <em>"Synced: 8,432 steps, 7h 32m sleep…"</em> and this page will show a recent
-                sync.
+                Open the oraimo health app first so the watch syncs. Then tap <Q>▶</Q> in your shortcut and allow Health
+                access when asked. You should see a notification like <em>"Synced 2026-10-24: 8,432 steps, 7h 32m sleep,
+                412 kcal active"</em>, and this page will show the sync time.
               </p>
             </Step>
-            <Step n={7} title="Make it run every night">
+            <Step n={7} title="Run it every night">
               <p>
-                In Shortcuts tap <Q>Automation</Q> → <Q>+</Q> → <Q>Time of Day</Q> → <Q>10:00 PM</Q>,{" "}
-                <Q>Daily</Q> → choose <Q>Run Immediately</Q> → <Q>Next</Q> → pick <Q>Sync Fitness</Q>.
-              </p>
-              <p>
-                Run it by hand any time too; it updates the same day rather than adding twice. Make sure the oraimo
-                health app has synced your watch first, or the latest numbers won't be in Apple Health yet.
+                In Shortcuts tap <Q>Automation</Q> → <Q>+</Q> → <Q>Time of Day</Q> → <Q>10:00 PM</Q>, <Q>Daily</Q> →{" "}
+                <Q>Run Immediately</Q> → <Q>Next</Q> → choose <Q>Sync Fitness</Q>. You can still run it by hand any
+                time; it updates the same day instead of adding it twice.
               </p>
             </Step>
           </ol>

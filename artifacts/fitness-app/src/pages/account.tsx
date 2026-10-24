@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Download, LogOut, Upload, Loader2 } from "lucide-react";
+import { Download, LogOut, Upload, Loader2, HeartPulse } from "lucide-react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -62,6 +63,20 @@ export default function AccountPage() {
           Logged in as {user?.email}
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Apple Health</CardTitle>
+          <CardDescription>Sync steps, sleep and heart rate from your iPhone and watch every night.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline" className="gap-2">
+            <Link href="/connect-health" data-testid="link-account-connect-health">
+              <HeartPulse className="h-4 w-4" /> Connect Apple Health
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

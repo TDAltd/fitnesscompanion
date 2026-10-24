@@ -11,6 +11,7 @@ import measurementsRouter from "./measurements";
 import nutritionLookupRouter from "./nutritionLookup";
 import dataTransferRouter from "./dataTransfer";
 import planSettingsRouter from "./planSettings";
+import { healthRouter as healthDataRouter, healthSyncPublicRouter } from "./healthSync";
 import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
@@ -18,6 +19,7 @@ const router: IRouter = Router();
 // Public
 router.use(healthRouter);
 router.use(authRouter);
+router.use(healthSyncPublicRouter); // uses its own sync key instead of a login
 
 // Everything below needs a logged-in user
 router.use(requireAuth);
@@ -31,5 +33,6 @@ router.use(measurementsRouter);
 router.use(nutritionLookupRouter);
 router.use(dataTransferRouter);
 router.use(planSettingsRouter);
+router.use(healthDataRouter);
 
 export default router;

@@ -9,6 +9,7 @@ import {
   habitLogsTable,
   mealPlanTable,
   bodyMeasurementsTable,
+  healthDailyTable,
 } from "@workspace/db";
 import { uid } from "../lib/auth";
 
@@ -27,6 +28,7 @@ const TABLES = {
   habit_logs: habitLogsTable,
   meal_plan_entries: mealPlanTable,
   body_measurements: bodyMeasurementsTable,
+  health_daily: healthDailyTable,
 } as const;
 
 type TableKey = keyof typeof TABLES;
@@ -109,7 +111,7 @@ router.post("/import", async (req, res) => {
         mapped = mapped.slice(0, 1);
       }
       // One habit row per day; last one wins
-      if (key === "habit_logs") {
+      if (key === "habit_logs" || key === "health_daily") {
         const byDate = new Map<unknown, Record<string, unknown>>();
         for (const r of mapped) byDate.set(r.date, r);
         mapped = [...byDate.values()];

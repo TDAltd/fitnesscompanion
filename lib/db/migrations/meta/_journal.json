@@ -15,6 +15,13 @@
       "when": 1792800726019,
       "tag": "0001_military_banshee",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792801536324,
+      "tag": "0002_spooky_maginty",
+      "breakpoints": true
     }
   ]
 }

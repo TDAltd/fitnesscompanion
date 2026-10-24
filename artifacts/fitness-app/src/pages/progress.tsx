@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { WeightChart } from "@/components/progress/weight-chart";
 import { WeeklySummary } from "@/components/progress/weekly-summary";
+import { HealthTrends } from "@/components/health/health-trends";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -109,6 +110,9 @@ export default function ProgressPage() {
 
       {/* WEEKLY SUMMARY */}
       <WeeklySummary />
+
+      {/* SLEEP & STEPS FROM APPLE HEALTH */}
+      <HealthTrends />
 
       {/* WEIGHT CHART */}
       <Card className="overflow-hidden">

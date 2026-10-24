@@ -46,6 +46,14 @@ export function createApp(staticDir?: string): Express {
   app.use(cookieParser());
   app.use("/api/nutrition-lookup", express.json({ limit: "4mb" }));
   app.use("/api/import", express.json({ limit: "25mb" }));
+  app.use("/api/health-sync", express.json({ limit: "256kb" }));
+  // Some Shortcut setups send the body as text; accept it and parse as JSON if possible
+  app.use("/api/health-sync", express.text({ type: ["text/*"], limit: "256kb" }), (req, _res, next) => {
+    if (typeof req.body === "string") {
+      try { req.body = JSON.parse(req.body); } catch { req.body = {}; }
+    }
+    next();
+  });
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 

@@ -16,6 +16,7 @@ import { HydrationReminder } from "@/components/hydration/hydration-reminder";
 import { WeightLogDialog } from "@/components/forms/weight-log-dialog";
 import { WorkoutLogDialog } from "@/components/forms/workout-log-dialog";
 import { usePlan } from "@/lib/plan";
+import { HealthCard } from "@/components/health/health-card";
 import { Progress } from "@/components/ui/progress";
 
 
@@ -202,6 +203,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <HealthCard />
 
       <div className="grid gap-6 md:grid-cols-1">
         <HabitChecklist />

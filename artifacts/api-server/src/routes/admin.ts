@@ -14,23 +14,34 @@ type Row = Record<string, unknown>;
 const rows = async (q: ReturnType<typeof sql>) => (await db.execute(q)).rows as Row[];
 const num = (v: unknown) => Number(v ?? 0);
 
+
+/** Admin accounts don't track fitness, so they're left out of every user metric. */
+async function adminIds(): Promise<number[]> {
+  const admins = envAdmins();
+  const all = await db.select({ id: usersTable.id, email: usersTable.email, role: usersTable.role }).from(usersTable);
+  return all.filter((u) => u.role === "admin" || admins.includes(u.email)).map((u) => u.id);
+}
+const notIn = (col: string, ids: number[]) =>
+  ids.length ? sql.raw(`${col} NOT IN (${ids.map((n) => Number(n)).join(",")})`) : sql.raw("TRUE");
+
 // ---------- overview ----------
 
 router.get("/admin/overview", async (_req, res) => {
+  const ex = await adminIds();
   const [totals] = await rows(sql`
     SELECT
-      (SELECT count(*) FROM users) AS total,
-      (SELECT count(*) FROM users WHERE created_at >= now() - interval '7 days') AS new_7d,
-      (SELECT count(*) FROM users WHERE created_at >= now() - interval '30 days') AS new_30d,
-      (SELECT count(*) FROM users WHERE disabled_at IS NOT NULL) AS disabled,
-      (SELECT count(DISTINCT user_id) FROM activity_days WHERE date = to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD')) AS active_1d,
-      (SELECT count(DISTINCT user_id) FROM activity_days WHERE date >= to_char((now() - interval '6 days') AT TIME ZONE 'UTC', 'YYYY-MM-DD')) AS active_7d,
-      (SELECT count(DISTINCT user_id) FROM activity_days WHERE date >= to_char((now() - interval '29 days') AT TIME ZONE 'UTC', 'YYYY-MM-DD')) AS active_30d
+      (SELECT count(*) FROM users WHERE ${notIn('id', ex)}) AS total,
+      (SELECT count(*) FROM users WHERE created_at >= now() - interval '7 days' AND ${notIn('id', ex)}) AS new_7d,
+      (SELECT count(*) FROM users WHERE created_at >= now() - interval '30 days' AND ${notIn('id', ex)}) AS new_30d,
+      (SELECT count(*) FROM users WHERE disabled_at IS NOT NULL AND ${notIn('id', ex)}) AS disabled,
+      (SELECT count(DISTINCT user_id) FROM activity_days WHERE date = to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD') AND ${notIn('user_id', ex)}) AS active_1d,
+      (SELECT count(DISTINCT user_id) FROM activity_days WHERE date >= to_char((now() - interval '6 days') AT TIME ZONE 'UTC', 'YYYY-MM-DD') AND ${notIn('user_id', ex)}) AS active_7d,
+      (SELECT count(DISTINCT user_id) FROM activity_days WHERE date >= to_char((now() - interval '29 days') AT TIME ZONE 'UTC', 'YYYY-MM-DD') AND ${notIn('user_id', ex)}) AS active_30d
   `);
 
   const signups = await rows(sql`
     SELECT to_char(d, 'YYYY-MM-DD') AS date,
-           (SELECT count(*) FROM users u WHERE (u.created_at AT TIME ZONE 'UTC')::date = d) AS count
+           (SELECT count(*) FROM users u WHERE (u.created_at AT TIME ZONE 'UTC')::date = d AND ${notIn('u.id', ex)}) AS count
     FROM generate_series((now() AT TIME ZONE 'UTC')::date - 29, (now() AT TIME ZONE 'UTC')::date, interval '1 day') AS d
     ORDER BY d
   `);
@@ -38,16 +49,16 @@ router.get("/admin/overview", async (_req, res) => {
   const total = num(totals.total);
   const [features] = await rows(sql`
     SELECT
-      (SELECT count(*) FROM user_profile WHERE fitness_goal IS NOT NULL) AS onboarded,
-      (SELECT count(DISTINCT user_id) FROM meal_plan_entries) AS meals,
-      (SELECT count(DISTINCT user_id) FROM workout_logs) AS workouts,
-      (SELECT count(DISTINCT user_id) FROM weight_logs) AS weight,
-      (SELECT count(DISTINCT user_id) FROM habit_logs) AS habits,
-      (SELECT count(*) FROM health_sync) AS apple_health,
-      (SELECT count(DISTINCT user_id) FROM usage_events WHERE kind = 'ai_estimate') AS ai_estimates,
-      (SELECT count(DISTINCT user_id) FROM body_measurements) AS measurements,
-      (SELECT count(*) FROM user_profile WHERE calorie_target IS NOT NULL OR protein_target IS NOT NULL
-                                           OR steps_goal IS NOT NULL OR water_goal_litres IS NOT NULL) AS custom_targets
+      (SELECT count(*) FROM user_profile WHERE fitness_goal IS NOT NULL AND ${notIn('user_id', ex)}) AS onboarded,
+      (SELECT count(DISTINCT user_id) FROM meal_plan_entries WHERE ${notIn('user_id', ex)}) AS meals,
+      (SELECT count(DISTINCT user_id) FROM workout_logs WHERE ${notIn('user_id', ex)}) AS workouts,
+      (SELECT count(DISTINCT user_id) FROM weight_logs WHERE ${notIn('user_id', ex)}) AS weight,
+      (SELECT count(DISTINCT user_id) FROM habit_logs WHERE ${notIn('user_id', ex)}) AS habits,
+      (SELECT count(*) FROM health_sync WHERE ${notIn('user_id', ex)}) AS apple_health,
+      (SELECT count(DISTINCT user_id) FROM usage_events WHERE kind = 'ai_estimate' AND ${notIn('user_id', ex)}) AS ai_estimates,
+      (SELECT count(DISTINCT user_id) FROM body_measurements WHERE ${notIn('user_id', ex)}) AS measurements,
+      (SELECT count(*) FROM user_profile WHERE (calorie_target IS NOT NULL OR protein_target IS NOT NULL
+                                           OR steps_goal IS NOT NULL OR water_goal_litres IS NOT NULL) AND ${notIn('user_id', ex)}) AS custom_targets
   `);
   const feature = (key: string, label: string) => ({
     key,
@@ -65,7 +76,7 @@ router.get("/admin/overview", async (_req, res) => {
                WHERE a.user_id = u.id AND a.date >= to_char((u.created_at + make_interval(days => ${days})) AT TIME ZONE 'UTC', 'YYYY-MM-DD')
              )) AS retained
       FROM users u
-      WHERE u.created_at <= now() - make_interval(days => ${days})
+      WHERE u.created_at <= now() - make_interval(days => ${days}) AND ${notIn('u.id', ex)}
     `);
     const cohort = num(r.cohort);
     return { days, cohort, retained: num(r.retained), percent: cohort ? Math.round((num(r.retained) / cohort) * 100) : null };

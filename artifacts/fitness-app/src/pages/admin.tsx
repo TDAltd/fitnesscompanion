@@ -65,7 +65,7 @@ export default function AdminPage() {
     }
   };
 
-  if (me && !me.isAdmin) {
+  if (me && me.isAdmin === false) {
     return <PageHeader title="Admin" description="You don't have access to this page." />;
   }
 
@@ -73,7 +73,7 @@ export default function AdminPage() {
     <div className="space-y-6 md:space-y-8">
       <PageHeader
         title="Admin"
-        description="Who's using Fitness Companion and which parts they use. Weights, meals and health numbers stay private."
+        description="Who's using Fitness Companion and which parts they use. Admin accounts aren't counted. Weights, meals and health numbers stay private."
         action={
           overview && (
             <div className="flex items-center gap-3 rounded-xl border bg-card px-4 py-2.5">
@@ -377,6 +377,13 @@ function UserDialog({ user, meId, onClose }: { user: AdminUser | null; meId?: nu
               disabled={action.isPending}
               data-testid="button-toggle-admin"
               onClick={async () => {
+                if (
+                  !user.isAdmin &&
+                  !window.confirm(
+                    `Make ${user.email} an admin? Admin accounts only see this dashboard: they can't track their own fitness with this account.`,
+                  )
+                )
+                  return;
                 const r = await run("change admin access", `/users/${user.id}/role`, "POST", { role: user.isAdmin ? "user" : "admin" });
                 if (r) toast({ title: user.isAdmin ? "Admin access removed" : "Now an admin" });
               }}

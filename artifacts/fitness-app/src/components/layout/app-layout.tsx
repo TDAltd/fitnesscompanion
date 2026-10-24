@@ -19,7 +19,7 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/me",
     label: "Me",
     icon: CircleUserRound,
-    also: ["/plan", "/stats", "/calorie-calculator", "/account", "/connect-health", "/admin"],
+    also: ["/plan", "/stats", "/calorie-calculator", "/account", "/connect-health"],
   },
 ];
 

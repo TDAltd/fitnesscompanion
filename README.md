@@ -48,7 +48,7 @@ This creates a `deploy/` folder. Zip **the contents** of `deploy/` (`app.js`, `p
 | `OPENAI_API_KEY` | your OpenAI key (optional) |
 | `AI_LOOKUPS_PER_DAY` | `30` |
 | `ALLOW_SIGNUPS` | `true` (set `false` later to stop new sign-ups) |
-| `ADMIN_EMAILS` | your login email, e.g. `you@example.com` (comma-separate several). These accounts can open **Me → Admin** and promote other admins |
+| `ADMIN_EMAILS` | your login email, e.g. `you@example.com` (comma-separate several). These accounts are admin-only (dashboard, no tracking) and can promote other admins |
 | `NODE_ENV` | `production` |
 
 8. Click **Create**.
@@ -130,7 +130,7 @@ Import **replaces** that account's data, so running it twice won't create duplic
 
 ## 3. Admin dashboard
 
-Accounts listed in `ADMIN_EMAILS` (and anyone an admin promotes) see **Me → Admin**:
+Accounts listed in `ADMIN_EMAILS` (and anyone an admin promotes) are **admin-only**: they log straight into the admin dashboard and can't use the tracking features. Admin accounts are left out of all user numbers. The dashboard shows:
 sign-ups per day, active users (today / 7 days / 30 days), feature use, 1- and 4-week retention,
 and a list of people with their goal, training setup and usage counts. Weights, meals, sleep and
 body measurements are never shown.

@@ -16,7 +16,7 @@ import AccountPage from "@/pages/account";
 import MyPlanPage from "@/pages/my-plan";
 import ConnectHealthPage from "@/pages/connect-health";
 import MePage from "@/pages/me";
-import AdminPage from "@/pages/admin";
+import { AdminShell } from "@/components/layout/admin-layout";
 import { AUTH_QUERY_KEY, useCurrentUser } from "@/lib/auth";
 import { BASE } from "@/lib/base-path";
 import { AppLayout } from "@/components/layout/app-layout";
@@ -25,8 +25,12 @@ import { AppLayout } from "@/components/layout/app-layout";
 const queryClient: QueryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {
-      if ((error as { status?: number }).status === 401) {
+      const status = (error as { status?: number }).status;
+      if (status === 401) {
         queryClient.setQueryData(AUTH_QUERY_KEY, null);
+      } else if (status === 403) {
+        // e.g. this account was just made an admin: re-check who they are so the right screens show
+        void queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEY });
       }
     },
   }),
@@ -47,6 +51,7 @@ function AuthGate() {
     );
   }
   if (!user) return <AuthPage />;
+  if (user.isAdmin) return <AdminShell />;
   return <Router />;
 }
 
@@ -87,14 +92,6 @@ function Router() {
       </main>
     );
   }
-  // Admins can open the dashboard before (or without) finishing their own setup
-  if (location === "/admin" && !profileComplete) {
-    return (
-      <main className="mx-auto w-full max-w-5xl p-4 md:p-10">
-        <AdminPage />
-      </main>
-    );
-  }
   if (!isOnboarding && !isError && !profileComplete) {
     return <Redirect to="/onboarding" />;
   }
@@ -113,7 +110,6 @@ function Router() {
         <Route path="/stats" component={StatsPage} />
         <Route path="/calorie-calculator" component={CalorieCalculatorPage} />
         <Route path="/me" component={MePage} />
-        <Route path="/admin" component={AdminPage} />
         <Route path="/plan" component={MyPlanPage} />
         <Route path="/connect-health" component={ConnectHealthPage} />
         <Route path="/account" component={AccountPage} />

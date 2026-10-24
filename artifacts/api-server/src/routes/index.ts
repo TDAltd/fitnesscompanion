@@ -24,6 +24,17 @@ router.use(healthSyncPublicRouter); // uses its own sync key instead of a login
 
 // Everything below needs a logged-in user
 router.use(requireAuth);
+
+// Admin accounts are admin-only: they get the admin API and nothing else
+router.use(adminRouter);
+router.use((req, res, next) => {
+  if (req.user?.isAdmin) {
+    res.status(403).json({ error: "Admin accounts can't use tracking features. Use a separate account to track your own fitness." });
+    return;
+  }
+  next();
+});
+
 router.use(weightRouter);
 router.use(workoutsRouter);
 router.use(habitsRouter);
@@ -35,6 +46,5 @@ router.use(nutritionLookupRouter);
 router.use(dataTransferRouter);
 router.use(planSettingsRouter);
 router.use(healthDataRouter);
-router.use(adminRouter);
 
 export default router;

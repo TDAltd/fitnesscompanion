@@ -86,7 +86,7 @@ Once Steps 1–5 work, every push to `main` builds the app on GitHub and uploads
 
 | Secret | Value |
 |---|---|
-| `FTP_SERVER` | `ftp.yourdomain.com` (or the server hostname shown in cPanel → FTP Accounts → *Configure FTP Client*) |
+| `FTP_SERVER` | the server hostname: cPanel → *General Information* → Server Name, plus `.web-hosting.com`. For this account: `premium228.web-hosting.com` |
 | `FTP_USERNAME` | the full FTP login, e.g. `deploy@yourdomain.com` |
 | `FTP_PASSWORD` | the password from step 1 |
 | `FTP_SERVER_DIR` | *Optional.* Leave it out if the FTP account is locked to the app folder. If you use your main cPanel FTP login instead, set it to `fitnesscompanion_app/` |

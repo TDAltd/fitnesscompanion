@@ -117,7 +117,7 @@ export default function ProgressPage() {
             <Target className="h-5 w-5 text-primary" /> Weight Trend
           </CardTitle>
           <CardDescription>
-            Target: 75kg
+            {summary?.goalWeight ? `Target: ${summary.goalWeight}kg` : "Your weigh-ins over time"}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">

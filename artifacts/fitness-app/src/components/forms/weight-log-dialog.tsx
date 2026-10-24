@@ -69,7 +69,7 @@ export function WeightLogDialog({ currentWeight }: WeightLogDialogProps) {
           form.reset();
           toast({
             title: "Weight logged",
-            description: "Keep pushing towards that 75kg goal.",
+            description: "Logged. Watch the weekly trend, not single days.",
           });
         },
         onError: () => {

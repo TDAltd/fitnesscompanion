@@ -24,8 +24,10 @@ import {
   useGetProfile,
   getGetProfileQueryKey,
 } from "@workspace/api-client-react";
+import { usePlan } from "@/lib/plan";
+import { INTERNATIONAL_MEALS, ORIGINAL_INTERNATIONAL } from "@/lib/international-meals";
 
-const meals = [
+const baseMeals = [
   {
     id: 1,
     name: "Grilled Chicken & Vegetable Stir-Fry",
@@ -576,15 +578,31 @@ const meals = [
   }
 ];
 
-const MEAT_TERMS = /\b(beef|chicken|turkey|pork|lamb|goat|mutton|duck|bacon|ham|sausage)\b/i;
-const SEAFOOD_TERMS = /\b(fish|tilapia|salmon|tuna|sardine|crayfish|shrimp|prawn|crab|lobster|seafood)\b/i;
+type Cuisine = "Nigerian" | "International" | "Any";
+
+const meals = [...baseMeals, ...INTERNATIONAL_MEALS].map((meal) => ({
+  ...meal,
+  cuisine: (meal.category === "Fruit"
+    ? "Any"
+    : meal.id > 100 || ORIGINAL_INTERNATIONAL.has(meal.name)
+      ? "International"
+      : "Nigerian") as Cuisine,
+}));
+
+const MEAT_TERMS = /\b(beef|chicken|turkey|pork|lamb|goat|mutton|duck|bacon|ham|sausage|suya|ponmo|kpomo|shaki|tripe|assorted meat|offal|snail)\b/i;
+// No leading \b on "fish" so catfish, stockfish, dryfish etc. are caught too
+const SEAFOOD_TERMS = /(fish\b|\b(tilapia|salmon|tuna|sardines?|mackerel|croaker|titus|shrimps?|prawns?|crabs?|lobster|periwinkle|seafood|anchov(y|ies))\b)/i;
 const OTHER_ANIMAL_PRODUCTS = /\b(egg(?:s| whites?)?|milk|butter|ghee|yogurt|cheese|cream|whey|honey|paneer)\b/i;
 
 function matchesDietaryPreference(meal: (typeof meals)[number], preference?: string | null) {
   if (!preference || preference === "No preference") return true;
   if (preference === "High-protein") return meal.protein >= 25;
 
-  const ingredients = meal.ingredients.join(" ");
+  // Plant-based versions ("peanut butter", "soy milk", "coconut milk") are fine for vegans
+  const ingredients = [meal.name, ...meal.ingredients]
+    .join(" ")
+    .replace(/\b(peanut|almond|cashew|nut|seed) butter\b/gi, "")
+    .replace(/\b(coconut|soy|almond|oat|rice|plant) (milk|yogurt|cream)\b/gi, "");
   if (preference === "Vegan") {
     return !MEAT_TERMS.test(ingredients) &&
       !SEAFOOD_TERMS.test(ingredients) &&
@@ -636,6 +654,8 @@ async function compressMealPhoto(file: File) {
 export default function MealsPage() {
   const [activeTab, setActiveTab] = useState("plan");
   const [filter, setFilter] = useState("All");
+  const [cuisine, setCuisine] = useState<"All" | "Nigerian" | "International">("All");
+  const { plan } = usePlan();
   const [date, setDate] = useState(new Date());
   const [customOpen, setCustomOpen] = useState(false);
   const [custom, setCustom] = useState(EMPTY_CUSTOM);
@@ -782,8 +802,8 @@ export default function MealsPage() {
     );
   }, [mealPlan]);
 
-  const targetCalories = 1700;
-  const targetProtein = 130;
+  const targetCalories = plan?.targets.calories ?? 2000;
+  const targetProtein = plan?.targets.protein ?? 100;
 
   const caloriesPercent = Math.min((totals.calories / targetCalories) * 100, 100);
   const proteinPercent = Math.min((totals.protein / targetProtein) * 100, 100);
@@ -793,7 +813,8 @@ export default function MealsPage() {
 
   const categoryFilteredMeals = filter === "All" ? meals : meals.filter(m => m.category === filter);
   const filteredMeals = categoryFilteredMeals.filter((meal) =>
-    matchesDietaryPreference(meal, profile?.dietaryPreference)
+    matchesDietaryPreference(meal, profile?.dietaryPreference) &&
+    (cuisine === "All" || meal.cuisine === cuisine || meal.cuisine === "Any")
   );
 
   return (
@@ -803,7 +824,7 @@ export default function MealsPage() {
           HEALTHY MEALS
         </h1>
         <p className="text-muted-foreground mt-1 text-sm font-mono">
-          Fuel your progress. 1600-1750 kcal daily target.
+          Fuel your progress. {targetCalories.toLocaleString()} kcal and {targetProtein}g protein a day.
         </p>
       </header>
 
@@ -961,6 +982,21 @@ export default function MealsPage() {
               ))}
             </TabsList>
 
+            <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Cuisine">
+              {(["All", "Nigerian", "International"] as const).map((c) => (
+                <Button
+                  key={c}
+                  size="sm"
+                  variant={cuisine === c ? "default" : "outline"}
+                  className="h-8 rounded-full text-xs font-bold"
+                  onClick={() => setCuisine(c)}
+                  data-testid={`button-cuisine-${c.toLowerCase()}`}
+                >
+                  {c === "All" ? "All cuisines" : c}
+                </Button>
+              ))}
+            </div>
+
             <div className="mb-4 flex flex-col gap-2 rounded-lg border border-primary/15 bg-primary/5 p-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">
                 {profile?.dietaryPreference && profile.dietaryPreference !== "No preference"
@@ -984,6 +1020,7 @@ export default function MealsPage() {
                         <div className="space-y-1.5 flex-1">
                           <div className="flex gap-2 items-center">
                             <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">{meal.category}</Badge>
+                            {meal.cuisine !== "Any" && <Badge variant="outline" className="text-[10px] font-medium">{meal.cuisine}</Badge>}
                             <span className="text-xs text-muted-foreground font-mono flex items-center gap-1">
                               <Clock className="w-3 h-3" /> {meal.prepMins}m
                             </span>

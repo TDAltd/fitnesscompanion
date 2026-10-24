@@ -18,8 +18,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { usePlan } from "@/lib/plan";
 
 export function HabitChecklist() {
+  const { plan } = usePlan();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const today = format(new Date(), "yyyy-MM-dd");
@@ -144,8 +146,8 @@ export function HabitChecklist() {
     );
   }
 
-  const stepsGoal = habits?.stepsGoal || 10000;
-  const waterGoal = habits?.waterGoalLitres || 2.5;
+  const stepsGoal = habits?.stepsGoal || plan?.targets.steps || 8000;
+  const waterGoal = habits?.waterGoalLitres || plan?.targets.waterLitres || 2.5;
 
   const mealPlanCalories = mealPlanEntries?.reduce((s, e) => s + e.calories, 0) ?? 0;
   const mealPlanProtein = mealPlanEntries?.reduce((s, e) => s + e.protein, 0) ?? 0;
@@ -172,7 +174,7 @@ export function HabitChecklist() {
                 <Cookie className="h-5 w-5 text-orange-500" />
               </div>
               <div>
-                <Label htmlFor="biscuits" className="font-bold text-base cursor-pointer">No Biscuits / Sweets</Label>
+                <Label htmlFor="biscuits" className="font-bold text-base cursor-pointer">{plan?.avoidHabit.label ?? "No sugary snacks"}</Label>
                 <p className="text-xs text-muted-foreground font-mono mt-0.5">Stay disciplined</p>
               </div>
             </div>

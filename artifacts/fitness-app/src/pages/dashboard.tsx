@@ -15,17 +15,18 @@ import { HabitChecklist } from "@/components/habits/habit-checklist";
 import { HydrationReminder } from "@/components/hydration/hydration-reminder";
 import { WeightLogDialog } from "@/components/forms/weight-log-dialog";
 import { WorkoutLogDialog } from "@/components/forms/workout-log-dialog";
-import { WEEKLY_SCHEDULE } from "@/lib/constants";
+import { usePlan } from "@/lib/plan";
 import { Progress } from "@/components/ui/progress";
 
-const CAL_TARGET = 1700;
-const PROTEIN_TARGET = 130;
 
 export default function DashboardPage() {
   const today = new Date();
   const todayStr = format(today, "yyyy-MM-dd");
   const dayOfWeek = today.getDay();
-  const scheduledWorkout = WEEKLY_SCHEDULE.find(d => d.day === dayOfWeek);
+  const { plan } = usePlan();
+  const scheduledWorkout = plan?.schedule.find(d => d.day === dayOfWeek);
+  const CAL_TARGET = plan?.targets.calories ?? 2000;
+  const PROTEIN_TARGET = plan?.targets.protein ?? 100;
 
   const { data: summary, isLoading: isLoadingSummary } = useGetProgressSummary({
     query: { queryKey: getGetProgressSummaryQueryKey() }
@@ -184,12 +185,12 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground font-bold uppercase">Calories</p>
-                    <p className="text-2xl font-black">1,700</p>
+                    <p className="text-2xl font-black">{CAL_TARGET.toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground font-mono">kcal target</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground font-bold uppercase">Protein</p>
-                    <p className="text-2xl font-black">130<span className="text-base text-muted-foreground">g</span></p>
+                    <p className="text-2xl font-black">{PROTEIN_TARGET}<span className="text-base text-muted-foreground">g</span></p>
                     <p className="text-xs text-muted-foreground font-mono">minimum</p>
                   </div>
                 </div>

@@ -10,6 +10,7 @@ import mealPlanRouter from "./mealPlan";
 import measurementsRouter from "./measurements";
 import nutritionLookupRouter from "./nutritionLookup";
 import dataTransferRouter from "./dataTransfer";
+import planSettingsRouter from "./planSettings";
 import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
@@ -29,5 +30,6 @@ router.use(mealPlanRouter);
 router.use(measurementsRouter);
 router.use(nutritionLookupRouter);
 router.use(dataTransferRouter);
+router.use(planSettingsRouter);
 
 export default router;

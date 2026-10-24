@@ -25,6 +25,11 @@ export const userProfileTable = pgTable("user_profile", {
   dailySchedule: text("daily_schedule"),
   workoutTimePreference: text("workout_time_preference"),
   workoutDurationMinutes: integer("workout_duration_minutes"),
+  // Targets the user set by hand on the My plan page (null = use the automatic value)
+  calorieTarget: integer("calorie_target"),
+  proteinTarget: integer("protein_target"),
+  stepsGoal: integer("steps_goal"),
+  waterGoalLitres: real("water_goal_litres"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

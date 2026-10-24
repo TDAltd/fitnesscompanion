@@ -1,9 +1,9 @@
 import { defineConfig } from "drizzle-kit";
-import path from "path";
 
+// Paths are relative to lib/db (run via `pnpm --filter @workspace/db run generate`)
 export default defineConfig({
-  schema: path.join(__dirname, "./src/schema/index.ts"),
-  out: path.join(__dirname, "./migrations"),
+  schema: "./src/schema/index.ts",
+  out: "./migrations",
   dialect: "postgresql",
   dbCredentials: {
     url: process.env.DATABASE_URL ?? "postgres://localhost/unused",

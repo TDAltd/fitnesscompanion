@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { FITNESS_PLANS, WEEKLY_SCHEDULE } from "@/lib/constants";
+import { usePlan } from "@/lib/plan";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -50,6 +50,7 @@ const PLAN_ICONS: Record<string, React.ElementType> = {
 
 export default function StatsPage() {
   const { toast } = useToast();
+  const { plan: myPlan } = usePlan();
   const queryClient = useQueryClient();
 
   const { data: profile, isLoading } = useGetProfile({
@@ -417,8 +418,11 @@ export default function StatsPage() {
           <BookOpen className="h-5 w-5 text-primary" />
           <div>
             <h2 className="text-xl font-black uppercase tracking-tight">The Playbook</h2>
-            <p className="text-xs text-muted-foreground font-mono">Note to self — read it, internalize it, execute it.</p>
+            <p className="text-xs text-muted-foreground font-mono">Built from your answers. Read it, internalize it, execute it.</p>
           </div>
+          <Button variant="outline" size="sm" className="ml-auto" asChild>
+            <Link href="/plan">Edit my plan</Link>
+          </Button>
         </div>
 
         {/* Weekly Schedule */}
@@ -428,7 +432,7 @@ export default function StatsPage() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {WEEKLY_SCHEDULE.map(day => (
+              {(myPlan?.schedule ?? []).map(day => (
                 <div key={day.day} className={`p-3 rounded-lg border ${day.rest ? "bg-card border-border" : "bg-background border-primary/20"}`}>
                   <p className={`text-xs font-bold uppercase ${day.rest ? "text-muted-foreground" : "text-primary"}`}>{day.label}</p>
                   <p className="font-bold text-sm mt-1 leading-snug">{day.workout}</p>
@@ -440,7 +444,7 @@ export default function StatsPage() {
 
         {/* Plan cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {FITNESS_PLANS.map(plan => {
+          {(myPlan?.guidelines ?? []).map(plan => {
             const Icon = PLAN_ICONS[plan.id] ?? Target;
             return (
               <Card key={plan.id} className="shadow-sm flex flex-col">

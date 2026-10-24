@@ -8,6 +8,13 @@
       "when": 1792763718648,
       "tag": "0000_tearful_quasimodo",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792800726019,
+      "tag": "0001_military_banshee",
+      "breakpoints": true
     }
   ]
 }

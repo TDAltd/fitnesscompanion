@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { uid } from "../lib/auth";
+import { targetsForUser } from "./planSettings";
 import { db, habitLogsTable } from "@workspace/db";
 import { and, desc, eq } from "drizzle-orm";
 import { UpsertHabitBody } from "@workspace/api-zod";
@@ -34,13 +35,14 @@ router.get("/habits/today", async (req, res) => {
     .from(habitLogsTable)
     .where(and(eq(habitLogsTable.date, today), eq(habitLogsTable.userId, uid(req))));
 
+  const targets = await targetsForUser(uid(req));
   if (!log) {
     res.json({
       id: 0,
       date: today,
-      stepsGoal: 10000,
+      stepsGoal: targets.steps,
       stepsDone: 0,
-      waterGoalLitres: 2.5,
+      waterGoalLitres: targets.waterLitres,
       waterDoneLitres: 0,
       biscuitsAvoided: false,
       caloriesConsumed: null,
@@ -49,12 +51,13 @@ router.get("/habits/today", async (req, res) => {
     return;
   }
 
+  // Today's goals always follow the current plan, even if targets changed since the row was created
   res.json({
     id: log.id,
     date: log.date,
-    stepsGoal: log.stepsGoal,
+    stepsGoal: targets.steps,
     stepsDone: log.stepsDone,
-    waterGoalLitres: log.waterGoalLitres,
+    waterGoalLitres: targets.waterLitres,
     waterDoneLitres: log.waterDoneLitres,
     biscuitsAvoided: log.biscuitsAvoided,
     caloriesConsumed: log.caloriesConsumed,
@@ -65,6 +68,8 @@ router.get("/habits/today", async (req, res) => {
 router.post("/habits", async (req, res) => {
   const body = UpsertHabitBody.parse(req.body);
   const date = body.date;
+  // Save the user's goals on the day's row so past days keep the goals that applied then
+  const targets = await targetsForUser(uid(req));
 
   const [existing] = await db
     .select()
@@ -76,6 +81,8 @@ router.post("/habits", async (req, res) => {
     const [updated] = await db
       .update(habitLogsTable)
       .set({
+        stepsGoal: targets.steps,
+        waterGoalLitres: targets.waterLitres,
         stepsDone: body.stepsDone ?? existing.stepsDone,
         waterDoneLitres: body.waterDoneLitres ?? existing.waterDoneLitres,
         biscuitsAvoided: body.biscuitsAvoided ?? existing.biscuitsAvoided,
@@ -91,6 +98,8 @@ router.post("/habits", async (req, res) => {
       .values({
         userId: uid(req),
         date,
+        stepsGoal: targets.steps,
+        waterGoalLitres: targets.waterLitres,
         stepsDone: body.stepsDone ?? 0,
         waterDoneLitres: body.waterDoneLitres ?? 0,
         biscuitsAvoided: body.biscuitsAvoided ?? false,

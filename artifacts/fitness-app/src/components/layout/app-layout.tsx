@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { Activity, Calculator, CircleUserRound, LineChart, User, UtensilsCrossed, Zap } from "lucide-react";
+import { Activity, Calculator, CircleUserRound, ClipboardList, LineChart, User, UtensilsCrossed, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
@@ -17,6 +17,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     { href: "/meals", label: "Meals", icon: UtensilsCrossed },
     { href: "/stats", label: "Stats", icon: User },
     { href: "/calorie-calculator", label: "Calorie calculator", icon: Calculator },
+    { href: "/plan", label: "My plan", icon: ClipboardList },
     { href: "/account", label: "Account", icon: CircleUserRound },
   ];
 

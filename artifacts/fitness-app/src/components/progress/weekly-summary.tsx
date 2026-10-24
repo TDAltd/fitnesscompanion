@@ -5,11 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarDays, Check, X, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePlan } from "@/lib/plan";
 
-const STEPS_GOAL    = 10000;
-const WATER_GOAL    = 2.5;
-const CAL_MAX       = 1750;
-const PROTEIN_MIN   = 120;
+// Small tolerance so being a few calories over / grams under still counts as on target
+const CAL_TOLERANCE     = 50;
+const PROTEIN_TOLERANCE = 10;
 
 type Status = "met" | "missed" | "none";
 
@@ -84,6 +84,14 @@ export function WeeklySummary() {
     query: { queryKey: getListWorkoutsQueryKey() }
   });
 
+  const { plan } = usePlan();
+  const STEPS_GOAL  = plan?.targets.steps ?? 8000;
+  const WATER_GOAL  = plan?.targets.waterLitres ?? 2.5;
+  const CAL_MAX     = (plan?.targets.calories ?? 2000) + CAL_TOLERANCE;
+  const PROTEIN_MIN = (plan?.targets.protein ?? 100) - PROTEIN_TOLERANCE;
+  const restDays    = new Set(plan?.schedule.filter(d => d.rest).map(d => d.day) ?? []);
+  const avoidLabel  = plan?.avoidHabit.short ?? "No sweets";
+
   const days = useMemo<DaySummary[]>(() => {
     const today = startOfDay(new Date());
     const todayStr = format(today, "yyyy-MM-dd");
@@ -106,12 +114,14 @@ export function WeeklySummary() {
       const isToday  = dateStr === todayStr;
 
       const hasWorkout = workoutDates.has(dateStr);
-      const workout: Status  = isFuture ? "none" : hasWorkout ? "met" : "missed";
+      // Resting on a planned rest day counts as following the plan
+      const workout: Status  = isFuture ? "none" : hasWorkout || restDays.has(d.getDay()) ? "met" : "missed";
 
+      // Each day is judged against the goal saved on that day's log (falls back to today's plan)
       const steps: Status    = !habit  ? (isFuture ? "none" : "missed")
-                             : habit.stepsDone >= STEPS_GOAL ? "met" : "missed";
+                             : habit.stepsDone >= (habit.stepsGoal || STEPS_GOAL) ? "met" : "missed";
       const water: Status    = !habit  ? (isFuture ? "none" : "missed")
-                             : habit.waterDoneLitres >= WATER_GOAL ? "met" : "missed";
+                             : habit.waterDoneLitres >= (habit.waterGoalLitres || WATER_GOAL) ? "met" : "missed";
       const biscuits: Status = !habit  ? (isFuture ? "none" : "missed")
                              : habit.biscuitsAvoided ? "met" : "missed";
       const calories: Status = !habit?.caloriesConsumed ? (isFuture ? "none" : "none")
@@ -138,7 +148,7 @@ export function WeeklySummary() {
         score: Math.round(score),
       };
     });
-  }, [habits, workouts]);
+  }, [habits, workouts, plan]);
 
   const isLoading = isLoadingHabits || isLoadingWorkouts;
 
@@ -208,7 +218,7 @@ export function WeeklySummary() {
                       "border-b border-border/50 last:border-0",
                       ci % 2 === 0 ? "bg-muted/5" : ""
                     )}>
-                      <td className="p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">{col.label}</td>
+                      <td className="p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">{col.key === "biscuits" ? avoidLabel : col.label}</td>
                       {days.map(d => (
                         <td key={d.date} className={cn(
                           "text-center p-3",
@@ -282,7 +292,7 @@ export function WeeklySummary() {
                 </div>
                 <span>No data logged</span>
               </div>
-              <span className="ml-auto font-mono">Score = workout + steps + water + no sweets + cal + protein</span>
+              <span className="ml-auto font-mono">Score = workout + steps + water + {avoidLabel.toLowerCase()} + cal + protein</span>
             </div>
           </>
         )}

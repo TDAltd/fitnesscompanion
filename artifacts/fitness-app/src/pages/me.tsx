@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { getGetProfileQueryKey, useGetProfile } from "@workspace/api-client-react";
-import { Calculator, ChevronRight, ClipboardList, HeartPulse, LogOut, Ruler, Settings2, UserRoundPen } from "lucide-react";
+import { Calculator, ChevronRight, ClipboardList, HeartPulse, LogOut, Ruler, Settings2, ShieldCheck, UserRoundPen } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { useAuthActions, useCurrentUser } from "@/lib/auth";
 import { useSyncStatus } from "@/lib/health";
@@ -43,7 +43,10 @@ export default function MePage() {
       )}
 
       <nav className="overflow-hidden rounded-2xl border bg-card" aria-label="Settings and tools">
-        {LINKS.map(({ href, icon: Icon, title, body }, i) => (
+        {(user?.isAdmin
+          ? [{ href: "/admin", icon: ShieldCheck, title: "Admin", body: "Sign-ups, active users and managing accounts" }, ...LINKS]
+          : LINKS
+        ).map(({ href, icon: Icon, title, body }, i) => (
           <Link
             key={href}
             href={href}

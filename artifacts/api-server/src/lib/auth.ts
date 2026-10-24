@@ -2,7 +2,7 @@ import { randomBytes, scrypt as scryptCb, timingSafeEqual, createHash } from "no
 import { promisify } from "node:util";
 import type { Request, Response, NextFunction } from "express";
 import { and, eq, gt } from "drizzle-orm";
-import { db, sessionsTable, usersTable } from "@workspace/db";
+import { db, sessionsTable, usersTable, activityDaysTable, appSettingsTable } from "@workspace/db";
 import { COOKIE_PATH } from "./config";
 
 const scrypt = promisify(scryptCb) as (pw: string, salt: Buffer, keylen: number) => Promise<Buffer>;
@@ -51,22 +51,58 @@ export async function destroySession(req: Request, res: Response) {
   res.clearCookie(SESSION_COOKIE, { path: COOKIE_PATH });
 }
 
-export async function getSessionUser(req: Request) {
+export type SessionUser = { id: number; email: string; role: string; disabled: boolean; isAdmin: boolean };
+
+/** Emails listed in ADMIN_EMAILS (comma separated) are always admins: the way the first admin is created. */
+export function envAdmins(): string[] {
+  return (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+export const isAdminUser = (u: { email: string; role: string }) => u.role === "admin" || envAdmins().includes(u.email);
+
+export async function getSessionUser(req: Request): Promise<SessionUser | null> {
   const token = req.cookies?.[SESSION_COOKIE];
   if (typeof token !== "string" || !token) return null;
   const [row] = await db
-    .select({ id: usersTable.id, email: usersTable.email })
+    .select({ id: usersTable.id, email: usersTable.email, role: usersTable.role, disabledAt: usersTable.disabledAt })
     .from(sessionsTable)
     .innerJoin(usersTable, eq(usersTable.id, sessionsTable.userId))
     .where(and(eq(sessionsTable.id, hashToken(token)), gt(sessionsTable.expiresAt, new Date())));
-  return row ?? null;
+  if (!row) return null;
+  return { id: row.id, email: row.email, role: row.role, disabled: row.disabledAt != null, isAdmin: isAdminUser(row) };
+}
+
+// ---------- activity tracking (one write per user per day per server process) ----------
+
+const seenToday = new Set<string>();
+
+export async function recordActivity(userId: number) {
+  const date = new Date().toISOString().slice(0, 10);
+  const key = `${userId}:${date}`;
+  if (seenToday.has(key)) return;
+  if (seenToday.size > 50_000) seenToday.clear();
+  seenToday.add(key);
+  await db.insert(activityDaysTable).values({ userId, date }).onConflictDoNothing();
+  await db.update(usersTable).set({ lastActiveAt: new Date() }).where(eq(usersTable.id, userId));
+}
+
+// ---------- app settings ----------
+
+/** Sign-ups are open unless an admin closed them (or ALLOW_SIGNUPS=false and no admin choice yet). */
+export async function signupsOpen(): Promise<boolean> {
+  const [row] = await db.select().from(appSettingsTable).where(eq(appSettingsTable.key, "signups_open"));
+  if (row) return row.value === "true";
+  return process.env.ALLOW_SIGNUPS !== "false";
 }
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
-      user?: { id: number; email: string };
+      user?: SessionUser;
     }
   }
 }
@@ -79,7 +115,13 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       res.status(401).json({ error: "Please log in" });
       return;
     }
+    if (user.disabled) {
+      await destroySession(req, res);
+      res.status(401).json({ error: "This account has been disabled. Contact the app owner." });
+      return;
+    }
     req.user = user;
+    recordActivity(user.id).catch((err) => req.log?.warn({ err }, "activity tracking failed"));
     next();
   } catch (err) {
     next(err);
@@ -109,4 +151,13 @@ export function rateLimit(key: string, limit: number, windowMs: number): boolean
   }
   bucket.count++;
   return bucket.count <= limit;
+}
+
+/** Only admins past this point. Use after requireAuth. */
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.user?.isAdmin) {
+    res.status(403).json({ error: "Admins only" });
+    return;
+  }
+  next();
 }

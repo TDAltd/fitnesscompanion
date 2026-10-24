@@ -16,6 +16,7 @@ import AccountPage from "@/pages/account";
 import MyPlanPage from "@/pages/my-plan";
 import ConnectHealthPage from "@/pages/connect-health";
 import MePage from "@/pages/me";
+import AdminPage from "@/pages/admin";
 import { AUTH_QUERY_KEY, useCurrentUser } from "@/lib/auth";
 import { BASE } from "@/lib/base-path";
 import { AppLayout } from "@/components/layout/app-layout";
@@ -86,6 +87,14 @@ function Router() {
       </main>
     );
   }
+  // Admins can open the dashboard before (or without) finishing their own setup
+  if (location === "/admin" && !profileComplete) {
+    return (
+      <main className="mx-auto w-full max-w-5xl p-4 md:p-10">
+        <AdminPage />
+      </main>
+    );
+  }
   if (!isOnboarding && !isError && !profileComplete) {
     return <Redirect to="/onboarding" />;
   }
@@ -104,6 +113,7 @@ function Router() {
         <Route path="/stats" component={StatsPage} />
         <Route path="/calorie-calculator" component={CalorieCalculatorPage} />
         <Route path="/me" component={MePage} />
+        <Route path="/admin" component={AdminPage} />
         <Route path="/plan" component={MyPlanPage} />
         <Route path="/connect-health" component={ConnectHealthPage} />
         <Route path="/account" component={AccountPage} />

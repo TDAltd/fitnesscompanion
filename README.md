@@ -48,6 +48,7 @@ This creates a `deploy/` folder. Zip **the contents** of `deploy/` (`app.js`, `p
 | `OPENAI_API_KEY` | your OpenAI key (optional) |
 | `AI_LOOKUPS_PER_DAY` | `30` |
 | `ALLOW_SIGNUPS` | `true` (set `false` later to stop new sign-ups) |
+| `ADMIN_EMAILS` | your login email, e.g. `you@example.com` (comma-separate several). These accounts can open **Me → Admin** and promote other admins |
 | `NODE_ENV` | `production` |
 
 8. Click **Create**.
@@ -127,7 +128,18 @@ Import **replaces** that account's data, so running it twice won't create duplic
 
 ---
 
-## 3. Local development
+## 3. Admin dashboard
+
+Accounts listed in `ADMIN_EMAILS` (and anyone an admin promotes) see **Me → Admin**:
+sign-ups per day, active users (today / 7 days / 30 days), feature use, 1- and 4-week retention,
+and a list of people with their goal, training setup and usage counts. Weights, meals, sleep and
+body measurements are never shown.
+
+From a person's panel an admin can reset their password (gives a temporary one to pass on), make
+them an admin, disable or re-enable the account, or delete it with all its data (type their email
+to confirm). The switch at the top opens or closes new sign-ups.
+
+## 4. Local development
 
 ```bash
 cp .env.example .env        # set DATABASE_URL to a local or Neon database

@@ -11,6 +11,7 @@ import measurementsRouter from "./measurements";
 import nutritionLookupRouter from "./nutritionLookup";
 import dataTransferRouter from "./dataTransfer";
 import planSettingsRouter from "./planSettings";
+import adminRouter from "./admin";
 import { healthRouter as healthDataRouter, healthSyncPublicRouter } from "./healthSync";
 import { requireAuth } from "../lib/auth";
 
@@ -34,5 +35,6 @@ router.use(nutritionLookupRouter);
 router.use(dataTransferRouter);
 router.use(planSettingsRouter);
 router.use(healthDataRouter);
+router.use(adminRouter);
 
 export default router;

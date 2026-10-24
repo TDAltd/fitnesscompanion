@@ -1,6 +1,7 @@
 import { Router } from "express";
 import OpenAI from "openai";
 import { rateLimit, uid } from "../lib/auth";
+import { db, usageEventsTable } from "@workspace/db";
 
 const router = Router();
 const MAX_IMAGE_DATA_URL_LENGTH = 2_800_000;
@@ -106,6 +107,7 @@ Example: {"mealName":"Eba and egusi with fish","calories":620,"protein":28,"carb
       return;
     }
 
+    await db.insert(usageEventsTable).values({ userId: uid(req), kind: "ai_estimate" }).catch(() => undefined);
     const estimatedName = typeof result.mealName === "string" ? result.mealName.trim().slice(0, 120) : "";
     res.json({
       mealName: mealName || estimatedName || "Meal from photo",

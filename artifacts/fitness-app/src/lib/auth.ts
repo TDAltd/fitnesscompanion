@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { withBase } from "./base-path";
 
-export type AuthUser = { id: number; email: string };
+export type AuthUser = { id: number; email: string; isAdmin?: boolean };
 
 export const AUTH_QUERY_KEY = ["auth", "me"] as const;
 

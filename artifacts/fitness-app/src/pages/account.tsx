@@ -1,7 +1,11 @@
 import { useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Download, LogOut, Upload, Loader2, HeartPulse } from "lucide-react";
+import { Download, LogOut, Upload, Loader2, HeartPulse, Mail, ShieldCheck, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
@@ -16,6 +20,8 @@ const TABLE_LABELS: Record<string, string> = {
   workout_logs: "workouts",
   habit_logs: "habit days",
   meal_plan_entries: "meals",
+  health_daily: "health days",
+  exercise_sets: "exercise sets",
   body_measurements: "measurements",
 };
 
@@ -120,9 +126,127 @@ export default function AccountPage() {
         </CardContent>
       </Card>
 
-      <Button variant="ghost" className="gap-2 text-destructive" onClick={() => void logout()} data-testid="button-logout">
+      <EmailSettings />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" /> Privacy</CardTitle>
+          <CardDescription>What we store, why, and your rights.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button asChild variant="outline"><Link href="/privacy">Read the privacy notice</Link></Button>
+        </CardContent>
+      </Card>
+
+      <Button variant="ghost" className="gap-2" onClick={() => void logout()} data-testid="button-logout">
         <LogOut className="h-4 w-4" /> Log out
       </Button>
+
+      <DeleteAccount />
+    </div>
+  );
+}
+
+type AccountSettings = { email: string; weeklyEmail: boolean; emailEnabled: boolean };
+
+async function call<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(withBase(path), { credentials: "same-origin", headers: { "content-type": "application/json" }, ...init });
+  if (res.status === 204) return null as T;
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error((data && data.error) || `Request failed (${res.status})`);
+  return data as T;
+}
+
+function EmailSettings() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { data } = useQuery({ queryKey: ["account-settings"], queryFn: () => call<AccountSettings>("/api/account/settings") });
+  const save = useMutation({
+    mutationFn: (weeklyEmail: boolean) => call("/api/account/settings", { method: "PUT", body: JSON.stringify({ weeklyEmail }) }),
+    onSuccess: (_d, weeklyEmail) => {
+      qc.setQueryData(["account-settings"], (old: AccountSettings | undefined) => (old ? { ...old, weeklyEmail } : old));
+      toast({ title: weeklyEmail ? "Weekly summary on" : "Weekly summary off" });
+    },
+    onError: (e) => toast({ title: "Couldn't save", description: (e as Error).message, variant: "destructive" }),
+  });
+  if (!data) return null;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Mail className="h-5 w-5 text-primary" /> Emails</CardTitle>
+        <CardDescription>
+          {data.emailEnabled ? `Sent to ${data.email}.` : "Email isn't switched on for this app yet, so nothing is sent for now."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between gap-4">
+          <Label htmlFor="weekly-email" className="cursor-pointer">
+            <span className="block font-semibold">Weekly summary</span>
+            <span className="block text-sm font-normal text-muted-foreground">Workouts, food logging, steps and weight, every Sunday.</span>
+          </Label>
+          <Switch
+            id="weekly-email"
+            checked={data.weeklyEmail}
+            disabled={save.isPending}
+            onCheckedChange={(v) => save.mutate(v)}
+            data-testid="switch-weekly-email"
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DeleteAccount() {
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const qc = useQueryClient();
+
+  const remove = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await call("/api/account", { method: "DELETE", body: JSON.stringify({ password }) });
+      qc.clear();
+      qc.setQueryData(AUTH_QUERY_KEY, null);
+      window.location.href = withBase("/");
+    } catch (e) {
+      setError((e as Error).message);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="border-t pt-6">
+      <p className="text-sm font-semibold">Delete my account</p>
+      <p className="mt-1 text-sm text-muted-foreground">Permanently removes your account and everything in it. Download a backup first if you want to keep anything.</p>
+      <Button variant="outline" className="mt-3 gap-2 border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setOpen(true)} data-testid="button-delete-account">
+        <Trash2 className="h-4 w-4" /> Delete my account
+      </Button>
+      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setPassword(""); setError(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete your account?</DialogTitle>
+            <DialogDescription>
+              Your profile, workouts, meals, weights, measurements and health data are deleted straight away. This can't be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); if (password) void remove(); }} className="space-y-2">
+            <Label htmlFor="delete-password">Enter your password to confirm</Label>
+            <Input id="delete-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} data-testid="input-delete-password" />
+            {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+            <DialogFooter className="pt-3">
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button type="submit" variant="destructive" disabled={!password || busy} data-testid="button-confirm-delete">
+                {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete everything
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,4 +1,12 @@
-import type { PlanProfile, TargetOverrides, Targets } from "./types";
+import type { Pace, PlanProfile, TargetOverrides, Targets } from "./types";
+
+/** Daily calorie gap per pace (7,700 kcal is roughly 1 kg). */
+export const PACES: Record<Pace, { deficit: number; label: string; perWeek: string }> = {
+  gentle: { deficit: 250, label: "Gentle", perWeek: "about 0.25 kg a week" },
+  steady: { deficit: 500, label: "Steady", perWeek: "about 0.5 kg a week" },
+  faster: { deficit: 750, label: "Faster", perWeek: "about 0.7 kg a week" },
+};
+const isPace = (v: unknown): v is Pace => v === "gentle" || v === "steady" || v === "faster";
 
 export const ACTIVITY_MULTIPLIERS: Record<string, number> = {
   Sedentary: 1.2,
@@ -57,10 +65,16 @@ export function computeTargets(p: PlanProfile, overrides: TargetOverrides = {}):
   const maintenance = bmr != null ? bmr * multiplier : null;
 
   let adjustment = 0; // negative = deficit, positive = surplus
+  let pace: Pace | null = null;
+  const underweight = bodyMassIndex != null && bodyMassIndex < 18.5;
+  const paceAvailable = wantsToLose && !isMinor && !underweight && goal !== "Build strength";
   if (isMinor) {
     notes.push("Under 18: the plan aims for maintenance, not a calorie deficit.");
   } else if (bodyMassIndex != null && bodyMassIndex < 18.5 && wantsToLose) {
     notes.push("Your BMI is already in the underweight range, so the plan does not cut calories.");
+  } else if (paceAvailable && isPace(overrides.pace)) {
+    pace = overrides.pace;
+    adjustment = -PACES[pace].deficit;
   } else if (goal === "Weight loss") {
     adjustment = bodyMassIndex != null && bodyMassIndex >= 30 ? -500 : -350;
   } else if (goal === "Build strength") {
@@ -115,5 +129,7 @@ export function computeTargets(p: PlanProfile, overrides: TargetOverrides = {}):
       waterLitres: waterLitres !== autoWater,
     },
     notes,
+    pace,
+    paceAvailable,
   };
 }

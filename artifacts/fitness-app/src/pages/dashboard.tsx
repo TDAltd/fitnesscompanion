@@ -1,4 +1,6 @@
 import { format } from "date-fns";
+import { InstallPrompt } from "@/components/today/install-prompt";
+import { WeeklyCheckIn } from "@/components/today/weekly-check-in";
 import { Link } from "wouter";
 import { Check, Dumbbell, Footprints, Droplets, Salad, Beef, Ban, Scale, ChevronRight } from "lucide-react";
 import {
@@ -21,7 +23,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { HabitChecklist } from "@/components/habits/habit-checklist";
-import { HydrationReminder } from "@/components/hydration/hydration-reminder";
 import { WeightLogDialog } from "@/components/forms/weight-log-dialog";
 import { WorkoutLogDialog } from "@/components/forms/workout-log-dialog";
 import { HealthCard } from "@/components/health/health-card";
@@ -116,6 +117,8 @@ export default function DashboardPage() {
           {greeting(today.getHours())}{firstName ? `, ${firstName}` : ""}
         </h1>
       </header>
+
+      <InstallPrompt />
 
       {/* Daily rhythm */}
       <Card className="overflow-hidden">
@@ -214,6 +217,8 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      <WeeklyCheckIn />
+
       <HabitChecklist />
 
       <HealthCard />
@@ -245,7 +250,13 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <HydrationReminder />
+      <Link href="/reminders" className="flex items-center justify-between rounded-2xl border bg-card px-5 py-4 text-sm transition-colors hover:bg-muted/50">
+        <span>
+          <span className="block font-semibold">Water & workout reminders</span>
+          <span className="block text-muted-foreground">Add alerts to your phone's calendar</span>
+        </span>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      </Link>
     </div>
   );
 }

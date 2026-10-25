@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { randomBytes, createHash } from "node:crypto";
 import { and, desc, eq, gte } from "drizzle-orm";
-import { db, healthDailyTable, healthSyncTable, habitLogsTable } from "@workspace/db";
+import { db, healthDailyTable, healthSyncTable, habitLogsTable, usersTable } from "@workspace/db";
 import { rateLimit, uid } from "../lib/auth";
 import { targetsForUser } from "./planSettings";
+import { DEFAULT_TZ, addDays, dateInTz, todayFor } from "../lib/dates";
 
 /**
  * Apple Health sync.
@@ -112,7 +113,9 @@ healthSyncPublicRouter.post("/health-sync", async (req, res) => {
     if (body[key] === undefined || body[key] === "") body[key] = v;
   }
 
-  const date = parseDate(body.date) ?? new Date().toISOString().slice(0, 10);
+  // No date from the Shortcut: use "today" in the user's own timezone
+  const [owner] = await db.select({ timezone: usersTable.timezone }).from(usersTable).where(eq(usersTable.id, userId));
+  const date = parseDate(body.date) ?? dateInTz(new Date(), owner?.timezone ?? DEFAULT_TZ);
   const steps = inRange(sum(toNumbers(body.steps)), 0, 150_000);
   const sleepMinutes = inRange(parseSleepMinutes(body.sleep ?? body.sleepMinutes ?? body.sleepHours), 1, 1440);
   const avgHeartRate = inRange(avg(toNumbers(body.heartRate ?? body.avgHeartRate)), 25, 230);
@@ -207,7 +210,7 @@ healthRouter.delete("/health-sync/key", async (req, res) => {
 
 healthRouter.get("/health", async (req, res) => {
   const days = Math.min(366, Math.max(1, Number(req.query.days) || 14));
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const since = addDays(todayFor(req), -days);
   const rows = await db
     .select()
     .from(healthDailyTable)

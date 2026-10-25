@@ -1,4 +1,7 @@
-import { ExternalLink, Info, Youtube } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, Info, Play, Youtube } from "lucide-react";
+import type { Session } from "@workspace/plan";
+import { SessionLogger } from "@/components/train/session-logger";
 import { Link } from "wouter";
 import { useGetProfile, getGetProfileQueryKey } from "@workspace/api-client-react";
 import { usePlan } from "@/lib/plan";
@@ -42,7 +45,9 @@ export default function WorkoutPage() {
     query: { queryKey: getGetProfileQueryKey() },
   });
   const { plan } = usePlan();
+  const [active, setActive] = useState<Session | null>(null);
   const circuits = (plan?.sessions ?? []).map((s, i) => ({
+    session: s,
     id: i + 1,
     title: s.title,
     badgeColor: BADGE_COLORS[i % BADGE_COLORS.length],
@@ -110,7 +115,7 @@ export default function WorkoutPage() {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="pt-4 flex-1">
+            <CardContent className="pt-4 flex-1 flex flex-col gap-4">
               <div className="space-y-3">
                 {circuit.exercises.map((exercise, i) => (
                   <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-muted/30 rounded-lg border border-border/50">
@@ -128,10 +133,15 @@ export default function WorkoutPage() {
                   </div>
                 ))}
               </div>
+              <Button className="mt-auto h-11 w-full gap-2" onClick={() => setActive(circuit.session)} data-testid={`button-start-${circuit.session.id}`}>
+                <Play className="h-4 w-4" /> Start session
+              </Button>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {active && <SessionLogger session={active} open={!!active} onOpenChange={(o) => !o && setActive(null)} />}
 
       <div className="bg-card border-l-4 border-l-primary rounded-r-lg p-4 shadow-sm flex items-start gap-3 my-8">
         <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />

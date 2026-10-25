@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { User, Activity, Target, Dumbbell, Utensils, ShieldAlert, Calendar, BookOpen, Ruler, Trash2, Plus } from "lucide-react";
+import { User, Activity, Target, Ruler, Trash2, Plus } from "lucide-react";
 import {
   useGetProfile,
   getGetProfileQueryKey,
@@ -25,7 +25,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { usePlan } from "@/lib/plan";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -41,17 +40,9 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const EMPTY_M = { date: format(new Date(), "yyyy-MM-dd"), neckCm: "", chestCm: "", waistCm: "", hipsCm: "", leftArmCm: "", rightArmCm: "", leftThighCm: "", rightThighCm: "", notes: "" };
 
-const PLAN_ICONS: Record<string, React.ElementType> = {
-  workout: Dumbbell,
-  diet: Utensils,
-  targets: Target,
-  plateau: ShieldAlert,
-  phases: Calendar,
-};
 
 export default function StatsPage() {
   const { toast } = useToast();
-  const { plan: myPlan } = usePlan();
   const queryClient = useQueryClient();
 
   const { data: profile, isLoading } = useGetProfile({
@@ -166,7 +157,7 @@ export default function StatsPage() {
     <div className="space-y-6 md:space-y-8">
       <PageHeader
         title="Body & measurements"
-        description="Your body numbers, tape measurements and playbook."
+        description="Your body numbers and tape measurements."
         action={
           <Button variant="outline" size="sm" asChild>
             <Link href="/onboarding">Update my answers</Link>
@@ -204,7 +195,7 @@ export default function StatsPage() {
                   <FormField control={form.control} name="sex" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Sex</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <Select key={field.value} onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                         </FormControl>
@@ -244,7 +235,7 @@ export default function StatsPage() {
                 <FormField control={form.control} name="activityLevel" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Activity Level</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                    <Select key={field.value} onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
                       </FormControl>
@@ -413,66 +404,10 @@ export default function StatsPage() {
         </CardContent>
       </Card>
 
-      {/* PLAYBOOK — NOTE TO SELF */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <BookOpen className="h-5 w-5 text-primary" />
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight">The Playbook</h2>
-            <p className="text-xs text-muted-foreground">Built from your answers. Read it, internalize it, execute it.</p>
-          </div>
-          <Button variant="outline" size="sm" className="ml-auto" asChild>
-            <Link href="/plan">Edit my plan</Link>
-          </Button>
-        </div>
-
-        {/* Weekly Schedule */}
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="tracking-wide text-primary text-sm">Weekly Schedule</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {(myPlan?.schedule ?? []).map(day => (
-                <div key={day.day} className={`p-3 rounded-lg border ${day.rest ? "bg-card border-border" : "bg-background border-primary/20"}`}>
-                  <p className={`text-xs font-bold ${day.rest ? "text-muted-foreground" : "text-primary"}`}>{day.label}</p>
-                  <p className="font-bold text-sm mt-1 leading-snug">{day.workout}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Plan cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {(myPlan?.guidelines ?? []).map(plan => {
-            const Icon = PLAN_ICONS[plan.id] ?? Target;
-            return (
-              <Card key={plan.id} className="shadow-sm flex flex-col">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-lg"><Icon className="h-4 w-4 text-primary" /></div>
-                    <div>
-                      <CardTitle className="tracking-tight text-base">{plan.title}</CardTitle>
-                      <p className="text-xs text-muted-foreground mt-0.5">{plan.description}</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1 bg-muted/20 pt-3 rounded-b-xl border-t border-border">
-                  <ul className="space-y-2">
-                    {plan.details.map((detail, i) => (
-                      <li key={i} className="flex gap-2 text-sm">
-                        <span className="text-primary font-bold shrink-0">•</span>
-                        <span className="font-medium text-foreground/90">{detail}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Your weekly schedule and plan guidelines are on{" "}
+        <Link href="/plan" className="font-semibold text-primary hover:underline">My plan</Link>.
+      </p>
     </div>
   );
 }

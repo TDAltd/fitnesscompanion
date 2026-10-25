@@ -30,6 +30,8 @@ export const userProfileTable = pgTable("user_profile", {
   proteinTarget: integer("protein_target"),
   stepsGoal: integer("steps_goal"),
   waterGoalLitres: real("water_goal_litres"),
+  /** Weight-loss pace: "gentle" | "steady" | "faster" (null = the app's default) */
+  pace: text("pace"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

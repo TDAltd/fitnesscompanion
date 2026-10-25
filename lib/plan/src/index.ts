@@ -3,7 +3,7 @@ import { buildSchedule, buildSessions } from "./workouts";
 import type { Guideline, Plan, PlanProfile, Targets, TargetOverrides } from "./types";
 
 export * from "./types";
-export { computeTargets, calorieFloor, restingCalories, bmi, ACTIVITY_MULTIPLIERS } from "./targets";
+export { computeTargets, PACES, calorieFloor, restingCalories, bmi, ACTIVITY_MULTIPLIERS } from "./targets";
 export { buildSchedule, buildSessions, DAY_NAMES } from "./workouts";
 
 const fmtKg = (n: number) => `${Math.round(n * 10) / 10}kg`;

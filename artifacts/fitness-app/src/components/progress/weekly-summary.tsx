@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarDays, Check, X, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePlan } from "@/lib/plan";
+import { useFoodTotals } from "@/lib/food-log";
 
 // Small tolerance so being a few calories over / grams under still counts as on target
 const CAL_TOLERANCE     = 50;
@@ -85,6 +86,10 @@ export function WeeklySummary() {
   });
 
   const { plan } = usePlan();
+  // Food totals come straight from the Eat diary
+  const weekTo = format(new Date(), "yyyy-MM-dd");
+  const weekFrom = format(subDays(new Date(), 6), "yyyy-MM-dd");
+  const { data: foodTotals } = useFoodTotals(weekFrom, weekTo);
   const STEPS_GOAL  = plan?.targets.steps ?? 8000;
   const WATER_GOAL  = plan?.targets.waterLitres ?? 2.5;
   const CAL_MAX     = (plan?.targets.calories ?? 2000) + CAL_TOLERANCE;
@@ -102,6 +107,7 @@ export function WeeklySummary() {
     );
 
     // Index habit logs by date
+    const foodByDate = new Map((foodTotals ?? []).map(f => [f.date, f]));
     const habitByDate = new Map(
       (habits ?? []).map(h => [h.date, h])
     );
@@ -124,10 +130,11 @@ export function WeeklySummary() {
                              : habit.waterDoneLitres >= (habit.waterGoalLitres || WATER_GOAL) ? "met" : "missed";
       const biscuits: Status = !habit  ? (isFuture ? "none" : "missed")
                              : habit.biscuitsAvoided ? "met" : "missed";
-      const calories: Status = !habit?.caloriesConsumed ? (isFuture ? "none" : "none")
-                             : habit.caloriesConsumed <= CAL_MAX ? "met" : "missed";
-      const protein: Status  = !habit?.proteinGrams ? (isFuture ? "none" : "none")
-                             : habit.proteinGrams >= PROTEIN_MIN ? "met" : "missed";
+      const food = foodByDate.get(dateStr);
+      const kcal = food?.calories ?? habit?.caloriesConsumed ?? 0;
+      const prot = food?.protein ?? habit?.proteinGrams ?? 0;
+      const calories: Status = !kcal ? "none" : kcal <= CAL_MAX ? "met" : "missed";
+      const protein: Status  = !prot ? "none" : prot >= PROTEIN_MIN ? "met" : "missed";
 
       const score = [workout, steps, water, biscuits]
         .filter(s => s === "met").length +
@@ -148,7 +155,7 @@ export function WeeklySummary() {
         score: Math.round(score),
       };
     });
-  }, [habits, workouts, plan]);
+  }, [habits, workouts, plan, foodTotals]);
 
   const isLoading = isLoadingHabits || isLoadingWorkouts;
 

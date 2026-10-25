@@ -10,6 +10,7 @@ import {
   mealPlanTable,
   bodyMeasurementsTable,
   healthDailyTable,
+  exerciseSetsTable,
 } from "@workspace/db";
 import { uid } from "../lib/auth";
 
@@ -29,6 +30,7 @@ const TABLES = {
   meal_plan_entries: mealPlanTable,
   body_measurements: bodyMeasurementsTable,
   health_daily: healthDailyTable,
+  exercise_sets: exerciseSetsTable,
 } as const;
 
 type TableKey = keyof typeof TABLES;

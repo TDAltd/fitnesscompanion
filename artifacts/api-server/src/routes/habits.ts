@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { uid } from "../lib/auth";
+import { todayFor } from "../lib/dates";
 import { targetsForUser } from "./planSettings";
 import { db, habitLogsTable } from "@workspace/db";
 import { and, desc, eq } from "drizzle-orm";
@@ -29,7 +30,7 @@ router.get("/habits", async (req, res) => {
 });
 
 router.get("/habits/today", async (req, res) => {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayFor(req);
   const [log] = await db
     .select()
     .from(habitLogsTable)

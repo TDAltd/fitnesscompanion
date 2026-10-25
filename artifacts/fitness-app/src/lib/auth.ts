@@ -49,8 +49,8 @@ export function useAuthActions() {
   return {
     login: async (email: string, password: string) =>
       afterAuth(await request<AuthUser>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) })),
-    signup: async (email: string, password: string) =>
-      afterAuth(await request<AuthUser>("/api/auth/signup", { method: "POST", body: JSON.stringify({ email, password }) })),
+    signup: async (email: string, password: string, consent: boolean) =>
+      afterAuth(await request<AuthUser>("/api/auth/signup", { method: "POST", body: JSON.stringify({ email, password, consent }) })),
     logout: async () => {
       await request("/api/auth/logout", { method: "POST" });
       afterAuth(null);

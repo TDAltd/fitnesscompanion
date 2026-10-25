@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { usePlan, useSaveTargetOverrides, useTargetOverrides } from "@/lib/plan";
+import { PACES, type Pace, type Plan } from "@workspace/plan";
+import { cn } from "@/lib/utils";
 
 type FieldKey = "calorieTarget" | "proteinTarget" | "stepsGoal" | "waterGoalLitres";
 
@@ -105,6 +107,8 @@ export default function MyPlanPage() {
           </Button>
         }
       />
+
+      {t.paceAvailable && <PaceCard plan={plan} />}
 
       {/* Weekly schedule */}
       <Card className="border-primary/20 bg-primary/5">
@@ -229,5 +233,67 @@ export default function MyPlanPage() {
         check targets with a doctor or dietitian.
       </p>
     </div>
+  );
+}
+
+/** Pick how fast to lose weight. This is the only place the calorie target is decided. */
+function PaceCard({ plan }: { plan: Plan }) {
+  const t = plan.targets;
+  const save = useSaveTargetOverrides();
+  const { toast } = useToast();
+  const choose = async (pace: Pace) => {
+    try {
+      // Choosing a pace replaces a hand-typed calorie target
+      await save.mutateAsync({ pace, calorieTarget: null });
+      toast({ title: `${PACES[pace].label} pace`, description: "Your calorie target is updated everywhere." });
+    } catch (err) {
+      toast({ title: "Couldn't save", description: (err as Error).message, variant: "destructive" });
+    }
+  };
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">How fast do you want to lose weight?</CardTitle>
+        <CardDescription>
+          {t.maintenance
+            ? `You burn about ${t.maintenance.toLocaleString()} kcal a day. Pick a pace and your daily target follows.`
+            : "Pick a pace and your daily target follows."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Weight-loss pace">
+          {(Object.keys(PACES) as Pace[]).map((p) => {
+            const on = t.pace === p && !t.overridden.calories;
+            const kcal = t.maintenance ? Math.max(t.maintenance - PACES[p].deficit, 0) : null;
+            return (
+              <button
+                key={p}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                disabled={save.isPending}
+                onClick={() => void choose(p)}
+                className={cn(
+                  "rounded-xl border p-3 text-left transition-colors",
+                  on ? "border-primary bg-primary/5 ring-1 ring-primary" : "hover:bg-muted/60",
+                )}
+                data-testid={`pace-${p}`}
+              >
+                <p className="font-semibold">{PACES[p].label}</p>
+                <p className="text-xs text-muted-foreground">{PACES[p].perWeek}</p>
+                {kcal != null && <p className="mt-1 text-sm tabular-nums">≈ {(Math.round(kcal / 25) * 25).toLocaleString()} kcal</p>}
+              </button>
+            );
+          })}
+        </div>
+        {!t.pace && !t.overridden.calories && (
+          <p className="text-xs text-muted-foreground">Right now the app picks a pace for you ({t.calories.toLocaleString()} kcal a day).</p>
+        )}
+        {t.overridden.calories && (
+          <p className="text-xs text-muted-foreground">You've typed your own calorie target below. Picking a pace replaces it.</p>
+        )}
+        <p className="text-xs text-muted-foreground">The app never suggests going under its safe minimum, so a faster pace may land on the same number.</p>
+      </CardContent>
+    </Card>
   );
 }

@@ -24,7 +24,11 @@ export interface TargetOverrides {
   proteinTarget?: number | null;
   stepsGoal?: number | null;
   waterGoalLitres?: number | null;
+  /** How fast to lose weight; only used when the goal is to lose weight */
+  pace?: Pace | null;
 }
+
+export type Pace = "gentle" | "steady" | "faster";
 
 export interface Targets {
   calories: number;
@@ -39,6 +43,10 @@ export interface Targets {
   auto: { calories: number; protein: number; steps: number; waterLitres: number };
   overridden: { calories: boolean; protein: boolean; steps: boolean; waterLitres: boolean };
   notes: string[];
+  /** The weight-loss pace in use, or null when the goal isn't weight loss (or a deficit isn't advised) */
+  pace: Pace | null;
+  /** True when the person can choose a pace (losing weight, adult, not underweight) */
+  paceAvailable: boolean;
 }
 
 export type SessionType = "FULL" | "LOWER" | "UPPER" | "CORE" | "CARDIO" | "INTERVALS" | "LONG";

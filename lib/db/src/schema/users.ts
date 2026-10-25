@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, timestamp, primaryKey, boolean } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -9,6 +9,12 @@ export const usersTable = pgTable("users", {
   /** Set when an admin disables the account; the user can't log in until re-enabled */
   disabledAt: timestamp("disabled_at", { withTimezone: true }),
   lastActiveAt: timestamp("last_active_at", { withTimezone: true }),
+  /** IANA timezone from the user's device, e.g. "Africa/Lagos" (for days that start at local midnight) */
+  timezone: text("timezone"),
+  /** When they accepted the privacy notice */
+  consentAt: timestamp("consent_at", { withTimezone: true }),
+  /** Weekly summary email opt-out */
+  weeklyEmail: boolean("weekly_email").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -45,4 +51,13 @@ export const appSettingsTable = pgTable("app_settings", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** One-time password reset links (stored hashed, valid for an hour). */
+export const passwordResetsTable = pgTable("password_resets", {
+  id: text("id").primaryKey(), // SHA-256 of the token
+  userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

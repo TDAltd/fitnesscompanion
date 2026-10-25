@@ -1,4 +1,5 @@
-import { Activity, Droplets, Cookie, Utensils, CheckCircle, RefreshCw } from "lucide-react";
+import { Activity, Droplets, Cookie, Utensils, CheckCircle, ChevronRight } from "lucide-react";
+import { Link } from "wouter";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
@@ -15,7 +16,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { usePlan } from "@/lib/plan";
@@ -151,9 +151,6 @@ export function HabitChecklist() {
 
   const mealPlanCalories = mealPlanEntries?.reduce((s, e) => s + e.calories, 0) ?? 0;
   const mealPlanProtein = mealPlanEntries?.reduce((s, e) => s + e.protein, 0) ?? 0;
-  const isSyncedFromPlan = mealPlanCalories > 0 &&
-    localState.caloriesConsumed === mealPlanCalories.toString() &&
-    localState.proteinGrams === mealPlanProtein.toString();
 
   return (
     <Card className="shadow-sm overflow-hidden">
@@ -245,57 +242,25 @@ export function HabitChecklist() {
             </div>
           </div>
 
-          {/* Macros — auto-synced from meal planner */}
-          <div className="p-4 flex flex-col gap-3 hover:bg-muted/10 transition-colors">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-dusk/10 p-2 rounded-md">
-                  <Utensils className="h-5 w-5 text-dusk" />
-                </div>
-                <div>
-                  <Label className="font-bold text-base">Food logged</Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {isSyncedFromPlan ? `${mealPlanEntries?.length} meal${mealPlanEntries?.length === 1 ? '' : 's'} planned` : 'End of day input'}
-                  </p>
-                </div>
+          {/* Food comes from the Eat diary (synced to habits automatically) */}
+          <Link href="/meals" className="p-4 flex items-center justify-between gap-3 hover:bg-muted/10 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="bg-dusk/10 p-2 rounded-md">
+                <Utensils className="h-5 w-5 text-dusk" />
               </div>
-              {isSyncedFromPlan && (
-                <Badge variant="outline" className="text-xs gap-1 text-primary border-primary/30 bg-primary/5">
-                  <RefreshCw className="h-3 w-3" />
-                  From your meal plan
-                </Badge>
-              )}
-            </div>
-            <div className="flex gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <Input 
-                  type="number" 
-                  value={localState.caloriesConsumed}
-                  onChange={(e) => setLocalState({ ...localState, caloriesConsumed: e.target.value })}
-                  onBlur={() => updateHabits({ caloriesConsumed: localState.caloriesConsumed })}
-                  className="w-24 text-right"
-                  placeholder="kcal"
-                />
-                <span className="text-xs font-bold text-muted-foreground">kcal</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Input 
-                  type="number" 
-                  value={localState.proteinGrams}
-                  onChange={(e) => setLocalState({ ...localState, proteinGrams: e.target.value })}
-                  onBlur={() => updateHabits({ proteinGrams: localState.proteinGrams })}
-                  className="w-20 text-right"
-                  placeholder="g"
-                />
-                <span className="text-xs font-bold text-muted-foreground">protein</span>
-              </div>
-              {isSyncedFromPlan && (
-                <p className="text-xs text-muted-foreground self-center">
-                  Edit to override
+              <div>
+                <p className="font-bold text-base">Food</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {mealPlanCalories > 0
+                    ? `${mealPlanCalories.toLocaleString()} kcal · ${mealPlanProtein} g protein logged`
+                    : "Nothing logged yet"}
                 </p>
-              )}
+              </div>
             </div>
-          </div>
+            <span className="text-sm font-semibold text-primary flex items-center gap-1">
+              Open diary <ChevronRight className="h-4 w-4" />
+            </span>
+          </Link>
         </div>
       </CardContent>
     </Card>

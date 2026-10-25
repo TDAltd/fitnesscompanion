@@ -13,6 +13,19 @@ import "./index.css";
 // All generated API calls ("/api/...") go to "<hosting folder>/api/..."
 setBaseUrl(BASE || null);
 
+// Tell the server which timezone this device is in, so "today" starts at local midnight
+const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const nativeFetch = window.fetch.bind(window);
+window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  if (timezone && url.includes("/api/")) {
+    const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
+    if (!headers.has("x-timezone")) headers.set("x-timezone", timezone);
+    return nativeFetch(input, { ...init, headers });
+  }
+  return nativeFetch(input, init);
+};
+
 // Follow the phone/computer's light or dark setting
 const media = window.matchMedia("(prefers-color-scheme: dark)");
 const applyTheme = () => document.documentElement.classList.toggle("dark", media.matches);

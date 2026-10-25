@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { uid } from "../lib/auth";
+import { todayFor } from "../lib/dates";
 import { db, mealPlanTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { AddMealPlanBody, RemoveMealPlanParams } from "@workspace/api-zod";
@@ -10,7 +11,7 @@ router.get("/meal-plan", async (req, res) => {
   const date =
     typeof req.query.date === "string"
       ? req.query.date
-      : new Date().toISOString().slice(0, 10);
+      : todayFor(req);
 
   const entries = await db
     .select()

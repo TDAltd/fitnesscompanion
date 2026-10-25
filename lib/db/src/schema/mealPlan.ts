@@ -13,6 +13,8 @@ export const mealPlanTable = pgTable("meal_plan_entries", {
   protein: integer("protein").notNull(),
   carbs: integer("carbs").notNull(),
   fat: integer("fat").notNull(),
+  /** Portion multiplier, e.g. 1.5 for "1½ portions". Macros above are already totals. */
+  servings: real("servings").notNull().default(1),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

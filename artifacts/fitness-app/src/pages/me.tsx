@@ -1,16 +1,16 @@
 import { Link } from "wouter";
 import { getGetProfileQueryKey, useGetProfile } from "@workspace/api-client-react";
-import { Calculator, ChevronRight, ClipboardList, HeartPulse, LogOut, Ruler, Settings2, UserRoundPen } from "lucide-react";
+import { BellRing, ChevronRight, ClipboardList, HeartPulse, LogOut, Ruler, Settings2, UserRoundPen } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { useAuthActions, useCurrentUser } from "@/lib/auth";
 import { useSyncStatus } from "@/lib/health";
 import { usePlan } from "@/lib/plan";
 
 const LINKS = [
-  { href: "/plan", icon: ClipboardList, title: "My plan", body: "Your week, daily targets and how they were worked out" },
-  { href: "/stats", icon: Ruler, title: "Body & measurements", body: "BMI, measurements and your playbook" },
-  { href: "/calorie-calculator", icon: Calculator, title: "Calorie calculator", body: "See how different paces change your daily calories" },
+  { href: "/plan", icon: ClipboardList, title: "My plan", body: "Your week, weight-loss pace and daily targets" },
+  { href: "/stats", icon: Ruler, title: "Body & measurements", body: "BMI and body measurements" },
   { href: "/connect-health", icon: HeartPulse, title: "Apple Health", body: "Sync steps, sleep and active calories every night" },
+  { href: "/reminders", icon: BellRing, title: "Reminders", body: "Water and workout alerts on your phone's calendar" },
   { href: "/onboarding", icon: UserRoundPen, title: "Update my answers", body: "Goal, weight, schedule, where you train" },
   { href: "/account", icon: Settings2, title: "Account & data", body: "Back up, import, and your login" },
 ];

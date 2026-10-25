@@ -26,7 +26,7 @@ async function loadProfile(userId: number) {
 /** The user's current targets (automatic values with their overrides applied). Used by habit tracking. */
 export async function targetsForUser(userId: number): Promise<Targets> {
   const profile = await loadProfile(userId);
-  return computeTargets(profile ?? {}, profile ?? {});
+  return computeTargets(profile ?? {}, toResponse(profile));
 }
 
 const toResponse = (p: Awaited<ReturnType<typeof loadProfile>>) => ({
@@ -34,6 +34,7 @@ const toResponse = (p: Awaited<ReturnType<typeof loadProfile>>) => ({
   proteinTarget: p?.proteinTarget ?? null,
   stepsGoal: p?.stepsGoal ?? null,
   waterGoalLitres: p?.waterGoalLitres ?? null,
+  pace: (p?.pace as "gentle" | "steady" | "faster" | null) ?? null,
 });
 
 router.get("/plan-overrides", async (req, res) => {
@@ -61,6 +62,16 @@ router.put("/plan-overrides", async (req, res) => {
     updates[key] = key === "waterGoalLitres" ? Math.round(n * 100) / 100 : Math.round(n);
   }
 
+  let pace: string | null | undefined;
+  if ("pace" in body) {
+    if (body.pace === null || body.pace === "") pace = null;
+    else if (body.pace === "gentle" || body.pace === "steady" || body.pace === "faster") pace = body.pace;
+    else {
+      res.status(400).json({ error: "pace must be gentle, steady or faster." });
+      return;
+    }
+  }
+
   const existing = await loadProfile(userId);
   if (!existing) {
     res.status(400).json({ error: "Finish setting up your profile first." });
@@ -68,7 +79,7 @@ router.put("/plan-overrides", async (req, res) => {
   }
   const [updated] = await db
     .update(userProfileTable)
-    .set({ ...updates, updatedAt: new Date() })
+    .set({ ...updates, ...(pace !== undefined ? { pace } : {}), updatedAt: new Date() })
     .where(eq(userProfileTable.userId, userId))
     .returning();
   res.json(toResponse(updated));

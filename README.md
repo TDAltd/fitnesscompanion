@@ -1,6 +1,6 @@
-# F90 Fitness Tracker
+# Fitness Companion
 
-Track workouts, meals, weight, body measurements and daily habits. Each person has their own account and their own data.
+Track workouts (set by set), a simple food diary, weight, body measurements and daily habits. Each person has their own account and their own data.
 
 - **Frontend:** React + Vite + Tailwind (`artifacts/fitness-app`)
 - **Backend:** Express API (`artifacts/api-server`) that also serves the built frontend
@@ -50,6 +50,14 @@ This creates a `deploy/` folder. Zip **the contents** of `deploy/` (`app.js`, `p
 | `ALLOW_SIGNUPS` | `true` (set `false` later to stop new sign-ups) |
 | `ADMIN_EMAILS` | your login email, e.g. `you@example.com` (comma-separate several). These accounts are admin-only (dashboard, no tracking) and can promote other admins |
 | `NODE_ENV` | `production` |
+| `APP_URL` | `https://tdaproducthub.com/fitnesscompanion` (used in email links) |
+| `SMTP_HOST` | *Optional, for email.* Your mail server, e.g. `mail.tdaproducthub.com` |
+| `SMTP_PORT` | `465` |
+| `SMTP_USER` | a cPanel mailbox, e.g. `hello@tdaproducthub.com` |
+| `SMTP_PASS` | that mailbox's password |
+| `MAIL_FROM` | `Fitness Companion <hello@tdaproducthub.com>` |
+| `CRON_SECRET` | a long random string; protects the weekly email job |
+| `APP_TIMEZONE` | *Optional.* Default `Africa/Lagos`, used until a user's phone reports its timezone |
 
 8. Click **Create**.
 
@@ -100,6 +108,18 @@ Once Steps 1–5 work, every push to `main` builds the app on GitHub and uploads
 - Your environment variables in cPanel are never touched; they stay in Setup Node.js App.
 - If a deploy uploads but the site still shows the old version, click **Restart** in Setup Node.js App once. Some servers ignore the automatic restart marker.
 - The upload uses encrypted FTP (FTPS). If it fails with a TLS or certificate error, change `protocol: ftps` to `protocol: ftp` in `.github/workflows/deploy.yml`.
+
+### Email: password resets and the weekly summary
+
+1. cPanel → **Email Accounts** → create a mailbox (e.g. `hello@tdaproducthub.com`). Its **Connect Devices** page shows the SMTP server and port.
+2. Add the `SMTP_*`, `MAIL_FROM`, `APP_URL` and `CRON_SECRET` variables above and click **Restart**. The login screen now shows **Forgot password?**
+3. **Weekly summary:** cPanel → **Cron Jobs** → *Add New Cron Job*. Common setting: *Once Per Week*, then set Hour `18`, Weekday `Sunday`. Command:
+   ```
+   curl -s "https://tdaproducthub.com/fitnesscompanion/api/cron/weekly-summary?key=YOUR_CRON_SECRET" > /dev/null
+   ```
+   Each person gets at most one email every 6 days. People can switch it off in **Me → Account** or with the link in the email.
+
+Without the SMTP variables the app works as before: no Forgot password link, no emails.
 
 ---
 

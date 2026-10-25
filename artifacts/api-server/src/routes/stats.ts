@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, weightLogsTable, workoutLogsTable, habitLogsTable, userProfileTable } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
 import { uid } from "../lib/auth";
+import { addDays, dateInTz, todayFor, tzFor } from "../lib/dates";
 
 const router = Router();
 
@@ -93,7 +94,7 @@ router.get("/stats/streak", async (req, res) => {
     .orderBy(desc(workoutLogsTable.loggedAt));
 
   const uniqueDates = [
-    ...new Set(workouts.map((w) => w.loggedAt.toISOString().slice(0, 10))),
+    ...new Set(workouts.map((w) => dateInTz(w.loggedAt, tzFor(req)))),
   ].sort((a, b) => b.localeCompare(a));
 
   let currentStreak = 0;
@@ -101,34 +102,21 @@ router.get("/stats/streak", async (req, res) => {
   let tempStreak = 0;
 
   if (uniqueDates.length > 0) {
-    const today = new Date().toISOString().slice(0, 10);
-    let expectedDate = today;
-    let streakBroken = false;
-
+    const today = todayFor(req);
+    // A streak is still alive if the last workout was today or yesterday
+    let expectedDate = uniqueDates[0] === today ? today : addDays(today, -1);
     for (const date of uniqueDates) {
-      if (!streakBroken && date === expectedDate) {
+      if (date === expectedDate) {
         currentStreak++;
-        const prev = new Date(expectedDate);
-        prev.setDate(prev.getDate() - 1);
-        expectedDate = prev.toISOString().slice(0, 10);
-      } else {
-        streakBroken = true;
+        expectedDate = addDays(expectedDate, -1);
+      } else if (date < expectedDate) {
+        break;
       }
     }
 
     let prevDate: string | null = null;
     for (const date of [...uniqueDates].reverse()) {
-      if (prevDate === null) {
-        tempStreak = 1;
-      } else {
-        const prevDay: Date = new Date(prevDate as string);
-        prevDay.setDate(prevDay.getDate() + 1);
-        if (prevDay.toISOString().slice(0, 10) === date) {
-          tempStreak++;
-        } else {
-          tempStreak = 1;
-        }
-      }
+      tempStreak = prevDate !== null && addDays(prevDate, 1) === date ? tempStreak + 1 : 1;
       longestStreak = Math.max(longestStreak, tempStreak);
       prevDate = date;
     }

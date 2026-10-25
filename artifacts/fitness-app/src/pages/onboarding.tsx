@@ -318,7 +318,7 @@ export default function OnboardingPage() {
                     <FormField control={form.control} name="sex" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Sex</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <Select key={String(field.value ?? "")} onValueChange={field.onChange} value={field.value ?? ""}>
                           <FormControl><SelectTrigger data-testid={SELECT_TEST_IDS.sex}><SelectValue placeholder="Choose an option" /></SelectTrigger></FormControl>
                           <SelectContent>
                             <SelectItem value="Female">Female</SelectItem>
@@ -355,7 +355,7 @@ export default function OnboardingPage() {
                     <FormField control={form.control} name="activityLevel" render={({ field }) => (
                       <FormItem className="sm:col-span-2">
                         <FormLabel>Your usual activity outside workouts</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <Select key={String(field.value ?? "")} onValueChange={field.onChange} value={field.value ?? ""}>
                           <FormControl><SelectTrigger data-testid={SELECT_TEST_IDS.activityLevel}><SelectValue placeholder="Choose what sounds closest" /></SelectTrigger></FormControl>
                           <SelectContent>
                             <SelectItem value="Sedentary">Mostly sitting</SelectItem>
@@ -383,7 +383,7 @@ export default function OnboardingPage() {
                     <FormField control={form.control} name="fitnessGoal" render={({ field }) => (
                       <FormItem>
                         <FormLabel>What would you like to focus on?</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <Select key={String(field.value ?? "")} onValueChange={field.onChange} value={field.value ?? ""}>
                           <FormControl><SelectTrigger data-testid={SELECT_TEST_IDS.fitnessGoal}><SelectValue placeholder="Choose a goal" /></SelectTrigger></FormControl>
                           <SelectContent>
                             <SelectItem value="Weight loss">Weight loss</SelectItem>
@@ -398,7 +398,7 @@ export default function OnboardingPage() {
                     <FormField control={form.control} name="dietaryPreference" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Food preference</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <Select key={String(field.value ?? "")} onValueChange={field.onChange} value={field.value ?? ""}>
                           <FormControl><SelectTrigger data-testid={SELECT_TEST_IDS.dietaryPreference}><SelectValue placeholder="Choose what suits you" /></SelectTrigger></FormControl>
                           <SelectContent>
                             <SelectItem value="No preference">No preference</SelectItem>
@@ -473,7 +473,7 @@ export default function OnboardingPage() {
                     <FormField control={form.control} name="workoutTimePreference" render={({ field }) => (
                       <FormItem>
                         <FormLabel>When can you usually fit in a workout?</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <Select key={String(field.value ?? "")} onValueChange={field.onChange} value={field.value ?? ""}>
                           <FormControl><SelectTrigger data-testid="select-workout-time"><SelectValue placeholder="Choose a time" /></SelectTrigger></FormControl>
                           <SelectContent>
                             <SelectItem value="Morning">Morning</SelectItem>
@@ -488,7 +488,7 @@ export default function OnboardingPage() {
                     <FormField control={form.control} name="workoutDurationMinutes" render={({ field }) => (
                       <FormItem>
                         <FormLabel>How long can you usually set aside?</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <Select key={String(field.value ?? "")} onValueChange={field.onChange} value={field.value ?? ""}>
                           <FormControl><SelectTrigger data-testid="select-workout-duration"><SelectValue placeholder="Choose a duration" /></SelectTrigger></FormControl>
                           <SelectContent>
                             {WORKOUT_DURATIONS.map((duration) => (
@@ -515,7 +515,7 @@ export default function OnboardingPage() {
                     <FormField control={form.control} name="workoutDaysPerWeek" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Days you’d like to train each week</FormLabel>
-                        <Select onValueChange={(value) => field.onChange(Number(value))} value={field.value == null ? "" : String(field.value)}>
+                        <Select key={String(field.value ?? "")} onValueChange={(value) => field.onChange(Number(value))} value={field.value == null ? "" : String(field.value)}>
                           <FormControl><SelectTrigger data-testid={SELECT_TEST_IDS.workoutDaysPerWeek}><SelectValue placeholder="Choose a rhythm" /></SelectTrigger></FormControl>
                           <SelectContent>
                             {[2, 3, 4, 5, 6].map((days) => <SelectItem key={days} value={String(days)}>{days} days a week</SelectItem>)}
@@ -527,7 +527,7 @@ export default function OnboardingPage() {
                     <FormField control={form.control} name="workoutLocation" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Where do you prefer to work out?</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <Select key={String(field.value ?? "")} onValueChange={field.onChange} value={field.value ?? ""}>
                           <FormControl><SelectTrigger data-testid={SELECT_TEST_IDS.workoutLocation}><SelectValue placeholder="Choose a place" /></SelectTrigger></FormControl>
                           <SelectContent>
                             <SelectItem value="Home">At home</SelectItem>
@@ -542,7 +542,7 @@ export default function OnboardingPage() {
                     <FormField control={form.control} name="trainingExperience" render={({ field }) => (
                       <FormItem className="sm:col-span-2">
                         <FormLabel>How does training feel for you?</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                        <Select key={String(field.value ?? "")} onValueChange={field.onChange} value={field.value ?? ""}>
                           <FormControl><SelectTrigger data-testid={SELECT_TEST_IDS.trainingExperience}><SelectValue placeholder="Choose your starting point" /></SelectTrigger></FormControl>
                           <SelectContent>
                             <SelectItem value="Beginner">I’m just getting started</SelectItem>

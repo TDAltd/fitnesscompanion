@@ -9,9 +9,11 @@ import ProgressPage from "@/pages/progress";
 import StatsPage from "@/pages/stats";
 import MealsPage from "@/pages/meals";
 import WorkoutPage from "@/pages/workout";
-import CalorieCalculatorPage from "@/pages/calorie-calculator";
 import OnboardingPage from "@/pages/onboarding";
 import AuthPage from "@/pages/auth";
+import PrivacyPage from "@/pages/privacy";
+import RemindersPage from "@/pages/reminders";
+import ResetPasswordPage from "@/pages/reset-password";
 import AccountPage from "@/pages/account";
 import MyPlanPage from "@/pages/my-plan";
 import ConnectHealthPage from "@/pages/connect-health";
@@ -42,7 +44,11 @@ const queryClient: QueryClient = new QueryClient({
 });
 
 function AuthGate() {
+  const [location] = useLocation();
   const { data: user, isLoading } = useCurrentUser();
+  // Pages anyone can open, signed in or not
+  if (location === "/reset-password") return <ResetPasswordPage />;
+  if (location === "/privacy" && !user) return <PrivacyPage standalone />;
   if (isLoading) {
     return (
       <main className="grid min-h-[100dvh] place-items-center px-6 text-sm text-muted-foreground" role="status">
@@ -92,6 +98,7 @@ function Router() {
       </main>
     );
   }
+  if (location === "/privacy" && !profileComplete) return <PrivacyPage standalone />;
   if (!isOnboarding && !isError && !profileComplete) {
     return <Redirect to="/onboarding" />;
   }
@@ -108,11 +115,13 @@ function Router() {
         <Route path="/workout" component={WorkoutPage} />
         <Route path="/meals" component={MealsPage} />
         <Route path="/stats" component={StatsPage} />
-        <Route path="/calorie-calculator" component={CalorieCalculatorPage} />
+        <Route path="/calorie-calculator">{() => <Redirect to="/plan" />}</Route>
         <Route path="/me" component={MePage} />
         <Route path="/plan" component={MyPlanPage} />
         <Route path="/connect-health" component={ConnectHealthPage} />
         <Route path="/account" component={AccountPage} />
+        <Route path="/reminders" component={RemindersPage} />
+        <Route path="/privacy">{() => <PrivacyPage />}</Route>
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

@@ -1,4 +1,4 @@
-// International recipes added alongside the Nigerian library on the Meals page.
+// International recipes added alongside the Nigerian library on the Eat page.
 // Macros are per serving and approximate (standard food-database values, rounded).
 export const INTERNATIONAL_MEALS = [
   // ---------- Breakfast ----------

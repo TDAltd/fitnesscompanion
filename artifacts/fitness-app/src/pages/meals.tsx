@@ -31,7 +31,7 @@ export default function Meals() {
   const openAdd = (slot: Slot) => setSheet({ open: true, slot });
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5 pb-8">
+    <div className="space-y-5 pb-8">
       <PageHeader
         title="Eat"
         description={view === "diary" ? "Log what you eat. Everything here counts towards today." : "Ideas that fit your plan. Add one to your diary in a tap."}
@@ -258,7 +258,7 @@ function Recipes({ date }: { date: string }) {
     <div className="space-y-4">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search recipes or ingredients" className="h-11 pl-9 text-base" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search recipes or ingredients" aria-label="Search recipes" className="h-11 pl-9 text-base" />
       </div>
       <div className="flex flex-wrap gap-1.5">
         {(["All", "Breakfast", "Lunch", "Dinner", "Snack"] as const).map((m) => (

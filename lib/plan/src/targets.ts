@@ -1,10 +1,13 @@
 import type { Pace, PlanProfile, TargetOverrides, Targets } from "./types";
 
 /** Daily calorie gap per pace (7,700 kcal is roughly 1 kg). */
+/** kg per week from a daily calorie gap, rounded to the nearest 0.05 kg (used everywhere it's shown). */
+export const kgPerWeek = (dailyGap: number) => Math.round(((dailyGap * 7) / 7700) * 20) / 20;
+const perWeekLabel = (deficit: number) => `about ${Math.abs(kgPerWeek(deficit)).toFixed(2).replace(/0$/, "")} kg a week`;
 export const PACES: Record<Pace, { deficit: number; label: string; perWeek: string }> = {
-  gentle: { deficit: 250, label: "Gentle", perWeek: "about 0.25 kg a week" },
-  steady: { deficit: 500, label: "Steady", perWeek: "about 0.5 kg a week" },
-  faster: { deficit: 750, label: "Faster", perWeek: "about 0.7 kg a week" },
+  gentle: { deficit: 250, label: "Gentle", perWeek: perWeekLabel(250) },
+  steady: { deficit: 500, label: "Steady", perWeek: perWeekLabel(500) },
+  faster: { deficit: 750, label: "Faster", perWeek: perWeekLabel(750) },
 };
 const isPace = (v: unknown): v is Pace => v === "gentle" || v === "steady" || v === "faster";
 
@@ -66,21 +69,20 @@ export function computeTargets(p: PlanProfile, overrides: TargetOverrides = {}):
 
   let adjustment = 0; // negative = deficit, positive = surplus
   let pace: Pace | null = null;
+  let paceIsDefault = false;
   const underweight = bodyMassIndex != null && bodyMassIndex < 18.5;
   const paceAvailable = wantsToLose && !isMinor && !underweight && goal !== "Build strength";
   if (isMinor) {
     notes.push("Under 18: the plan aims for maintenance, not a calorie deficit.");
   } else if (bodyMassIndex != null && bodyMassIndex < 18.5 && wantsToLose) {
     notes.push("Your BMI is already in the underweight range, so the plan does not cut calories.");
-  } else if (paceAvailable && isPace(overrides.pace)) {
-    pace = overrides.pace;
+  } else if (paceAvailable) {
+    // Your chosen pace, else the app's pick: steady with a BMI of 30+, gentle otherwise
+    pace = isPace(overrides.pace) ? overrides.pace : bodyMassIndex != null && bodyMassIndex >= 30 ? "steady" : "gentle";
+    paceIsDefault = !isPace(overrides.pace);
     adjustment = -PACES[pace].deficit;
-  } else if (goal === "Weight loss") {
-    adjustment = bodyMassIndex != null && bodyMassIndex >= 30 ? -500 : -350;
   } else if (goal === "Build strength") {
     adjustment = bodyMassIndex != null && bodyMassIndex >= 25 ? 0 : 200;
-  } else if (wantsToLose) {
-    adjustment = -250;
   }
 
   let autoCalories = maintenance != null ? maintenance + adjustment : 2000;
@@ -112,7 +114,7 @@ export function computeTargets(p: PlanProfile, overrides: TargetOverrides = {}):
 
   // Expected weekly change from the calorie gap (7,700 kcal ~ 1 kg)
   const dailyGap = maintenance != null ? calories - maintenance : adjustment;
-  const weeklyChangeKg = Math.round(((dailyGap * 7) / 7700) * 100) / 100;
+  const weeklyChangeKg = kgPerWeek(dailyGap);
 
   return {
     calories,
@@ -130,6 +132,7 @@ export function computeTargets(p: PlanProfile, overrides: TargetOverrides = {}):
     },
     notes,
     pace,
+    paceIsDefault,
     paceAvailable,
   };
 }

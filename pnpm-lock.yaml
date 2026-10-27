@@ -375,6 +375,10 @@ importers:
   lib/plan: {}
 
   scripts:
+    dependencies:
+      '@workspace/plan':
+        specifier: workspace:*
+        version: link:../lib/plan
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

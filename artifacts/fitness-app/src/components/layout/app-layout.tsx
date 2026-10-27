@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Dumbbell, LineChart, Salad, Sun, CircleUserRound, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -11,29 +11,53 @@ interface AppLayoutProps {
 type NavItem = { href: string; label: string; icon: LucideIcon; also?: string[] };
 
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "Today", icon: Sun },
-  { href: "/workout", label: "Train", icon: Dumbbell },
-  { href: "/meals", label: "Eat", icon: Salad },
+  { href: "/today", label: "Today", icon: Sun },
+  { href: "/train", label: "Train", icon: Dumbbell },
+  { href: "/eat", label: "Eat", icon: Salad },
   { href: "/progress", label: "Progress", icon: LineChart },
   {
     href: "/me",
     label: "Me",
     icon: CircleUserRound,
-    also: ["/plan", "/stats", "/account", "/connect-health", "/reminders", "/privacy"],
+    also: ["/plan", "/body", "/account", "/connect-health", "/reminders", "/privacy"],
   },
 ];
 
 const isActive = (item: NavItem, location: string) =>
   location === item.href || location.startsWith(`${item.href}/`) || (item.also ?? []).includes(location);
 
+const TITLES: Record<string, string> = {
+  "/today": "Today",
+  "/train": "Train",
+  "/eat": "Eat",
+  "/progress": "Progress",
+  "/me": "Me",
+  "/plan": "My plan",
+  "/body": "Body",
+  "/account": "Account",
+  "/connect-health": "Apple Health",
+  "/reminders": "Reminders",
+  "/privacy": "Privacy",
+};
+
+/** Each page opens at the top and names itself in the browser tab. */
+export function usePageChrome(location: string) {
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+    const name = TITLES[location];
+    document.title = name ? `${name} · Fitness Companion` : "Fitness Companion";
+  }, [location]);
+}
+
 export function AppLayout({ children }: AppLayoutProps) {
   const [location] = useLocation();
+  usePageChrome(location);
 
   return (
     <div className="min-h-[100dvh] bg-background md:flex">
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-[100dvh] w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-4 py-6 md:flex">
-        <Link href="/dashboard" className="mb-8 px-2" aria-label="Fitness Companion home">
+        <Link href="/today" className="mb-8 px-2" aria-label="Fitness Companion home">
           <Logo />
         </Link>
         <nav className="flex flex-col gap-1" aria-label="Main">
@@ -64,7 +88,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Phone header */}
         <header className="sticky top-0 z-40 flex items-center border-b border-border/60 bg-background/85 px-4 pb-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] backdrop-blur-md md:hidden">
-          <Link href="/dashboard" className="flex items-center gap-2" aria-label="Fitness Companion home">
+          <Link href="/today" className="flex items-center gap-2" aria-label="Fitness Companion home">
             <LogoMark className="h-7 w-7" />
             <span className="font-display text-[15px] font-medium">Fitness Companion</span>
           </Link>

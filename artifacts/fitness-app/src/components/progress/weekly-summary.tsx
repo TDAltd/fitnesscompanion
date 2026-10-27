@@ -1,32 +1,10 @@
-import { useMemo } from "react";
-import { format, subDays, startOfDay, parseISO } from "date-fns";
-import { useListHabits, getListHabitsQueryKey, useListWorkouts, getListWorkoutsQueryKey } from "@workspace/api-client-react";
+import { format, parseISO } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarDays, Check, X, Minus } from "lucide-react";
+import { CalendarDays, Check, X, Minus, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePlan } from "@/lib/plan";
-import { useFoodTotals } from "@/lib/food-log";
-
-// Small tolerance so being a few calories over / grams under still counts as on target
-const CAL_TOLERANCE     = 50;
-const PROTEIN_TOLERANCE = 10;
-
-type Status = "met" | "missed" | "none";
-
-interface DaySummary {
-  date: string;
-  label: string;
-  shortDate: string;
-  isToday: boolean;
-  workout: Status;
-  steps: Status;
-  water: Status;
-  biscuits: Status;
-  calories: Status;
-  protein: Status;
-  score: number; // 0–5
-}
+import { useWeekScores, type Status } from "@/lib/day-score";
 
 const columns = [
   { key: "workout",  label: "Workout"   },
@@ -38,6 +16,13 @@ const columns = [
 ] as const;
 
 function StatusDot({ status }: { status: Status }) {
+  if (status === "rest") {
+    return (
+      <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted/60" title="Rest day: not counted">
+        <Moon className="h-3 w-3 text-muted-foreground" />
+      </div>
+    );
+  }
   if (status === "none") {
     return (
       <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted/40">
@@ -58,113 +43,24 @@ function StatusDot({ status }: { status: Status }) {
   );
 }
 
-function ScoreBar({ score }: { score: number }) {
-  const max = 5;
-  const pct = (score / max) * 100;
-  const color =
-    score === 5 ? "bg-primary" :
-    score >= 3  ? "bg-primary"   :
-    score >= 1  ? "bg-dusk" : "bg-destructive";
-
+function ScoreBar({ percent }: { percent: number }) {
+  const color = percent >= 80 ? "bg-primary" : percent >= 40 ? "bg-dusk" : "bg-destructive";
   return (
     <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
-      <div
-        className={cn("h-full rounded-full transition-all", color)}
-        style={{ width: `${pct}%` }}
-      />
+      <div className={cn("h-full rounded-full transition-all", color)} style={{ width: `${percent}%` }} />
     </div>
   );
 }
 
 export function WeeklySummary() {
-  const { data: habits, isLoading: isLoadingHabits } = useListHabits({
-    query: { queryKey: getListHabitsQueryKey() }
-  });
-
-  const { data: workouts, isLoading: isLoadingWorkouts } = useListWorkouts({
-    query: { queryKey: getListWorkoutsQueryKey() }
-  });
-
   const { plan } = usePlan();
-  // Food totals come straight from the Eat diary
-  const weekTo = format(new Date(), "yyyy-MM-dd");
-  const weekFrom = format(subDays(new Date(), 6), "yyyy-MM-dd");
-  const { data: foodTotals } = useFoodTotals(weekFrom, weekTo);
-  const STEPS_GOAL  = plan?.targets.steps ?? 8000;
-  const WATER_GOAL  = plan?.targets.waterLitres ?? 2.5;
-  const CAL_MAX     = (plan?.targets.calories ?? 2000) + CAL_TOLERANCE;
-  const PROTEIN_MIN = (plan?.targets.protein ?? 100) - PROTEIN_TOLERANCE;
-  const restDays    = new Set(plan?.schedule.filter(d => d.rest).map(d => d.day) ?? []);
-  const avoidLabel  = plan?.avoidHabit.short ?? "No sweets";
-
-  const days = useMemo<DaySummary[]>(() => {
-    const today = startOfDay(new Date());
-    const todayStr = format(today, "yyyy-MM-dd");
-
-    // Build a set of dates with at least one workout logged
-    const workoutDates = new Set(
-      (workouts ?? []).map(w => w.loggedAt.slice(0, 10))
-    );
-
-    // Index habit logs by date
-    const foodByDate = new Map((foodTotals ?? []).map(f => [f.date, f]));
-    const habitByDate = new Map(
-      (habits ?? []).map(h => [h.date, h])
-    );
-
-    return Array.from({ length: 7 }, (_, i) => {
-      const d     = subDays(today, 6 - i);
-      const dateStr = format(d, "yyyy-MM-dd");
-      const habit = habitByDate.get(dateStr);
-      const isFuture = d > today;
-      const isToday  = dateStr === todayStr;
-
-      const hasWorkout = workoutDates.has(dateStr);
-      // Resting on a planned rest day counts as following the plan
-      const workout: Status  = isFuture ? "none" : hasWorkout || restDays.has(d.getDay()) ? "met" : "missed";
-
-      // Each day is judged against the goal saved on that day's log (falls back to today's plan)
-      const steps: Status    = !habit  ? (isFuture ? "none" : "missed")
-                             : habit.stepsDone >= (habit.stepsGoal || STEPS_GOAL) ? "met" : "missed";
-      const water: Status    = !habit  ? (isFuture ? "none" : "missed")
-                             : habit.waterDoneLitres >= (habit.waterGoalLitres || WATER_GOAL) ? "met" : "missed";
-      const biscuits: Status = !habit  ? (isFuture ? "none" : "missed")
-                             : habit.biscuitsAvoided ? "met" : "missed";
-      const food = foodByDate.get(dateStr);
-      const kcal = food?.calories ?? habit?.caloriesConsumed ?? 0;
-      const prot = food?.protein ?? habit?.proteinGrams ?? 0;
-      const calories: Status = !kcal ? "none" : kcal <= CAL_MAX ? "met" : "missed";
-      const protein: Status  = !prot ? "none" : prot >= PROTEIN_MIN ? "met" : "missed";
-
-      const score = [workout, steps, water, biscuits]
-        .filter(s => s === "met").length +
-        (calories === "met" ? 0.5 : 0) +
-        (protein  === "met" ? 0.5 : 0);
-
-      return {
-        date: dateStr,
-        label: isToday ? "Today" : format(d, "EEE"),
-        shortDate: format(d, "d MMM"),
-        isToday,
-        workout,
-        steps,
-        water,
-        biscuits,
-        calories,
-        protein,
-        score: Math.round(score),
-      };
-    });
-  }, [habits, workouts, plan, foodTotals]);
-
-  const isLoading = isLoadingHabits || isLoadingWorkouts;
-
-  // Calculate week stats
-  const metDays    = days.filter(d => d.score >= 4).length;
-  const totalDone  = days.filter(d => !d.isToday).length;
-  const avgScore   = totalDone > 0
-    ? (days.reduce((s, d) => s + d.score, 0) / totalDone).toFixed(1)
-    : "—";
+  const avoidLabel = plan?.avoidHabit.short ?? "No sweets";
+  const { scores, strongDays, averagePercent, isLoading } = useWeekScores(7);
+  const days = scores.map((s) => ({
+    ...s,
+    label: s.isToday ? "Today" : format(parseISO(s.date), "EEE"),
+    shortDate: format(parseISO(s.date), "d MMM"),
+  }));
 
   return (
     <Card className="overflow-hidden">
@@ -175,18 +71,18 @@ export function WeeklySummary() {
               <CalendarDays className="h-5 w-5 text-primary" /> Week at a glance
             </CardTitle>
             <CardDescription className="mt-1">
-              Last 7 days — habits, workouts, and nutrition targets
+              Last 7 days. Each habit is 1 point; rest days don't count either way.
             </CardDescription>
           </div>
           {!isLoading && (
             <div className="flex gap-4 text-right">
               <div>
                 <p className="text-xs text-muted-foreground">Strong days</p>
-                <p className="text-2xl font-semibold text-primary">{metDays}<span className="text-sm text-muted-foreground font-normal"> / 7</span></p>
+                <p className="text-2xl font-semibold text-primary" data-testid="text-strong-days">{strongDays}<span className="text-sm text-muted-foreground font-normal"> / 7</span></p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Avg score</p>
-                <p className="text-2xl font-semibold">{avgScore}<span className="text-sm text-muted-foreground font-normal"> / 5</span></p>
+                <p className="text-xs text-muted-foreground">Average day</p>
+                <p className="text-2xl font-semibold" data-testid="text-average-day">{averagePercent == null ? "–" : `${averagePercent}%`}</p>
               </div>
             </div>
           )}
@@ -231,7 +127,7 @@ export function WeeklySummary() {
                           "text-center p-3",
                           d.isToday ? "bg-primary/5" : ""
                         )}>
-                          <div className="flex justify-center">
+                          <div className="flex justify-center" data-testid={`status-${col.key}-${d.date}`} data-status={d[col.key]}>
                             <StatusDot status={d[col.key] as Status} />
                           </div>
                         </td>
@@ -242,8 +138,8 @@ export function WeeklySummary() {
                     <td className="p-4 text-xs font-bold text-muted-foreground">Score</td>
                     {days.map(d => (
                       <td key={d.date} className={cn("p-3", d.isToday ? "bg-primary/5" : "")}>
-                        <div className="text-center font-semibold text-sm mb-1">{d.score}<span className="text-xs text-muted-foreground font-normal">/5</span></div>
-                        <ScoreBar score={d.score} />
+                        <div className="text-center font-semibold text-sm mb-1" data-testid={`score-${d.date}`}>{d.met}<span className="text-xs text-muted-foreground font-normal">/{d.possible}</span></div>
+                        <ScoreBar percent={d.percent} />
                       </td>
                     ))}
                   </tr>
@@ -271,10 +167,10 @@ export function WeeklySummary() {
                     ))}
                   </div>
                   <div className="text-center">
-                    <span className="text-xs font-semibold">{d.score}</span>
-                    <span className="text-[9px] text-muted-foreground">/5</span>
+                    <span className="text-xs font-semibold">{d.met}</span>
+                    <span className="text-[9px] text-muted-foreground">/{d.possible}</span>
                   </div>
-                  <ScoreBar score={d.score} />
+                  <ScoreBar percent={d.percent} />
                 </div>
               ))}
             </div>
@@ -297,9 +193,15 @@ export function WeeklySummary() {
                 <div className="w-4 h-4 rounded-full bg-muted/40 flex items-center justify-center">
                   <Minus className="h-2.5 w-2.5 text-muted-foreground/40" />
                 </div>
-                <span>No data logged</span>
+                <span>Food not logged</span>
               </div>
-              <span className="ml-auto">Score = workout + steps + water + {avoidLabel.toLowerCase()} + cal + protein</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-4 h-4 rounded-full bg-muted/60 flex items-center justify-center">
+                  <Moon className="h-2.5 w-2.5 text-muted-foreground" />
+                </div>
+                <span>Rest day (not counted)</span>
+              </div>
+              <span className="ml-auto">Strong day = 80% or more of the habits that applied</span>
             </div>
           </>
         )}
@@ -313,7 +215,7 @@ function MobileDot({ status }: { status: Status }) {
     <div className={cn(
       "h-2 w-full rounded-sm",
       status === "met"    ? "bg-primary/70" :
-      status === "missed" ? "bg-destructive/50"   : "bg-muted/40"
+      status === "missed" ? "bg-destructive/50" : status === "rest" ? "bg-muted" : "bg-muted/40"
     )} />
   );
 }

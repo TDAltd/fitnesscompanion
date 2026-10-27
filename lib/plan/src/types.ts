@@ -47,6 +47,8 @@ export interface Targets {
   pace: Pace | null;
   /** True when the person can choose a pace (losing weight, adult, not underweight) */
   paceAvailable: boolean;
+  /** True when the app picked the pace because the person hasn't chosen one */
+  paceIsDefault: boolean;
 }
 
 export type SessionType = "FULL" | "LOWER" | "UPPER" | "CORE" | "CARDIO" | "INTERVALS" | "LONG";

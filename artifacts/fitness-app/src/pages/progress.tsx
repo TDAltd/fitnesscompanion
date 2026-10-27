@@ -17,7 +17,10 @@ import { HealthTrends } from "@/components/health/health-trends";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { useWeekScores } from "@/lib/day-score";
+
 export default function ProgressPage() {
+  const week = useWeekScores(7);
   const { data: summary, isLoading: isLoadingSummary } = useGetProgressSummary({
     query: { queryKey: getGetProgressSummaryQueryKey() }
   });
@@ -92,11 +95,11 @@ export default function ProgressPage() {
         <Card className="bg-card">
           <CardContent className="p-6 space-y-2">
             <Activity className="h-5 w-5 text-primary mb-2" />
-            <p className="text-xs font-bold text-muted-foreground">Habit score</p>
-            {isLoadingSummary || !summary ? (
+            <p className="text-xs font-bold text-muted-foreground">Strong days this week</p>
+            {week.isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <p className="text-3xl font-semibold">{summary.habitCompliancePercent ? `${summary.habitCompliancePercent.toFixed(0)}%` : 'N/A'}</p>
+              <p className="text-3xl font-semibold">{week.strongDays}<span className="text-lg text-muted-foreground"> / 7</span></p>
             )}
           </CardContent>
         </Card>

@@ -49,7 +49,7 @@ export default function AccountPage() {
       // Refresh every screen's data, but keep the user logged in
       await qc.invalidateQueries({ predicate: (q) => q.queryKey[0] !== AUTH_QUERY_KEY[0] });
       toast({ title: "Import complete", description: summary });
-      if (counts.user_profile) navigate("/dashboard");
+      if (counts.user_profile) navigate("/today");
     } catch (err) {
       toast({
         title: "Import failed",

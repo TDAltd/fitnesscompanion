@@ -83,7 +83,7 @@ export default function RemindersPage() {
   const toggle = (t: string) => setTimes((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t].sort()));
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5 pb-16">
+    <div className="space-y-5 pb-16">
       <PageHeader title="Reminders" description="Nudges for water and workouts, on your phone's calendar." />
 
       <Card className="border-primary/20 bg-primary/5">

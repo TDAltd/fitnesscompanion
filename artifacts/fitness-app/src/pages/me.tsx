@@ -8,7 +8,7 @@ import { usePlan } from "@/lib/plan";
 
 const LINKS = [
   { href: "/plan", icon: ClipboardList, title: "My plan", body: "Your week, weight-loss pace and daily targets" },
-  { href: "/stats", icon: Ruler, title: "Body & measurements", body: "BMI and body measurements" },
+  { href: "/body", icon: Ruler, title: "Body & measurements", body: "BMI and body measurements" },
   { href: "/connect-health", icon: HeartPulse, title: "Apple Health", body: "Sync steps, sleep and active calories every night" },
   { href: "/reminders", icon: BellRing, title: "Reminders", body: "Water and workout alerts on your phone's calendar" },
   { href: "/onboarding", icon: UserRoundPen, title: "Update my answers", body: "Goal, weight, schedule, where you train" },

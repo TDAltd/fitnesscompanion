@@ -2,11 +2,20 @@ import { Router } from "express";
 import { uid } from "../lib/auth";
 import { todayFor } from "../lib/dates";
 import { targetsForUser } from "./planSettings";
-import { db, habitLogsTable } from "@workspace/db";
+import { db, habitLogsTable, healthDailyTable } from "@workspace/db";
 import { and, desc, eq } from "drizzle-orm";
 import { UpsertHabitBody } from "@workspace/api-zod";
 
 const router = Router();
+
+/** Steps synced from Apple Health, by date. The habit shows whichever is higher: synced or typed in. */
+async function syncedSteps(userId: number, date?: string): Promise<Map<string, number>> {
+  const rows = await db
+    .select({ date: healthDailyTable.date, steps: healthDailyTable.steps })
+    .from(healthDailyTable)
+    .where(date ? and(eq(healthDailyTable.userId, userId), eq(healthDailyTable.date, date)) : eq(healthDailyTable.userId, userId));
+  return new Map(rows.filter((r) => r.steps != null).map((r) => [r.date, r.steps as number]));
+}
 
 router.get("/habits", async (req, res) => {
   const logs = await db
@@ -14,18 +23,25 @@ router.get("/habits", async (req, res) => {
     .from(habitLogsTable)
     .where(eq(habitLogsTable.userId, uid(req)))
     .orderBy(desc(habitLogsTable.date));
+  const synced = await syncedSteps(uid(req));
 
   const formatted = logs.map((l) => ({
     id: l.id,
     date: l.date,
     stepsGoal: l.stepsGoal,
-    stepsDone: l.stepsDone,
+    stepsDone: Math.max(l.stepsDone, synced.get(l.date) ?? 0),
     waterGoalLitres: l.waterGoalLitres,
     waterDoneLitres: l.waterDoneLitres,
     biscuitsAvoided: l.biscuitsAvoided,
     caloriesConsumed: l.caloriesConsumed,
     proteinGrams: l.proteinGrams,
   }));
+  const logged = new Set(logs.map((l) => l.date));
+  for (const [date, steps] of synced) {
+    if (logged.has(date)) continue;
+    formatted.push({ id: 0, date, stepsGoal: 0, stepsDone: steps, waterGoalLitres: 0, waterDoneLitres: 0, biscuitsAvoided: false, caloriesConsumed: null, proteinGrams: null });
+  }
+  formatted.sort((a, b) => b.date.localeCompare(a.date));
   res.json(formatted);
 });
 
@@ -37,12 +53,13 @@ router.get("/habits/today", async (req, res) => {
     .where(and(eq(habitLogsTable.date, today), eq(habitLogsTable.userId, uid(req))));
 
   const targets = await targetsForUser(uid(req));
+  const steps = (await syncedSteps(uid(req), today)).get(today) ?? 0;
   if (!log) {
     res.json({
       id: 0,
       date: today,
       stepsGoal: targets.steps,
-      stepsDone: 0,
+      stepsDone: steps,
       waterGoalLitres: targets.waterLitres,
       waterDoneLitres: 0,
       biscuitsAvoided: false,
@@ -57,7 +74,7 @@ router.get("/habits/today", async (req, res) => {
     id: log.id,
     date: log.date,
     stepsGoal: targets.steps,
-    stepsDone: log.stepsDone,
+    stepsDone: Math.max(log.stepsDone, steps),
     waterGoalLitres: targets.waterLitres,
     waterDoneLitres: log.waterDoneLitres,
     biscuitsAvoided: log.biscuitsAvoided,

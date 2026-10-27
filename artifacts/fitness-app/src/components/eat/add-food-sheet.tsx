@@ -69,7 +69,7 @@ export function AddFoodSheet({
       .map<Pick>((r) => ({ name: r.name, portion: "1 serving (recipe)", calories: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat, source: "recipe" }));
     const mine = (recent ?? [])
       .filter((r) => !q || r.name.toLowerCase().includes(q))
-      .map<Pick>((r) => ({ name: r.name, portion: "1 portion, as you logged it", calories: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat, source: "recent" }));
+      .map<Pick>((r) => ({ name: r.name, portion: "1 portion, same as last time", calories: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat, source: "recent" }));
     if (!q) {
       // No search yet: your recent foods, then popular picks for this meal
       const popular = FOODS.filter((f) => f.slot === slot)
@@ -105,7 +105,7 @@ export function AddFoodSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="mx-auto flex max-h-[92dvh] w-full max-w-xl flex-col gap-0 rounded-t-3xl p-0 pb-[env(safe-area-inset-bottom)]"
+        className="mx-auto flex max-h-[92dvh] w-full max-w-xl flex-col gap-0 rounded-t-3xl p-0 pb-[env(safe-area-inset-bottom)] md:inset-auto md:bottom-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-3xl md:border md:pb-0 md:data-[state=open]:slide-in-from-bottom-4 md:data-[state=closed]:slide-out-to-bottom-4 md:data-[state=open]:zoom-in-95 md:max-h-[85vh]"
       >
         <SheetHeader className="space-y-1 border-b px-5 pb-4 pt-5 text-left">
           <div className="flex items-center gap-2">
@@ -161,6 +161,7 @@ export function AddFoodSheet({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search: jollof, eba, egg, suya…"
+                  aria-label="Search foods"
                   className="h-11 pl-9 pr-9 text-base"
                   data-testid="input-food-search"
                 />
@@ -327,8 +328,8 @@ function AiStep({ onEstimate }: { onEstimate: (p: Pick) => void }) {
       {
         onSuccess: (r) =>
           onEstimate({
-            name: text.trim() || r.mealName,
-            portion: "what you described",
+            name: r.mealName,
+            portion: text.trim() ? `as described: "${text.trim().slice(0, 60)}"` : "the portion in your photo",
             calories: r.calories,
             protein: r.protein,
             carbs: r.carbs,

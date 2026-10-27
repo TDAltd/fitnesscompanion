@@ -1,3 +1,4 @@
+import { Link } from "wouter";
 import { format, parseISO, subDays } from "date-fns";
 import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Moon, Footprints } from "lucide-react";
@@ -54,7 +55,17 @@ export function HealthTrends() {
           <p className="mb-1 flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
             <Moon className="h-3.5 w-3.5" /> Sleep (hours)
           </p>
-          {chart("sleep", "hsl(var(--primary))", 7, "h")}
+          {rows.some((d) => d.sleep != null) ? (
+            chart("sleep", "hsl(var(--primary))", 7, "h")
+          ) : (
+            <div className="flex h-48 flex-col items-center justify-center gap-1 rounded-lg bg-muted/40 px-4 text-center text-sm" data-testid="sleep-empty">
+              <p className="font-semibold">No sleep data yet</p>
+              <p className="text-xs text-muted-foreground">
+                Steps are arriving, but sleep isn't. In the Shortcut, the Sleep step should only filter "Value is not In Bed".{" "}
+                <Link href="/connect-health" className="font-semibold text-primary">See the guide</Link>
+              </p>
+            </div>
+          )}
         </div>
         <div>
           <p className="mb-1 flex items-center gap-1.5 text-xs font-bold text-muted-foreground">

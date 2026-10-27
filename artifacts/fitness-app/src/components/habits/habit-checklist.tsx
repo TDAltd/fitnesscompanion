@@ -175,12 +175,14 @@ export function HabitChecklist() {
                 <p className="text-xs text-muted-foreground mt-0.5">Keep it for planned treats</p>
               </div>
             </div>
-            <Checkbox 
-              id="biscuits" 
-              className="h-6 w-6"
-              checked={localState.biscuitsAvoided}
-              onCheckedChange={(checked) => updateHabits({ biscuitsAvoided: !!checked })}
-            />
+            <label htmlFor="biscuits" className="-m-2.5 flex h-11 w-11 cursor-pointer items-center justify-center">
+              <Checkbox
+                id="biscuits"
+                className="h-7 w-7"
+                checked={localState.biscuitsAvoided}
+                onCheckedChange={(checked) => updateHabits({ biscuitsAvoided: !!checked })}
+              />
+            </label>
           </div>
 
           {/* Water */}
@@ -190,7 +192,7 @@ export function HabitChecklist() {
                 <Droplets className="h-5 w-5 text-dusk" />
               </div>
               <div className="flex-1">
-                <Label className="font-bold text-base">Water</Label>
+                <p className="font-bold text-base" id="water-label">Water</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Goal: {waterGoal}L</p>
               </div>
             </div>
@@ -198,19 +200,21 @@ export function HabitChecklist() {
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="h-8 w-8 rounded-full"
+                className="h-11 w-11 rounded-full text-lg"
+                aria-label="Half a litre less water"
                 onClick={() => updateHabits({ waterDoneLitres: Math.max(0, localState.waterDoneLitres - 0.5) })}
                 disabled={localState.waterDoneLitres <= 0}
               >
                 -
               </Button>
-              <div className="w-16 text-center font-bold">
+              <div className="w-14 text-center font-bold" aria-live="polite" aria-labelledby="water-label">
                 {localState.waterDoneLitres.toFixed(1)}L
               </div>
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="h-8 w-8 rounded-full"
+                className="h-11 w-11 rounded-full text-lg"
+                aria-label="Half a litre more water"
                 onClick={() => updateHabits({ waterDoneLitres: localState.waterDoneLitres + 0.5 })}
               >
                 +
@@ -225,17 +229,19 @@ export function HabitChecklist() {
                 <Activity className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <Label className="font-bold text-base">Steps</Label>
+                <Label htmlFor="steps-done" className="font-bold text-base">Steps</Label>
                 <p className="text-xs text-muted-foreground mt-0.5">Goal: {stepsGoal.toLocaleString()}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Input 
-                type="number" 
-                value={localState.stepsDone || ''} 
+              <Input
+                id="steps-done"
+                type="number"
+                inputMode="numeric"
+                value={localState.stepsDone || ''}
                 onChange={(e) => setLocalState({ ...localState, stepsDone: Number(e.target.value) })}
                 onBlur={() => updateHabits({ stepsDone: localState.stepsDone })}
-                className="w-full sm:w-24 text-right font-bold"
+                className="h-11 w-full sm:w-28 text-right font-bold"
                 placeholder="0"
               />
               <span className="text-sm font-bold text-muted-foreground">steps</span>
@@ -243,7 +249,7 @@ export function HabitChecklist() {
           </div>
 
           {/* Food comes from the Eat diary (synced to habits automatically) */}
-          <Link href="/meals" className="p-4 flex items-center justify-between gap-3 hover:bg-muted/10 transition-colors">
+          <Link href="/eat" className="p-4 flex items-center justify-between gap-3 hover:bg-muted/10 transition-colors">
             <div className="flex items-center gap-3">
               <div className="bg-dusk/10 p-2 rounded-md">
                 <Utensils className="h-5 w-5 text-dusk" />

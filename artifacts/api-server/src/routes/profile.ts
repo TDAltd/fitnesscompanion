@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { uid } from "../lib/auth";
-import { db, userProfileTable } from "@workspace/db";
+import { db, userProfileTable, weightLogsTable } from "@workspace/db";
 import { UpsertProfileBody } from "@workspace/api-zod";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 const router = Router();
 
@@ -123,6 +123,21 @@ router.post("/profile", async (req, res) => {
       })
       .returning();
     profile = inserted;
+  }
+  {
+    // One weight history: the weight in your answers becomes a weigh-in when it's new or changed
+    const weight = body.currentWeightKg;
+    if (weight != null) {
+      const [latest] = await db
+        .select()
+        .from(weightLogsTable)
+        .where(eq(weightLogsTable.userId, uid(req)))
+        .orderBy(desc(weightLogsTable.loggedAt))
+        .limit(1);
+      if (!latest || Math.abs(latest.weightKg - weight) >= 0.05) {
+        await db.insert(weightLogsTable).values({ userId: uid(req), weightKg: weight, notes: latest ? "From updated answers" : "Starting weight" });
+      }
+    }
   }
 
   res.json({

@@ -171,6 +171,16 @@ Changing the database schema: edit `lib/db/src/schema/*`, then run `pnpm run db:
 
 Changing the API contract: edit `lib/api-spec/openapi.yaml`, then run `pnpm --filter @workspace/api-spec run codegen`.
 
+## Consistency test
+
+Checks that Today and Progress agree (rest days, off-plan workouts, starting weight, synced steps, short food names). Run it against a **local** server, never the live site; it creates and deletes a test account:
+
+```bash
+pnpm --filter @workspace/scripts run test:consistency http://localhost:3000
+```
+
+Screen checks run too when Playwright is installed globally; otherwise only the API checks run.
+
 ## Security notes
 
 - Passwords are hashed with scrypt; sessions are random tokens in an httpOnly cookie, stored hashed in the `sessions` table, 30-day expiry

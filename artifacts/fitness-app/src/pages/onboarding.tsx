@@ -205,7 +205,7 @@ export default function OnboardingPage() {
         queryClient.setQueryData(getGetProfileQueryKey(), savedProfile);
         void queryClient.invalidateQueries({ queryKey: getGetProfileQueryKey() });
         setSaved(true);
-        window.setTimeout(() => setLocation("/dashboard"), 900);
+        window.setTimeout(() => setLocation("/today"), 900);
       },
     });
   }

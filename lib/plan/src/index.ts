@@ -3,7 +3,7 @@ import { buildSchedule, buildSessions } from "./workouts";
 import type { Guideline, Plan, PlanProfile, Targets, TargetOverrides } from "./types";
 
 export * from "./types";
-export { computeTargets, PACES, calorieFloor, restingCalories, bmi, ACTIVITY_MULTIPLIERS } from "./targets";
+export { computeTargets, PACES, kgPerWeek, calorieFloor, restingCalories, bmi, ACTIVITY_MULTIPLIERS } from "./targets";
 export { buildSchedule, buildSessions, DAY_NAMES } from "./workouts";
 
 const fmtKg = (n: number) => `${Math.round(n * 10) / 10}kg`;
@@ -58,7 +58,7 @@ function buildGuidelines(p: PlanProfile, t: Targets): Guideline[] {
       details: [
         `Start: ${fmtKg(start)}`,
         `Goal: ${fmtKg(goal)}`,
-        `Pace: about ${Math.abs(t.weeklyChangeKg).toFixed(2)}kg per week`,
+        `Pace: about ${Math.abs(t.weeklyChangeKg).toFixed(2).replace(/0$/, "")} kg a week`,
         weeks > 26
           ? "This is a long journey: celebrate every 5kg milestone"
           : "Weigh in at the same time each week, and judge the trend, not single days",

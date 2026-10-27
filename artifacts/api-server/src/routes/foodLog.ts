@@ -3,6 +3,7 @@ import { and, between, desc, eq, gte, sql } from "drizzle-orm";
 import { db, mealPlanTable, usageEventsTable } from "@workspace/db";
 import { uid } from "../lib/auth";
 import { addDays, todayFor } from "../lib/dates";
+import { tidyFoodName } from "../lib/food-name";
 
 /**
  * Food diary (the Eat page). Uses the same table as the old meal plan, so existing entries,
@@ -40,7 +41,7 @@ router.get("/food-log", async (req, res) => {
 
 router.post("/food-log", async (req, res) => {
   const b = (req.body ?? {}) as Record<string, unknown>;
-  const name = typeof b.name === "string" ? b.name.trim().slice(0, 120) : "";
+  const name = typeof b.name === "string" ? tidyFoodName(b.name).slice(0, 120) : "";
   const slot = typeof b.slot === "string" && (SLOTS as readonly string[]).includes(b.slot) ? b.slot : null;
   const servings = Number(b.servings ?? 1);
   const per = (k: string, max: number) => {
@@ -104,7 +105,7 @@ router.get("/food-log/recent", async (req, res) => {
     .groupBy(mealPlanTable.mealName)
     .orderBy(desc(sql`count(*)`), desc(sql`max(${mealPlanTable.createdAt})`))
     .limit(12);
-  res.json(rows.map((r) => ({ ...r, slot: toSlot(r.slot) })));
+  res.json(rows.map(({ last: _last, ...r }) => ({ ...r, name: tidyFoodName(r.name), slot: toSlot(r.slot) })));
 });
 
 /** Daily calorie/protein totals between two dates (for the weekly summary). */

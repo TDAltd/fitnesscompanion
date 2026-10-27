@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Link } from "wouter";
+import { WeightLogDialog } from "@/components/forms/weight-log-dialog";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/page-header";
@@ -106,7 +107,9 @@ export default function StatsPage() {
     return { value: bmi.toFixed(1), category, colorClass, progressValue, idealMin: idealMin.toFixed(1), idealMax: idealMax.toFixed(1), diffToGoal: (currentWeightKg - goalWeightKg).toFixed(1) };
   }, [heightCm, currentWeightKg, goalWeightKg]);
 
-  function onSubmit(data: ProfileFormValues) {
+  function onSubmit(values: ProfileFormValues) {
+    // Weight is only changed with "Log weight", so every change lands in your weight history
+    const { currentWeightKg: _weight, ...data } = values;
     upsertProfile.mutate({ data }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetProfileQueryKey() });
@@ -220,8 +223,7 @@ export default function StatsPage() {
                   <FormField control={form.control} name="currentWeightKg" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Weight (kg)</FormLabel>
-                      <FormControl><Input type="number" step="0.1" {...field} /></FormControl>
-                      <FormMessage />
+                      <FormControl><Input type="number" readOnly tabIndex={-1} className="bg-muted/50 text-muted-foreground" aria-describedby="weight-help" {...field} /></FormControl>
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="goalWeightKg" render={({ field }) => (
@@ -231,6 +233,10 @@ export default function StatsPage() {
                       <FormMessage />
                     </FormItem>
                   )} />
+                </div>
+                <div id="weight-help" className="-mt-1 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                  <span>Weight changes go through Log weight, so your history stays in one place.</span>
+                  <WeightLogDialog currentWeight={profile?.currentWeightKg ?? undefined} />
                 </div>
                 <FormField control={form.control} name="activityLevel" render={({ field }) => (
                   <FormItem>

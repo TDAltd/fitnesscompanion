@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { uid } from "../lib/auth";
-import { db, weightLogsTable } from "@workspace/db";
+import { db, weightLogsTable, userProfileTable } from "@workspace/db";
 import { and, desc, eq } from "drizzle-orm";
 import { CreateWeightLogBody, DeleteWeightLogParams } from "@workspace/api-zod";
 
@@ -33,6 +33,8 @@ router.post("/weight", async (req, res) => {
       loggedAt: body.loggedAt ? new Date(body.loggedAt) : new Date(),
     })
     .returning();
+  // The plan's calorie and protein targets follow your latest weight
+  await db.update(userProfileTable).set({ currentWeightKg: inserted.weightKg, updatedAt: new Date() }).where(eq(userProfileTable.userId, uid(req)));
 
   res.status(201).json({
     id: inserted.id,

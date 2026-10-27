@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { InstallPrompt } from "@/components/today/install-prompt";
 import { WeeklyCheckIn } from "@/components/today/weekly-check-in";
 import { Link } from "wouter";
-import { Check, Dumbbell, Footprints, Droplets, Salad, Beef, Ban, Scale, ChevronRight } from "lucide-react";
+import { Check, Dumbbell, Footprints, Droplets, Salad, Beef, Ban, Scale, ChevronRight, Moon } from "lucide-react";
 import {
   useGetProgressSummary,
   getGetProgressSummaryQueryKey,
@@ -29,6 +29,7 @@ import { HealthCard } from "@/components/health/health-card";
 import { RhythmRing } from "@/components/today/rhythm-ring";
 import { usePlan } from "@/lib/plan";
 import { cn } from "@/lib/utils";
+import { caloriesMet, proteinMet } from "@/lib/day-score";
 
 function greeting(hour: number) {
   if (hour < 12) return "Good morning";
@@ -60,14 +61,17 @@ export default function DashboardPage() {
   const stepsGoal = habits?.stepsGoal || plan?.targets.steps || 8000;
   const waterGoal = habits?.waterGoalLitres || plan?.targets.waterLitres || 2.5;
 
-  // The six things that make up "today's plan"
+  // The things that make up "today's plan". Same rules as the Progress week grid (lib/day-score).
+  // A rest day with no workout is neutral: shown, but not counted either way.
+  const restToday = Boolean(scheduled?.rest) && !workedOutToday;
   const items = [
     {
       key: "move",
       icon: Dumbbell,
-      label: scheduled?.rest ? "Rest day" : "Workout",
-      done: scheduled?.rest ? true : workedOutToday,
-      detail: scheduled?.rest ? "Recovery counts" : workedOutToday ? "Logged" : scheduled?.workout ?? "Planned session",
+      label: scheduled?.rest ? (workedOutToday ? "Bonus workout" : "Rest day") : "Workout",
+      done: workedOutToday,
+      neutral: restToday,
+      detail: restToday ? "Not counted today" : workedOutToday ? "Logged" : scheduled?.workout ?? "Planned session",
     },
     {
       key: "steps",
@@ -88,14 +92,14 @@ export default function DashboardPage() {
       icon: Salad,
       label: "Calories",
       // "Done" once you've eaten most of your target without going over
-      done: calories >= calTarget * 0.8 && calories <= calTarget + 50,
+      done: caloriesMet(calories, calTarget),
       detail: calories > 0 ? `${calories.toLocaleString()} of ${calTarget.toLocaleString()} kcal` : "Nothing logged yet",
     },
     {
       key: "protein",
       icon: Beef,
       label: "Protein",
-      done: protein >= proteinTarget - 10,
+      done: proteinMet(protein, proteinTarget),
       detail: `${protein}g of ${proteinTarget}g`,
     },
     {
@@ -106,7 +110,9 @@ export default function DashboardPage() {
       detail: habits?.biscuitsAvoided ? "Done" : "Tick it off tonight",
     },
   ];
-  const doneCount = items.filter((i) => i.done).length;
+  const counted = items.filter((i) => !("neutral" in i && i.neutral));
+  const doneCount = counted.filter((i) => i.done).length;
+  const totalCount = counted.length;
   const firstName = profile?.name?.trim().split(/\s+/)[0];
 
   return (
@@ -123,17 +129,17 @@ export default function DashboardPage() {
       {/* Daily rhythm */}
       <Card className="overflow-hidden">
         <CardContent className="flex flex-col items-center gap-6 p-6 sm:flex-row sm:items-center sm:gap-10 md:p-8">
-          <RhythmRing done={doneCount} total={items.length} />
+          <RhythmRing done={doneCount} total={totalCount} />
           <div className="w-full min-w-0 flex-1">
             <p className="mb-3 font-display text-lg font-medium">
-              {doneCount === items.length
+              {doneCount === totalCount
                 ? "Everything done today. Well paced."
                 : doneCount === 0
                   ? "Your plan for today"
-                  : `${items.length - doneCount} left for today`}
+                  : `${totalCount - doneCount} left for today`}
             </p>
             <ul className="grid gap-x-6 gap-y-2.5 sm:grid-cols-2">
-              {items.map(({ key, icon: Icon, label, done, detail }) => (
+              {items.map(({ key, icon: Icon, label, done, detail, ...rest }) => (
                 <li key={key} className="flex items-center gap-3" data-testid={`today-item-${key}`}>
                   <span
                     className={cn(
@@ -141,7 +147,7 @@ export default function DashboardPage() {
                       done ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
                     )}
                   >
-                    {done ? <Check className="h-4 w-4" strokeWidth={3} /> : <Icon className="h-4 w-4" />}
+                    {"neutral" in rest && rest.neutral ? <Moon className="h-4 w-4" /> : done ? <Check className="h-4 w-4" strokeWidth={3} /> : <Icon className="h-4 w-4" />}
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold">{label}</span>
@@ -173,7 +179,7 @@ export default function DashboardPage() {
               <WorkoutLogDialog defaultName={scheduled?.workout} isRest={scheduled?.rest} />
               {!scheduled?.rest && (
                 <Button asChild variant="ghost" size="sm" className="gap-1">
-                  <Link href="/workout">
+                  <Link href="/train">
                     See exercises <ChevronRight className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -211,7 +217,7 @@ export default function DashboardPage() {
               </div>
             )}
             <Button asChild variant="outline" size="sm" className="mt-auto w-fit">
-              <Link href="/meals">{(meals?.length ?? 0) > 0 ? "Add or change meals" : "Plan today's meals"}</Link>
+              <Link href="/eat">{(meals?.length ?? 0) > 0 ? "Add or change meals" : "Plan today's meals"}</Link>
             </Button>
           </CardContent>
         </Card>

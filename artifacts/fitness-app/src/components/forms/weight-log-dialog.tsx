@@ -27,7 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useCreateWeightLog, getListWeightLogsQueryKey, getGetProgressSummaryQueryKey } from "@workspace/api-client-react";
+import { useCreateWeightLog, getListWeightLogsQueryKey, getGetProgressSummaryQueryKey, getGetProfileQueryKey } from "@workspace/api-client-react";
 
 const formSchema = z.object({
   weightKg: z.coerce.number().min(30, "Weight must be valid").max(200, "Weight must be valid"),
@@ -65,6 +65,8 @@ export function WeightLogDialog({ currentWeight }: WeightLogDialogProps) {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListWeightLogsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetProgressSummaryQueryKey() });
+          // Your plan's targets follow the latest weight
+          queryClient.invalidateQueries({ queryKey: getGetProfileQueryKey() });
           setOpen(false);
           form.reset();
           toast({

@@ -137,7 +137,7 @@ export default function MyPlanPage() {
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
             Exercises for each session are on the{" "}
-            <Link href="/workout" className="font-semibold text-primary hover:underline">Workout</Link> page.
+            <Link href="/train" className="font-semibold text-primary hover:underline">Train</Link> page.
           </p>
         </CardContent>
       </Card>
@@ -286,8 +286,8 @@ function PaceCard({ plan }: { plan: Plan }) {
             );
           })}
         </div>
-        {!t.pace && !t.overridden.calories && (
-          <p className="text-xs text-muted-foreground">Right now the app picks a pace for you ({t.calories.toLocaleString()} kcal a day).</p>
+        {t.pace && t.paceIsDefault && !t.overridden.calories && (
+          <p className="text-xs text-muted-foreground">The app picked {PACES[t.pace].label.toLowerCase()} for you. Tap another to change it.</p>
         )}
         {t.overridden.calories && (
           <p className="text-xs text-muted-foreground">You've typed your own calorie target below. Picking a pace replaces it.</p>

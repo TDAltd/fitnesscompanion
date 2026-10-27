@@ -108,13 +108,18 @@ function Router() {
     <AppLayout>
       <Switch>
         <Route path="/">
-          <Redirect to="/dashboard" />
+          <Redirect to="/today" />
         </Route>
-        <Route path="/dashboard" component={DashboardPage} />
+        <Route path="/today" component={DashboardPage} />
         <Route path="/progress" component={ProgressPage} />
-        <Route path="/workout" component={WorkoutPage} />
-        <Route path="/meals" component={MealsPage} />
-        <Route path="/stats" component={StatsPage} />
+        <Route path="/train" component={WorkoutPage} />
+        <Route path="/eat" component={MealsPage} />
+        <Route path="/body" component={StatsPage} />
+        {/* Old addresses still work */}
+        <Route path="/dashboard">{() => <Redirect to="/today" replace />}</Route>
+        <Route path="/workout">{() => <Redirect to="/train" replace />}</Route>
+        <Route path="/meals">{() => <Redirect to="/eat" replace />}</Route>
+        <Route path="/stats">{() => <Redirect to="/body" replace />}</Route>
         <Route path="/calorie-calculator">{() => <Redirect to="/plan" />}</Route>
         <Route path="/me" component={MePage} />
         <Route path="/plan" component={MyPlanPage} />

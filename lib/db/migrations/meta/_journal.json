@@ -50,6 +50,13 @@
       "when": 1792950925962,
       "tag": "0006_groovy_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793085286005,
+      "tag": "0007_starting_weight",
+      "breakpoints": true
     }
   ]
 }

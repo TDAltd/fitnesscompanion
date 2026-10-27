@@ -19,9 +19,9 @@ router.get("/stats/summary", async (req, res) => {
     .where(eq(userProfileTable.userId, userId))
     .limit(1);
 
-  // Start = weight entered at onboarding, else the oldest log. Goal comes from the profile.
+  // Start = the first weigh-in (your setup weight is saved as one). Goal comes from the profile.
   const oldestLog = weights.length > 0 ? weights[weights.length - 1].weightKg : null;
-  const START_WEIGHT = profile?.currentWeightKg ?? oldestLog ?? 0;
+  const START_WEIGHT = oldestLog ?? profile?.currentWeightKg ?? 0;
   const currentWeight = weights.length > 0 ? weights[0].weightKg : START_WEIGHT;
   const GOAL_WEIGHT = profile?.goalWeightKg ?? currentWeight;
   const weightLost = Math.max(0, START_WEIGHT - currentWeight);

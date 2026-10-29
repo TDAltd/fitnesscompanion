@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Camera, ChevronRight, History, Loader2, PencilLine, Search, Sparkles, X } from "lucide-react";
+import { ArrowLeft, Camera, ChevronRight, History, Image as ImageIcon, Loader2, PencilLine, Search, Sparkles, X } from "lucide-react";
 import { useGetProfile, getGetProfileQueryKey, useNutritionLookup } from "@workspace/api-client-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -329,6 +329,7 @@ function AiStep({ onEstimate }: { onEstimate: (p: Pick) => void }) {
   const [extra, setExtra] = useState("");
   const [edited, setEdited] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const library = useRef<HTMLInputElement>(null);
   const lookup = useNutritionLookup();
   const { toast } = useToast();
 
@@ -480,31 +481,44 @@ function AiStep({ onEstimate }: { onEstimate: (p: Pick) => void }) {
         />
         <p className="text-xs text-muted-foreground">Tip: tap the microphone on your keyboard to say it instead of typing. Mention amounts for a better estimate.</p>
       </div>
-      <input
-        ref={input}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={async (e) => {
-          const f = e.target.files?.[0];
-          if (!f) return;
-          try {
-            setPhoto(await compressMealPhoto(f));
-          } catch (err) {
-            toast({ title: "Photo couldn't be used", description: (err as Error).message, variant: "destructive" });
-          }
-        }}
-      />
+      {[
+        { ref: input, capture: true },
+        { ref: library, capture: false },
+      ].map(({ ref, capture }) => (
+        <input
+          key={String(capture)}
+          ref={ref}
+          type="file"
+          accept="image/*"
+          // "capture" opens the camera straight away; without it, iPhone offers the photo library
+          {...(capture ? { capture: "environment" as const } : {})}
+          className="hidden"
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (!f) return;
+            try {
+              setPhoto(await compressMealPhoto(f));
+            } catch (err) {
+              toast({ title: "Photo couldn't be used", description: (err as Error).message, variant: "destructive" });
+            }
+          }}
+        />
+      ))}
       {photo ? (
         <div className="relative overflow-hidden rounded-xl border">
           <img src={photo} alt="Your meal" className="max-h-52 w-full object-cover" />
           <Button size="sm" variant="secondary" className="absolute right-2 top-2" onClick={() => setPhoto(null)}>Remove</Button>
         </div>
       ) : (
-        <Button variant="outline" className="h-11 w-full gap-2" onClick={() => input.current?.click()}>
-          <Camera className="h-4 w-4" /> Take or choose a photo
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" className="h-11 gap-2" onClick={() => input.current?.click()} data-testid="button-take-photo">
+            <Camera className="h-4 w-4" /> Take photo
+          </Button>
+          <Button variant="outline" className="h-11 gap-2" onClick={() => library.current?.click()} data-testid="button-choose-photo">
+            <ImageIcon className="h-4 w-4" /> Choose photo
+          </Button>
+        </div>
       )}
       <Button className="h-12 w-full gap-2 text-base" disabled={(!text.trim() && !photo) || lookup.isPending} onClick={() => run(text, true)} data-testid="button-ai-estimate">
         {lookup.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}

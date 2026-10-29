@@ -45,11 +45,6 @@ export default function Meals() {
       <PageHeader
         title="Eat"
         description={view === "diary" ? "Log what you eat. Everything here counts towards today." : "Ideas that fit your plan. Add one to your diary in a tap."}
-        action={
-          <Button className="gap-1.5" onClick={() => openAdd(defaultSlot())} data-testid="button-add-food-header">
-            <Plus className="h-4 w-4" /> Log a meal
-          </Button>
-        }
       />
       <div className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1" role="tablist">
         {(["diary", "recipes"] as const).map((v) => (
@@ -199,7 +194,12 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
         )}
       </Card>
 
-      <LowIntakeNote message={lowNote} onAdd={() => onAdd(defaultSlot())} />
+      {/* Log a meal sits right under the day's summary */}
+      <Button className="h-12 w-full gap-2 text-base" onClick={() => onAdd(defaultSlot())} data-testid="button-add-food-header">
+        <Plus className="h-5 w-5" /> Log a meal
+      </Button>
+
+      <LowIntakeNote message={lowNote} />
 
       {atToday && !habitFocus && !isLoading && <MealIdeas left={left} date={date} slot={defaultSlot()} />}
 

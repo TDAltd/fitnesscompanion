@@ -4,6 +4,7 @@ import { useGetProfile, getGetProfileQueryKey, useNutritionLookup } from "@works
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { FOODS } from "@/lib/foods";
@@ -494,12 +495,13 @@ function AiStep({ onEstimate, quickPicks }: { onEstimate: (p: Pick) => void; qui
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="ai-text" className="font-semibold">What did you eat?</Label>
-        <Input
+        <Textarea
           id="ai-text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="e.g. 1 plate of eba and egusi with 2 pieces of beef"
-          className="h-11 text-base"
+          placeholder="e.g. 1 plate of eba and egusi soup with 2 pieces of beef, and a bottle of water"
+          rows={3}
+          className="min-h-[88px] resize-none text-base"
           maxLength={300}
           data-testid="input-ai-describe"
         />

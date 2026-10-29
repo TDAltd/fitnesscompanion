@@ -18,22 +18,33 @@ export type AiSetup = {
   maxTokens: number;
 };
 
-/** Lighter Gemini models to fall back to when the main one is busy (503/429) or not available (404). */
-const GEMINI_FALLBACKS = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-flash-latest"];
+/**
+ * Gemini models in order of preference for meal estimates: fast first.
+ * The newest "thinking" models are accurate but can take 20+ seconds, too slow for logging a meal.
+ * Only models the key can actually use are tried (see availableGeminiModels).
+ */
+const GEMINI_PREFERRED = [
+  "gemini-2.5-flash",
+  "gemini-flash-latest",
+  "gemini-2.5-flash-lite",
+  "gemini-flash-lite-latest",
+  "gemini-3.5-flash-lite",
+  "gemini-3.6-flash",
+];
 
 export function aiSetup(): AiSetup | null {
   const provider = (process.env.AI_PROVIDER ?? "").toLowerCase() === "gemini" || (!process.env.OPENAI_API_KEY && process.env.GEMINI_API_KEY) ? "gemini" : "openai";
   if (provider === "gemini") {
     const apiKey = process.env.GEMINI_API_KEY ?? process.env.AI_API_KEY;
     if (!apiKey) return null;
-    const model = process.env.AI_MODEL || "gemini-3.8-flash";
+    const model = process.env.AI_MODEL || GEMINI_PREFERRED[0];
     return {
       provider,
       apiKey,
       // Gemini's OpenAI-compatible endpoint: same request format, Google's models
       client: new OpenAI({ apiKey, baseURL: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai/", timeout: 20_000, maxRetries: 0 }),
       model,
-      models: [...new Set([model, ...GEMINI_FALLBACKS])],
+      models: [...new Set([model, ...GEMINI_PREFERRED])],
       jsonMode: false,
       maxTokens: 4000,
     };
@@ -76,8 +87,23 @@ export function aiErrorDetail(err: unknown): string {
 
 const retryable = (err: unknown) => {
   const status = (err as { status?: number }).status;
-  return status === 503 || status === 429 || status === 404 || status === 500 || status === 502;
+  const name = (err as { constructor?: { name?: string } }).constructor?.name ?? "";
+  return status === 503 || status === 429 || status === 404 || status === 500 || status === 502 || name.includes("Timeout");
 };
+
+// Which Gemini models this key can use, remembered for an hour
+let available: { at: number; models: Set<string> } | null = null;
+async function availableGeminiModels(apiKey: string): Promise<Set<string> | null> {
+  if (available && Date.now() - available.at < 60 * 60 * 1000) return available.models;
+  try {
+    const l = await geminiModels(apiKey);
+    if (l.status !== 200 || !l.models.length) return null;
+    available = { at: Date.now(), models: new Set(l.models) };
+    return available.models;
+  } catch {
+    return null; // can't list: just try the preferred order
+  }
+}
 
 /**
  * Ask for a chat completion, moving on to the next model when one is busy or unavailable.
@@ -89,10 +115,22 @@ export async function completeWithFallback(
 ): Promise<{ text: string; model: string }> {
   const started = Date.now();
   let lastErr: unknown;
-  for (const model of ai.models) {
-    if (Date.now() - started > 25_000) break;
+  let models = ai.models;
+  if (ai.provider === "gemini" && !process.env.GEMINI_BASE_URL) {
+    const have = await availableGeminiModels(ai.apiKey);
+    if (have) {
+      const usable = models.filter((m) => have.has(m));
+      if (usable.length) models = usable;
+    }
+  }
+  for (const model of models) {
+    const left = 28_000 - (Date.now() - started);
+    if (left < 4_000) break;
     try {
-      const r = (await ai.client.chat.completions.create({ ...params, model, stream: false })) as OpenAI.Chat.Completions.ChatCompletion;
+      const r = (await ai.client.chat.completions.create(
+        { ...params, model, stream: false },
+        { timeout: Math.min(12_000, left) },
+      )) as OpenAI.Chat.Completions.ChatCompletion;
       const text = r.choices[0]?.message?.content ?? "";
       if (!text.trim()) throw Object.assign(new Error("The AI returned an empty answer"), { status: 503 });
       return { text, model };

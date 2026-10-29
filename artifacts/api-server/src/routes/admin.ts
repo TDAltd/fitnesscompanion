@@ -282,7 +282,7 @@ router.get("/admin/ai-check", async (_req, res) => {
       provider: ai.provider,
       model: r.model,
       ms: Date.now() - started,
-      detail: [r.model !== ai.model ? `${ai.model} was busy or unavailable, so ${r.model} answered.` : `Answered: ${r.text.slice(0, 40)}`, listing].filter(Boolean).join(" "),
+      detail: [r.model !== ai.model ? `${ai.model} was slow or unavailable, so ${r.model} answered.` : `Answered: ${r.text.slice(0, 40)}`, listing].filter(Boolean).join(" "),
     });
   } catch (err) {
     res.json({ configured: true, ok: false, provider: ai.provider, model: ai.model, ms: Date.now() - started, detail: [aiErrorDetail(err), listing].filter(Boolean).join(" | ") });

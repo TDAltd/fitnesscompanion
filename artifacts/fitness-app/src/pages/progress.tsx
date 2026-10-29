@@ -111,10 +111,10 @@ export default function ProgressPage() {
         </Card>
       </div>
 
-      <MilestonesCard />
-
       {/* WEEKLY SUMMARY */}
       <WeeklySummary />
+
+      <MilestonesCard />
 
       <CalorieChart />
 

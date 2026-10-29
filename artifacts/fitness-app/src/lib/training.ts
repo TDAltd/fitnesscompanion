@@ -58,3 +58,41 @@ export function suggestion(last: LoggedSet[] | undefined, range: { min: number; 
 
 export const formatSets = (sets: LoggedSet[]) =>
   sets.map((s) => (s.weightKg ? `${+s.weightKg.toFixed(1)}×${s.reps}` : `${s.reps}`)).join(", ");
+
+// ---------- editing a logged session ----------
+export type SessionSet = { exercise: string; setNumber: number; weightKg: number | null; reps: number };
+export type SessionDetail = { id: number; name: string; type: string; durationMins: number | null; notes: string | null; loggedAt: string; date: string; sets: SessionSet[] };
+
+export const useSessionDetail = (id: number | null) =>
+  useQuery({ queryKey: ["workout-detail", id], queryFn: () => api<SessionDetail>(`/api/workouts/${id}/detail`), enabled: id != null });
+
+function useRefreshTraining() {
+  const qc = useQueryClient();
+  return () =>
+    qc.invalidateQueries({
+      predicate: (q) => {
+        const k = String(q.queryKey[0]).toLowerCase();
+        return k.includes("workout") || k === "exercise-sets" || k.includes("stats") || k.includes("summary") || k === "milestones";
+      },
+    });
+}
+
+export function useEditSession() {
+  const refresh = useRefreshTraining();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: number; name?: string; type?: string; durationMins?: number | null; date?: string; sets?: SessionSet[] }) =>
+      api<unknown>(`/api/workouts/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+    onSuccess: () => void refresh(),
+  });
+}
+
+export function useDeleteSession() {
+  const refresh = useRefreshTraining();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(withBase(`/api/workouts/${id}`), { method: "DELETE", credentials: "same-origin" });
+      if (!res.ok) throw new Error("Couldn't delete that session.");
+    },
+    onSuccess: () => void refresh(),
+  });
+}

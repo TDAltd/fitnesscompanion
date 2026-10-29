@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, ExternalLink, Info, Play, Youtube } from "lucide-react";
 import { TodaySession } from "@/components/train/today-session";
+import { RecentSessions } from "@/components/train/recent-sessions";
 import { EQUIPMENT, type Session } from "@workspace/plan";
 import { SessionLogger } from "@/components/train/session-logger";
 import { Link } from "wouter";
@@ -64,6 +65,15 @@ export default function WorkoutPage() {
       }
       return !v;
     });
+  // Plan sessions start folded on phones (long lists), open on larger screens
+  const [wide] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.("(min-width: 768px)").matches);
+  const [toggled, setToggled] = useState<Set<number>>(new Set());
+  const toggleSession = (id: number) =>
+    setToggled((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   const circuits = (plan?.sessions ?? []).map((s, i) => ({
     session: s,
     id: i + 1,
@@ -80,6 +90,8 @@ export default function WorkoutPage() {
       <PageHeader title="Train" description="Today's session first, then your full week." />
 
       {plan && <TodaySession plan={plan} onStart={setActive} />}
+
+      <RecentSessions />
 
       {profile && (
         <Card className="overflow-hidden border-primary/20 bg-primary/5" data-testid="training-setup">
@@ -138,20 +150,32 @@ export default function WorkoutPage() {
       )}
 
       <h2 className="font-display text-xl font-medium">This week's sessions</h2>
-      <div className="grid gap-6 md:grid-cols-2">
-        {circuits.map((circuit) => (
-          <Card key={circuit.id} className="shadow-sm flex flex-col overflow-hidden">
-            <CardHeader className="pb-4 bg-muted/20 border-b border-border">
-              <div className="flex justify-between items-start gap-4 mb-2">
-                <Badge variant="outline" className={`font-bold ${circuit.badgeColor}`}>
+      <div className="grid items-start gap-4 md:grid-cols-2 md:gap-6">
+        {circuits.map((circuit) => {
+          const isOpen = wide !== toggled.has(circuit.id);
+          return (
+          <Card key={circuit.id} className="shadow-sm flex flex-col overflow-hidden" data-testid={`plan-session-${circuit.id}`}>
+            <button
+              type="button"
+              onClick={() => toggleSession(circuit.id)}
+              aria-expanded={isOpen}
+              className="flex w-full items-start justify-between gap-3 bg-muted/20 px-5 py-4 text-left md:px-6"
+              data-testid={`button-toggle-session-${circuit.id}`}
+            >
+              <span className="min-w-0">
+                <Badge variant="outline" className={`mb-2 font-bold ${circuit.badgeColor}`}>
                   Session {circuit.id}
                 </Badge>
-              </div>
-              <CardTitle className="text-xl tracking-tight leading-tight">{circuit.title}</CardTitle>
-              <div className="space-y-1 mt-3">
-                <p className="text-xs text-muted-foreground">
-                  <strong className="text-foreground">When:</strong> {circuit.when}
-                </p>
+                <span className="block text-lg font-semibold leading-tight tracking-tight">{circuit.title}</span>
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  {circuit.when} · {circuit.exercises.length} exercises
+                </span>
+              </span>
+              <ChevronDown className={`mt-1 h-5 w-5 shrink-0 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
+            </button>
+            {isOpen && (
+            <CardContent className="flex flex-1 flex-col gap-4 border-t border-border pt-4">
+              <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">
                   <strong className="text-foreground">Goal:</strong> {circuit.goal}
                 </p>
@@ -161,8 +185,6 @@ export default function WorkoutPage() {
                   </p>
                 )}
               </div>
-            </CardHeader>
-            <CardContent className="pt-4 flex-1 flex flex-col gap-4">
               <div className="space-y-3">
                 {circuit.exercises.map((exercise, i) => (
                   <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-muted/30 rounded-lg border border-border/50">
@@ -184,8 +206,10 @@ export default function WorkoutPage() {
                 <Play className="h-4 w-4" /> Start session
               </Button>
             </CardContent>
+            )}
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {active && <SessionLogger session={active} open={!!active} onOpenChange={(o) => !o && setActive(null)} />}

@@ -85,6 +85,13 @@
       "when": 1793303825828,
       "tag": "0011_milestones",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793310430783,
+      "tag": "0012_sets_belong_to_session",
+      "breakpoints": true
     }
   ]
 }

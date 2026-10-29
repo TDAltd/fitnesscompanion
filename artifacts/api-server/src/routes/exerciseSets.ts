@@ -94,14 +94,14 @@ router.post("/exercise-sets/session", async (req, res) => {
   const type = typeof b.type === "string" && ["Strength", "Cardio", "Flexibility", "Active Recovery", "Other"].includes(b.type) ? b.type : "Strength";
 
   await db.transaction(async (tx) => {
-    if (sets.length) await tx.insert(exerciseSetsTable).values(sets.map((s) => ({ ...s, userId, date })));
-    await tx.insert(workoutLogsTable).values({
+    const [workout] = await tx.insert(workoutLogsTable).values({
       userId,
       name: title,
       type,
       durationMins: Number.isFinite(durationMins) && durationMins > 0 && durationMins <= 600 ? Math.round(durationMins) : null,
       notes: sets.length ? `${sets.length} sets logged` : null,
-    });
+    }).returning();
+    if (sets.length) await tx.insert(exerciseSetsTable).values(sets.map((s) => ({ ...s, userId, date, workoutId: workout.id })));
   });
   res.status(201).json({ saved: sets.length, date });
 });

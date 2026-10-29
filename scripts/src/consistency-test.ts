@@ -112,6 +112,28 @@ async function main() {
   check("a seen milestone doesn't pop up again", !(await api<M>("/milestones")).body.unseen.includes("first-meal"));
 
   // --- Treat days: at most one in any 7 days
+  // Editing a logged session
+  type Detail = { id: number; name: string; durationMins: number; date: string; sets: { exercise: string; setNumber: number; weightKg: number | null; reps: number }[] };
+  await api("/exercise-sets/session", { method: "POST", body: JSON.stringify({ title: "Test push", type: "Strength", durationMins: 40, sets: [
+    { exercise: "Press", setNumber: 1, weightKg: 20, reps: 10 }, { exercise: "Press", setNumber: 2, weightKg: 20, reps: 8 }, { exercise: "Row", setNumber: 1, weightKg: 15, reps: 12 },
+  ] }) });
+  const wl = (await api<{ id: number; name: string }[]>("/workouts")).body.find((w) => w.name === "Test push");
+  check("logged session appears in workouts", !!wl);
+  if (wl) {
+    const d1 = (await api<Detail>(`/workouts/${wl.id}/detail`)).body;
+    check("session detail carries its sets", d1.sets?.length === 3, JSON.stringify(d1.sets));
+    const patched = await api(`/workouts/${wl.id}`, { method: "PATCH", body: JSON.stringify({ name: "Push day", durationMins: 35, sets: [{ exercise: "Press", setNumber: 1, weightKg: 22.5, reps: 9 }] }) });
+    const d2 = (await api<Detail>(`/workouts/${wl.id}/detail`)).body;
+    check("edit session: name, minutes and sets replaced", patched.status === 200 && d2.name === "Push day" && d2.durationMins === 35 && d2.sets.length === 1 && d2.sets[0].weightKg === 22.5, JSON.stringify(d2));
+    check("edit session: future day refused", (await api(`/workouts/${wl.id}`, { method: "PATCH", body: JSON.stringify({ date: "2099-01-01" }) })).status === 400);
+    check("edit session: someone else's can't be changed", (await api(`/workouts/999999999`, { method: "PATCH", body: JSON.stringify({ name: "x" }) })).status === 404);
+    const last = (await api<Record<string, unknown>>(`/exercise-sets/last?names=Press|Row`)).body;
+    check("removed sets no longer feed 'last time'", !("Row" in last), JSON.stringify(last));
+    await api(`/workouts/${wl.id}`, { method: "DELETE" });
+    const after = (await api<Record<string, unknown>>(`/exercise-sets/last?names=Press|Row`)).body;
+    check("deleting a session removes its sets", Object.keys(after).length === 0, JSON.stringify(after));
+  }
+
   check("treat day can be set today", (await api("/treats", { method: "PUT", body: JSON.stringify({ date: today, on: true }) })).status === 200);
   const second = await api("/treats", { method: "PUT", body: JSON.stringify({ date: last7[3], on: true }) });
   check("a second treat day in the same week is refused", second.status === 409, String(second.status));

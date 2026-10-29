@@ -1,5 +1,6 @@
 import { pgTable, serial, text, integer, real, timestamp, index } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
+import { workoutLogsTable } from "./workoutLogs";
 
 /** One logged set of an exercise (weight x reps), for progressive overload on the Train page. */
 export const exerciseSetsTable = pgTable(
@@ -7,6 +8,8 @@ export const exerciseSetsTable = pgTable(
   {
     id: serial("id").primaryKey(),
     userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+    /** The session these sets belong to; deleting the session deletes its sets */
+    workoutId: integer("workout_id").references(() => workoutLogsTable.id, { onDelete: "cascade" }),
     date: text("date").notNull(), // YYYY-MM-DD, user's local day
     exercise: text("exercise").notNull(),
     setNumber: integer("set_number").notNull(),

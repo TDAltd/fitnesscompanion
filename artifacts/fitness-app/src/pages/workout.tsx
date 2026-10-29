@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ExternalLink, Info, Play, Youtube } from "lucide-react";
+import { ChevronDown, ExternalLink, Info, Play, Youtube } from "lucide-react";
+import { TodaySession } from "@/components/train/today-session";
 import { EQUIPMENT, type Session } from "@workspace/plan";
 import { SessionLogger } from "@/components/train/session-logger";
 import { Link } from "wouter";
@@ -46,6 +47,23 @@ export default function WorkoutPage() {
   });
   const { plan } = usePlan();
   const [active, setActive] = useState<Session | null>(null);
+  // Setup details are folded away by default; remember the choice on this device
+  const [showSetup, setShowSetup] = useState(() => {
+    try {
+      return localStorage.getItem("fc-show-training-setup") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggleSetup = () =>
+    setShowSetup((v) => {
+      try {
+        localStorage.setItem("fc-show-training-setup", v ? "0" : "1");
+      } catch {
+        /* private mode */
+      }
+      return !v;
+    });
   const circuits = (plan?.sessions ?? []).map((s, i) => ({
     session: s,
     id: i + 1,
@@ -59,14 +77,32 @@ export default function WorkoutPage() {
 
   return (
     <div className="space-y-6 md:space-y-8 pb-20">
-      <PageHeader title="Train" description="Your sessions for the week. Each one matches a day in your plan." />
+      <PageHeader title="Train" description="Today's session first, then your full week." />
+
+      {plan && <TodaySession plan={plan} onStart={setActive} />}
 
       {profile && (
-        <Card className="overflow-hidden border-primary/20 bg-primary/5">
-          <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between md:p-6">
+        <Card className="overflow-hidden border-primary/20 bg-primary/5" data-testid="training-setup">
+          <button
+            type="button"
+            onClick={() => toggleSetup()}
+            aria-expanded={showSetup}
+            className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left md:px-6"
+            data-testid="button-toggle-setup"
+          >
+            <span className="min-w-0">
+              <span className="block text-xs font-bold text-primary">Your training setup</span>
+              <span className="block truncate text-sm font-semibold">
+                {profile.fitnessGoal || "General fitness"} · {profile.workoutDaysPerWeek ?? 3} days · {profile.workoutLocation || "Flexible"}
+              </span>
+            </span>
+            <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-primary">
+              {showSetup ? "Hide" : "Show"} <ChevronDown className={`h-4 w-4 transition-transform ${showSetup ? "rotate-180" : ""}`} />
+            </span>
+          </button>
+          {showSetup && (
+          <CardContent className="flex flex-col gap-4 border-t border-primary/10 p-5 pt-4 sm:flex-row sm:items-center sm:justify-between md:p-6 md:pt-4">
             <div>
-              <p className="text-[10px] font-bold text-primary">Your training setup</p>
-              <h2 className="mt-1 text-lg font-semibold">{profile.fitnessGoal || "General fitness"}</h2>
               <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 {profile.workoutDaysPerWeek ?? 3} training days per week · {profile.workoutLocation || "Flexible location"} · {profile.trainingExperience || "Beginner"} level
                 {profile.workoutLocation !== "Gym" && (
@@ -97,9 +133,11 @@ export default function WorkoutPage() {
               <Link href="/onboarding">Change setup</Link>
             </Button>
           </CardContent>
+          )}
         </Card>
       )}
 
+      <h2 className="font-display text-xl font-medium">This week's sessions</h2>
       <div className="grid gap-6 md:grid-cols-2">
         {circuits.map((circuit) => (
           <Card key={circuit.id} className="shadow-sm flex flex-col overflow-hidden">

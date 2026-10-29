@@ -152,7 +152,7 @@ Import **replaces** that account's data, so running it twice won't create duplic
 
 Accounts listed in `ADMIN_EMAILS` (and anyone an admin promotes) are **admin-only**: they log straight into the admin dashboard and can't use the tracking features. Admin accounts are left out of all user numbers. The dashboard shows:
 sign-ups per day, active users (today / 7 days / 30 days), feature use, 1- and 4-week retention,
-and a list of people with their goal, training setup and usage counts. Weights, meals, sleep and
+and a list of people with their goal, training setup and usage counts. Weights, meals and
 body measurements are never shown.
 
 From a person's panel an admin can reset their password (gives a temporary one to pass on), make

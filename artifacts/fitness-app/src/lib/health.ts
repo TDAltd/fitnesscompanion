@@ -4,7 +4,6 @@ import { withBase } from "./base-path";
 export type HealthDay = {
   date: string;
   steps: number | null;
-  sleepMinutes: number | null;
   avgHeartRate: number | null;
   activeEnergyKcal: number | null;
   updatedAt: string;
@@ -66,5 +65,4 @@ export function useRevokeSyncKey() {
   });
 }
 
-export const formatSleep = (minutes: number | null | undefined) =>
-  minutes == null ? "—" : `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`;
+

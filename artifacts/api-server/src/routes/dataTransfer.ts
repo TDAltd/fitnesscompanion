@@ -118,6 +118,8 @@ router.post("/import", async (req, res) => {
         for (const r of mapped) byDate.set(r.date, r);
         mapped = [...byDate.values()];
       }
+      // Sleep isn't synced any more, so old backups don't bring it back
+      if (key === "health_daily") mapped = mapped.map((r) => ({ ...r, sleepMinutes: null }));
       prepared[key] = mapped;
     }
   } catch (err) {

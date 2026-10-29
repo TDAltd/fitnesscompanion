@@ -1,13 +1,11 @@
 import { Link } from "wouter";
 import { format, formatDistanceToNowStrict, parseISO } from "date-fns";
-import { Activity, AlertCircle, Flame, Moon, Footprints, RefreshCw, Smartphone } from "lucide-react";
+import { Activity, AlertCircle, Flame, Footprints, RefreshCw, Smartphone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatSleep, useHealthDays, useSyncStatus } from "@/lib/health";
+import { useHealthDays, useSyncStatus } from "@/lib/health";
 import { usePlan } from "@/lib/plan";
-
-const SLEEP_TARGET_MIN = 7 * 60;
 
 /** Dashboard card: latest numbers synced from Apple Health, or a prompt to connect. */
 export function HealthCard() {
@@ -30,7 +28,7 @@ export function HealthCard() {
           <div className="flex items-center gap-3">
             <Smartphone className="h-6 w-6 text-primary" />
             <div>
-              <p className="font-bold">Sync steps & sleep from your phone or watch</p>
+              <p className="font-bold">Sync steps from your phone or watch</p>
               <p className="text-sm text-muted-foreground">Works with iPhone, Apple Watch, Oraimo, Xiaomi, Huawei, Amazfit and smart rings.</p>
             </div>
           </div>
@@ -47,16 +45,8 @@ export function HealthCard() {
   const stale = !lastSync || Date.now() - lastSync.getTime() > 36 * 60 * 60 * 1000;
   // Opens the "Sync Fitness" Shortcut on the iPhone (only the phone can read Apple Health)
   const runShortcut = "shortcuts://run-shortcut?name=" + encodeURIComponent("Sync Fitness");
-  const sleepMin = latest?.sleepMinutes ?? null;
   const stepsGoal = plan?.targets.steps ?? 8000;
   const tiles = [
-    {
-      icon: Moon,
-      label: "Sleep",
-      value: formatSleep(sleepMin),
-      sub: sleepMin == null ? "no data" : sleepMin >= SLEEP_TARGET_MIN ? "7h+ target met" : `${formatSleep(SLEEP_TARGET_MIN - sleepMin)} short of 7h`,
-      good: sleepMin != null && sleepMin >= SLEEP_TARGET_MIN,
-    },
     {
       icon: Footprints,
       label: "Steps",
@@ -101,7 +91,7 @@ export function HealthCard() {
             )}
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4">
           {tiles.map(({ icon: Icon, label, value, sub, good }) => (
             <div key={label} className="space-y-1" data-testid={`health-${label.toLowerCase().replace(/\s+/g, "-")}`}>
               <p className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">

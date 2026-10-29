@@ -37,24 +37,6 @@ function toNumbers(value: unknown): number[] {
 const sum = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) : null);
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
 
-/**
- * Sleep can arrive as seconds (Shortcuts durations), minutes or hours, or as text like
- * "7 hr 32 min" / "7:32". Returns minutes.
- */
-export function parseSleepMinutes(value: unknown): number | null {
-  if (typeof value === "string") {
-    const hm = value.match(/(\d+)\s*(h|hr|hrs|hour|hours)\b(?:\s*(\d+)\s*(m|min|mins|minutes)\b)?/i);
-    if (hm) return Number(hm[1]) * 60 + (hm[3] ? Number(hm[3]) : 0);
-    const colon = value.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-    if (colon) return Number(colon[1]) * 60 + Number(colon[2]);
-  }
-  const total = sum(toNumbers(value));
-  if (total == null || total <= 0) return null;
-  if (total >= 1440) return Math.round(total / 60); // seconds
-  if (total > 24) return Math.round(total); // minutes
-  return Math.round(total * 60); // hours
-}
-
 function inRange(n: number | null, min: number, max: number): number | null {
   return n != null && n >= min && n <= max ? Math.round(n) : null;
 }
@@ -66,8 +48,6 @@ function parseDate(value: unknown): string | null {
   const d = new Date(v);
   return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
 }
-
-const fmtSleep = (m: number) => `${Math.floor(m / 60)}h ${m % 60}m`;
 
 // ---------- public route (sync key, no login) ----------
 
@@ -117,7 +97,7 @@ healthSyncPublicRouter.post("/health-sync", async (req, res) => {
   const [owner] = await db.select({ timezone: usersTable.timezone }).from(usersTable).where(eq(usersTable.id, userId));
   const date = parseDate(body.date) ?? dateInTz(new Date(), owner?.timezone ?? DEFAULT_TZ);
   const steps = inRange(sum(toNumbers(body.steps)), 0, 150_000);
-  const sleepMinutes = inRange(parseSleepMinutes(body.sleep ?? body.sleepMinutes ?? body.sleepHours), 1, 1440);
+  // Sleep is no longer synced: older Shortcuts may still send it, and it's ignored
   const avgHeartRate = inRange(avg(toNumbers(body.heartRate ?? body.avgHeartRate)), 25, 230);
   // If the Shortcut's unit was left on "cal" (small calories) the number is ~1000x too big; convert it
   const rawEnergy = sum(toNumbers(body.activeEnergy ?? body.activeEnergyKcal));
@@ -126,7 +106,6 @@ healthSyncPublicRouter.post("/health-sync", async (req, res) => {
   // Only overwrite fields the Shortcut actually sent this time
   const values = {
     ...(steps != null ? { steps } : {}),
-    ...(sleepMinutes != null ? { sleepMinutes } : {}),
     ...(avgHeartRate != null ? { avgHeartRate } : {}),
     ...(activeEnergyKcal != null ? { activeEnergyKcal } : {}),
   };
@@ -162,7 +141,6 @@ healthSyncPublicRouter.post("/health-sync", async (req, res) => {
 
   const parts = [
     steps != null ? `${steps.toLocaleString("en")} steps` : null,
-    sleepMinutes != null ? `${fmtSleep(sleepMinutes)} sleep` : null,
     avgHeartRate != null ? `${avgHeartRate} bpm avg` : null,
     activeEnergyKcal != null ? `${activeEnergyKcal} kcal active` : null,
   ].filter(Boolean);
@@ -170,7 +148,7 @@ healthSyncPublicRouter.post("/health-sync", async (req, res) => {
   res.json({
     ok: true,
     date,
-    saved: { steps, sleepMinutes, avgHeartRate, activeEnergyKcal },
+    saved: { steps, avgHeartRate, activeEnergyKcal },
     message: parts.length ? `Synced ${date}: ${parts.join(", ")}` : `Connected, but no health numbers were found for ${date}.`,
   });
 });
@@ -220,7 +198,6 @@ healthRouter.get("/health", async (req, res) => {
     rows.map((r) => ({
       date: r.date,
       steps: r.steps,
-      sleepMinutes: r.sleepMinutes,
       avgHeartRate: r.avgHeartRate,
       activeEnergyKcal: r.activeEnergyKcal,
       updatedAt: r.updatedAt.toISOString(),

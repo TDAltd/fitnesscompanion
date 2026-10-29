@@ -76,6 +76,8 @@ async function main() {
     body: JSON.stringify({ date: today, steps: 9123, sleep: "6.5", activeEnergy: 300 }),
   });
   check("health sync accepted", sync.ok, String(sync.status));
+  const syncBody = (await sync.json()) as { message: string; saved: Record<string, unknown> };
+  check("sleep sent by an old Shortcut is ignored", !("sleepMinutes" in syncBody.saved) && !/sleep/i.test(syncBody.message), syncBody.message);
   const habitsToday = await api<{ stepsDone: number }>("/habits/today");
   check("synced steps fill today's steps habit", habitsToday.body.stepsDone === 9123, JSON.stringify(habitsToday.body));
 

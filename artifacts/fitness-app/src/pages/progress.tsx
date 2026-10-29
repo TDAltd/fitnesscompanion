@@ -108,7 +108,7 @@ export default function ProgressPage() {
       {/* WEEKLY SUMMARY */}
       <WeeklySummary />
 
-      {/* SLEEP & STEPS FROM APPLE HEALTH */}
+      {/* STEPS FROM APPLE HEALTH */}
       <HealthTrends />
 
       {/* WEIGHT CHART */}

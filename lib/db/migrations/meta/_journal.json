@@ -57,6 +57,13 @@
       "when": 1793085286005,
       "tag": "0007_starting_weight",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793302365901,
+      "tag": "0008_clear_synced_sleep",
+      "breakpoints": true
     }
   ]
 }

@@ -72,7 +72,7 @@ export default function AccountPage() {
       <Card>
         <CardHeader>
           <CardTitle>Health devices</CardTitle>
-          <CardDescription>Sync steps, sleep and active calories from your iPhone, watch or ring every night.</CardDescription>
+          <CardDescription>Sync steps and active calories from your iPhone, watch or ring every night.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button asChild variant="outline" className="gap-2">

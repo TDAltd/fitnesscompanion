@@ -72,7 +72,6 @@ export default function ConnectHealthPage() {
     setDeviceId(id);
     saveDevice(id);
   };
-  const noSleep = device?.id === "iphone";
 
   const makeKey = async () => {
     if (status?.connected && !window.confirm("Make a new key? The old one stops working, so you'll need to update your Shortcut.")) return;
@@ -95,7 +94,7 @@ export default function ConnectHealthPage() {
     <div className="space-y-6 pb-20">
       <PageHeader
         title="Connect your devices"
-        description="Your phone, watch or ring saves to the iPhone Health app. A small Shortcut then sends each day's steps, sleep and active calories here every night."
+        description="Your phone, watch or ring saves to the iPhone Health app. A small Shortcut then sends each day's steps and active calories here every night."
       />
 
       {/* 1. Device */}
@@ -132,7 +131,6 @@ export default function ConnectHealthPage() {
               <div className="flex flex-wrap gap-1.5 text-xs">
                 {[
                   ["Steps", device.gives.steps],
-                  ["Sleep", device.gives.sleep],
                   ["Active calories", device.gives.energy],
                 ].map(([label, v]) => (
                   <span
@@ -140,7 +138,7 @@ export default function ConnectHealthPage() {
                     className={cn("rounded-full px-2.5 py-1 font-semibold", v ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground line-through")}
                   >
                     {label as string}
-                    {v === "needs-setup" ? " (after setup)" : v === "estimate" ? " (estimate)" : ""}
+                    {v === "estimate" ? " (estimate)" : ""}
                   </span>
                 ))}
               </div>
@@ -277,30 +275,20 @@ export default function ConnectHealthPage() {
                 <li><Q>Set Variable</Q>: name <Q>Steps</Q>, to <Q>Sum</Q></li>
               </ul>
             </Step>
-            <Step n={2} title={noSleep ? "Sleep (skip this with iPhone only)" : "Sleep"}>
-              {noSleep && <p>Your iPhone can't measure sleep, so skip this step and leave <Q>sleep</Q> out in step 5.</p>}
-              <ul className={cn("list-disc space-y-1 pl-5", noSleep && "opacity-60")}>
-                <li><Q>Find Health Samples</Q>: Type is <Q>Sleep</Q>, Start Date is <Q>in the last 1 days</Q>, and add the filter <Q>Value is not In Bed</Q>.</li>
-                <li>Wear two sleep trackers to bed (say a watch and a ring)? Also add <Q>Source is</Q> the one you trust, or sleep is counted twice.</li>
-                <li><Q>Get Details of Health Samples</Q>: <Q>Duration</Q></li>
-                <li><Q>Calculate Statistics</Q>: <Q>Sum</Q> (it reads "Sum of Duration")</li>
-                <li><Q>Set Variable</Q>: name <Q>Sleep</Q>, to the <Q>Sum</Q> directly above</li>
-              </ul>
-            </Step>
-            <Step n={3} title="Active calories">
+            <Step n={2} title="Active calories">
               <ul className="list-disc space-y-1 pl-5">
                 <li><Q>Find Health Samples</Q>: Type is <Q>Active Energy</Q>, Start Date is <Q>today</Q>, <Q>Group By</Q> <Q>Day</Q>. Set <Q>Unit</Q> to <Q>kcal</Q> (not "cal").</li>
                 <li><Q>Calculate Statistics</Q>: <Q>Sum</Q></li>
                 <li><Q>Set Variable</Q>: name <Q>Energy</Q>, to the <Q>Sum</Q> directly above</li>
               </ul>
             </Step>
-            <Step n={4} title="Today's date">
+            <Step n={3} title="Today's date">
               <p>
                 <Q>Format Date</Q>: tap the date and choose <Q>Current Date</Q>. Tap the arrow for more options → Date
                 Format <Q>Custom</Q> → type <code className="rounded bg-muted px-1">yyyy-MM-dd</code> (capital MM).
               </p>
             </Step>
-            <Step n={5} title="Send it to the app">
+            <Step n={4} title="Send it to the app">
               <p>Add <Q>Get Contents of URL</Q> and paste the <Q>Web address</Q> from above. Tap the arrow for more options:</p>
               <ul className="list-disc space-y-1 pl-5">
                 <li><Q>Method:</Q> POST</li>
@@ -309,30 +297,29 @@ export default function ConnectHealthPage() {
                   value: paste the <Q>Authorization value</Q> from above (starts with "Bearer").
                 </li>
                 <li>
-                  <Q>Request Body:</Q> <Q>JSON</Q>. Tap <Q>Add new field</Q> → <Q>Text</Q> four times. Type the key
+                  <Q>Request Body:</Q> <Q>JSON</Q>. Tap <Q>Add new field</Q> → <Q>Text</Q> three times. Type the key
                   exactly, then tap the value box and pick the variable:
                   <div className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
                     <span>date</span><span>→ Formatted Date</span>
                     <span>steps</span><span>→ Steps</span>
-                    <span>sleep</span><span>→ Sleep</span>
                     <span>activeEnergy</span><span>→ Energy</span>
                   </div>
                 </li>
               </ul>
               <p>Last, add <Q>Show Notification</Q> and set it to <Q>Contents of URL</Q>, so you see what was synced.</p>
             </Step>
-            <Step n={6} title="Test it">
+            <Step n={5} title="Test it">
               <p>
                 {device?.app ? <>Open <Q>{device.app}</Q> first so your device syncs. Then tap</> : <>Tap</>} <Q>▶</Q> in your shortcut and allow Health
-                access when asked. You should see a notification like <em>"Synced 2026-10-24: 8,432 steps, 7h 32m sleep,
-                412 kcal active"</em>, and this page will show the sync time.
+                access when asked. You should see a notification like <em>"Synced 2026-10-24: 8,432 steps, 412 kcal
+                active"</em>, and this page will show the sync time.
               </p>
               <p>
                 If steps look about double what your device shows, open <Q>Find Health Samples</Q> for Steps and add{" "}
                 <Q>Source is</Q> your watch or ring app.
               </p>
             </Step>
-            <Step n={7} title="Run it every night">
+            <Step n={6} title="Run it every night">
               <p>
                 In Shortcuts tap <Q>Automation</Q> → <Q>+</Q> → <Q>Time of Day</Q> → <Q>10:00 PM</Q>, <Q>Daily</Q> →{" "}
                 <Q>Run Immediately</Q> → <Q>Next</Q> → choose <Q>Sync Fitness</Q>. You can still run it by hand any
@@ -357,7 +344,8 @@ export default function ConnectHealthPage() {
       )}
 
       <p className="text-xs text-muted-foreground">
-        Synced steps fill in your daily checklist automatically. Workouts aren't synced yet, so keep logging them in Train.
+        Set up before? If your Shortcut still has a Sleep step, it keeps working: the app now ignores sleep, so you
+        can delete that step whenever you like. Synced steps fill in your daily checklist automatically. Workouts aren't synced yet, so keep logging them in Train.
       </p>
     </div>
   );

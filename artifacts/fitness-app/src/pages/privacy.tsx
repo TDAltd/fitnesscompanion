@@ -33,10 +33,10 @@ export default function PrivacyPage({ standalone = false }: { standalone?: boole
             <li><b>Account:</b> your email address and a scrambled (hashed) version of your password. We can't see your password.</li>
             <li><b>Your answers:</b> age, sex, height, weight, goal weight, activity level, fitness goal, food preference, training setup, sleep and schedule.</li>
             <li><b>What you log:</b> food, workouts and sets, weight, body measurements, steps, water and habits.</li>
-            <li><b>Apple Health (only if you connect it):</b> daily steps, sleep and active calories sent by your iPhone Shortcut.</li>
+            <li><b>Apple Health (only if you connect it):</b> daily steps and active calories sent by your iPhone Shortcut. We don't collect sleep data from your devices.</li>
             <li><b>Usage:</b> the days you open the app, which features you use, and your device's timezone, so days start at your midnight.</li>
           </ul>
-          <p className="mt-2">Weight, body measurements, sleep and food can say something about your health. We only use them to run your plan and show your progress.</p>
+          <p className="mt-2">Weight, body measurements and food can say something about your health. We only use them to run your plan and show your progress.</p>
         </Section>
 
         <Section title="Why we use it">
@@ -47,7 +47,7 @@ export default function PrivacyPage({ standalone = false }: { standalone?: boole
           <ul className="list-disc space-y-1 pl-5">
             <li><b>Our hosting provider</b> (Namecheap) stores the app and database.</li>
             <li><b>OpenAI</b> receives a meal photo or description only when you tap "Estimate calories". We don't store it, and by default OpenAI doesn't use API data to train its models.</li>
-            <li><b>App admins</b> can see your email, sign-up date, goal, training setup and how often you use features, so they can support you and run the service. They can't see your weights, meals, sleep or measurements.</li>
+            <li><b>App admins</b> can see your email, sign-up date, goal, training setup and how often you use features, so they can support you and run the service. They can't see your weights, meals or measurements.</li>
           </ul>
           <p className="mt-2">We don't sell your information or use it for advertising.</p>
         </Section>

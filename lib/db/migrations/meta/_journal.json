@@ -78,6 +78,13 @@
       "when": 1793303089472,
       "tag": "0010_equipment_birthday",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793303825828,
+      "tag": "0011_milestones",
+      "breakpoints": true
     }
   ]
 }

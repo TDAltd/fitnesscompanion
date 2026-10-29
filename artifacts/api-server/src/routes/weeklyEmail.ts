@@ -15,6 +15,7 @@ import {
 import { calorieFloor } from "@workspace/plan";
 import { targetsForUser } from "./planSettings";
 import { TREAT_KCAL } from "./foodLog";
+import { milestonesFor } from "../lib/milestones";
 import { addDays, dateInTz, DEFAULT_TZ, validTimezone } from "../lib/dates";
 import { appUrl, checkUnsubscribe, emailHtml, mailConfigured, sendMail, unsubscribeToken } from "../lib/mail";
 import { envAdmins } from "../lib/auth";
@@ -108,6 +109,10 @@ async function summarise(user: typeof usersTable.$inferSelect): Promise<Summary 
   } else if (latest) {
     rows.push(["Latest weight", `${latest.weightKg} kg`]);
   }
+
+  // Milestones reached this week (this also records any that were reached but not yet saved)
+  const reached = (await milestonesFor(user.id)).filter((m) => m.earnedAt && !m.backfilled && new Date(m.earnedAt) >= since);
+  if (reached.length) rows.push(["Milestones", reached.map((m) => `${m.icon} ${m.title}`).join(", ")]);
 
   const lines: string[] = [];
   if (nothing) {

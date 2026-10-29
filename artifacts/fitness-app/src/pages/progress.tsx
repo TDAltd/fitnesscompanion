@@ -19,9 +19,14 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { useWeekScores } from "@/lib/day-score";
 import { CalorieChart } from "@/components/progress/calorie-chart";
+import { MilestonesCard } from "@/components/milestones/milestones-card";
+import { useMilestones } from "@/lib/milestones";
 
 export default function ProgressPage() {
   const week = useWeekScores(7);
+  // A running total that never resets (same count the milestones use)
+  const { data: milestones } = useMilestones();
+  const daysLogged = Math.max(0, ...(milestones?.milestones ?? []).filter((m) => m.key.startsWith("days-logged-")).map((m) => m.progress.current));
   const { data: summary, isLoading: isLoadingSummary } = useGetProgressSummary({
     query: { queryKey: getGetProgressSummaryQueryKey() }
   });
@@ -84,11 +89,11 @@ export default function ProgressPage() {
         <Card className="bg-card border-primary/20">
           <CardContent className="p-6 space-y-2">
             <Flame className="h-5 w-5 text-primary mb-2" />
-            <p className="text-xs font-bold text-muted-foreground">Current streak</p>
-            {isLoadingStreak || !streak ? (
+            <p className="text-xs font-bold text-muted-foreground">Days logged</p>
+            {!milestones ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <p className="text-3xl font-semibold text-primary">{streak.currentStreak} <span className="text-lg text-muted-foreground">days</span></p>
+              <p className="text-3xl font-semibold text-primary" data-testid="text-days-logged">{daysLogged} <span className="text-lg text-muted-foreground">days</span></p>
             )}
           </CardContent>
         </Card>
@@ -105,6 +110,8 @@ export default function ProgressPage() {
           </CardContent>
         </Card>
       </div>
+
+      <MilestonesCard />
 
       {/* WEEKLY SUMMARY */}
       <WeeklySummary />

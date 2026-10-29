@@ -1,6 +1,6 @@
 import { tidyFoodName } from "../lib/food-name";
 import { Router } from "express";
-import OpenAI from "openai";
+import { aiSetup, parseJsonReply } from "../lib/ai";
 import { rateLimit, uid } from "../lib/auth";
 import { db, usageEventsTable } from "@workspace/db";
 
@@ -52,13 +52,12 @@ router.post("/nutrition-lookup", async (req, res) => {
     return;
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    res.status(503).json({ error: "AI estimates aren't switched on yet: the app owner needs to add an OpenAI key. Use search or quick add for now." });
+  const ai = aiSetup();
+  if (!ai) {
+    res.status(503).json({ error: "AI estimates aren't switched on yet: the app owner needs to add a Gemini or OpenAI key. Use search or quick add for now." });
     return;
   }
-
-  const client = new OpenAI({ apiKey });
+  const { client } = ai;
   try {
     const prompt = `Estimate the nutrition of a meal, item by item.
 ${mealName ? `The user's description: "${mealName}"` : "Identify every food and drink visible and estimate typical portions."}
@@ -85,15 +84,15 @@ Example: {"mealName":"Banana and groundnuts","items":[{"name":"Banana","amount":
         : []),
     ];
     const completion = await client.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: ai.model,
       messages: [{ role: "user", content }],
-      response_format: { type: "json_object" },
+      ...(ai.jsonMode ? { response_format: { type: "json_object" as const } } : {}),
       max_tokens: 700,
       temperature: 0.2,
     });
 
     const raw = completion.choices[0]?.message?.content ?? "{}";
-    const result = JSON.parse(raw) as Record<string, unknown>;
+    const result = parseJsonReply(raw);
 
     const toMacro = (value: unknown) => {
       const number = Number(value);
@@ -157,11 +156,15 @@ Example: {"mealName":"Banana and groundnuts","items":[{"name":"Banana","amount":
     // Say what actually went wrong, so the owner can fix setup problems
     const status = (err as { status?: number }).status;
     const code = (err as { code?: string }).code;
-    req.log.error({ err, status, code }, "AI nutrition estimate failed");
+    req.log.error({ err, status, code, provider: ai.provider, model: ai.model }, "AI nutrition estimate failed");
+    if (status === 404 || status === 400) {
+      res.status(503).json({ error: `The AI model "${ai.model}" wasn't accepted. The app owner should check AI_MODEL in cPanel.` });
+      return;
+    }
     if (status === 401) {
-      res.status(503).json({ error: "AI estimates are off: the OpenAI key was rejected. The app owner needs to check it in cPanel." });
+      res.status(503).json({ error: `AI estimates are off: the ${ai.provider === "gemini" ? "Gemini" : "OpenAI"} key was rejected. The app owner needs to check it in cPanel.` });
     } else if (status === 429 || code === "insufficient_quota") {
-      res.status(503).json({ error: code === "insufficient_quota" ? "AI estimates are paused: the OpenAI account is out of credit. The app owner needs to top it up." : "The AI service is busy. Try again in a minute." });
+      res.status(503).json({ error: code === "insufficient_quota" ? `AI estimates are paused: the ${ai.provider === "gemini" ? "Gemini" : "OpenAI"} account has run out of credit or free quota. The app owner needs to check it.` : "The AI service is busy. Try again in a minute." });
     } else if (err instanceof SyntaxError) {
       res.status(502).json({ error: "The AI's answer came back garbled. Please try again." });
     } else {

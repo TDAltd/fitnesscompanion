@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Dumbbell, LineChart, Salad, Sun, CircleUserRound, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo, LogoMark } from "@/components/brand/logo";
+import { MilestonePopup } from "@/components/milestones/milestone-popup";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -96,6 +97,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
         <main className="flex-1 pb-28 md:pb-12">
           <div className="mx-auto w-full max-w-5xl px-4 py-6 md:px-10 md:py-10">{children}</div>
+          <MilestonePopup />
         </main>
       </div>
 

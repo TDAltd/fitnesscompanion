@@ -524,7 +524,7 @@ function AiStep({ onEstimate }: { onEstimate: (p: Pick) => void }) {
         {lookup.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
         {lookup.isPending ? "Estimating…" : "Estimate calories"}
       </Button>
-      <p className="text-xs text-muted-foreground">Photos are sent to OpenAI for the estimate and aren't stored. You can fix anything it gets wrong next.</p>
+      <p className="text-xs text-muted-foreground">Photos go to our AI provider for the estimate and aren't stored by us. You can fix anything it gets wrong next.</p>
     </div>
   );
 }

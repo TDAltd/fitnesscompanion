@@ -46,7 +46,7 @@ export default function PrivacyPage({ standalone = false }: { standalone?: boole
         <Section title="Who else sees it">
           <ul className="list-disc space-y-1 pl-5">
             <li><b>Our hosting provider</b> (Namecheap) stores the app and database.</li>
-            <li><b>OpenAI</b> receives a meal photo or description only when you tap "Estimate calories". We don't store it, and by default OpenAI doesn't use API data to train its models.</li>
+            <li><b>Our AI provider</b> (Google Gemini or OpenAI) receives a meal photo or description only when you tap "Estimate calories". We don't store it. On paid plans these providers don't use it to train their models; on Gemini's free plan, Google may use it to improve its products.</li>
             <li><b>App admins</b> can see your email, sign-up date, goal, training setup and how often you use features, so they can support you and run the service. They can't see your weights, meals or measurements.</li>
           </ul>
           <p className="mt-2">We don't sell your information or use it for advertising.</p>

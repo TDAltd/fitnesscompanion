@@ -48,6 +48,10 @@ async function main() {
   check("sign up", (await api("/auth/signup", { method: "POST", body: JSON.stringify({ email, password: PASSWORD, consent: true }) })).status === 201);
   check("save profile", (await api("/profile", { method: "POST", body: JSON.stringify(profile) })).status === 200);
 
+  type M = { milestones: { key: string; earned: boolean; seen: boolean; progress: { current: number } }[]; unseen: string[] };
+  const before = await api<M>("/milestones"); // the app does this on first load
+  check("new account starts with no milestones", before.body.milestones.every((m) => !m.earned), JSON.stringify(before.body.unseen));
+
   // Which of the last 7 days are rest days in this person's plan?
   const plan = buildPlan(profile);
   const restDays = new Set(plan.schedule.filter((d) => d.rest).map((d) => d.day));
@@ -88,6 +92,15 @@ async function main() {
   });
   check("long AI sentence stored as a short name", food.body.name === "Mixed grill platter", food.body.name);
 
+  // --- Milestones: one source of truth, no reward for very low days
+  await api("/food-log", { method: "POST", body: JSON.stringify({ date: last7[1], slot: "Lunch", name: "Tiny snack", servings: 1, calories: 150, protein: 2 }) });
+  const ms = await api<M>("/milestones");
+  const get = (k: string) => ms.body.milestones.find((m) => m.key === k);
+  check("first meal and first workout milestones earned and waiting to pop up", ms.body.unseen.includes("first-meal") && ms.body.unseen.includes("first-workout"), JSON.stringify(ms.body.unseen));
+  check("a very low day doesn't count toward days logged", get("days-logged-3")?.progress.current === 0, String(get("days-logged-3")?.progress.current));
+  await api("/milestones/seen", { method: "POST", body: JSON.stringify({ keys: ["first-meal"] }) });
+  check("a seen milestone doesn't pop up again", !(await api<M>("/milestones")).body.unseen.includes("first-meal"));
+
   // --- Treat days: at most one in any 7 days
   check("treat day can be set today", (await api("/treats", { method: "PUT", body: JSON.stringify({ date: today, on: true }) })).status === 200);
   const second = await api("/treats", { method: "PUT", body: JSON.stringify({ date: last7[3], on: true }) });
@@ -112,6 +125,10 @@ async function main() {
   check("date of birth sets age", withDob.body.ageYears === 30, String(withDob.body.ageYears));
   check("birthday is recognised", isBirthday(dob, today));
   check("silly birth dates are refused", (await api("/profile", { method: "POST", body: JSON.stringify({ ...profile, dateOfBirth: "2030-01-01" }) })).status === 400);
+
+  // Close any milestone pop-ups first (they cover the page, as they should)
+  const pending = (await api<M>("/milestones")).body.unseen;
+  if (pending.length) await api("/milestones/seen", { method: "POST", body: JSON.stringify({ keys: pending }) });
 
   // --- Screens: Today's ring and Progress' today column use the same rules
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

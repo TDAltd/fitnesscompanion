@@ -13,6 +13,7 @@ import dataTransferRouter from "./dataTransfer";
 import planSettingsRouter from "./planSettings";
 import foodLogRouter from "./foodLog";
 import exerciseSetsRouter from "./exerciseSets";
+import milestonesRouter from "./milestones";
 import adminRouter from "./admin";
 import accountRouter from "./account";
 import weeklyEmailRouter from "./weeklyEmail";
@@ -54,5 +55,6 @@ router.use(planSettingsRouter);
 router.use(healthDataRouter);
 router.use(foodLogRouter);
 router.use(exerciseSetsRouter);
+router.use(milestonesRouter);
 
 export default router;

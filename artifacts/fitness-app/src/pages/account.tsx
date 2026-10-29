@@ -169,20 +169,19 @@ function EmailSettings() {
     },
     onError: (e) => toast({ title: "Couldn't save", description: (e as Error).message, variant: "destructive" }),
   });
-  if (!data) return null;
+  // Hidden until the app can actually send email
+  if (!data || !data.emailEnabled) return null;
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Mail className="h-5 w-5 text-primary" /> Emails</CardTitle>
-        <CardDescription>
-          {data.emailEnabled ? `Sent to ${data.email}.` : "Email isn't switched on for this app yet, so nothing is sent for now."}
-        </CardDescription>
+        <CardDescription>Sent to {data.email}.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between gap-4">
           <Label htmlFor="weekly-email" className="cursor-pointer">
             <span className="block font-semibold">Weekly summary</span>
-            <span className="block text-sm font-normal text-muted-foreground">Workouts, food logging, steps and weight, every Sunday.</span>
+            <span className="block text-sm font-normal text-muted-foreground">Every Sunday: your workouts, food, steps, weight and milestones for the week.</span>
           </Label>
           <Switch
             id="weekly-email"

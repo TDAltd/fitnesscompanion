@@ -5,7 +5,7 @@ Track workouts (set by set), a simple food diary, weight, body measurements and 
 - **Frontend:** React + Vite + Tailwind (`artifacts/fitness-app`)
 - **Backend:** Express API (`artifacts/api-server`) that also serves the built frontend
 - **Database:** PostgreSQL via Drizzle ORM (`lib/db`). Migrations run automatically when the server starts
-- **AI meal estimates:** OpenAI `gpt-4o-mini` (optional), capped per user per day
+- **AI meal estimates:** Google Gemini or OpenAI (optional), capped per user per day
 
 ---
 
@@ -45,7 +45,10 @@ This creates a `deploy/` folder. Zip **the contents** of `deploy/` (`app.js`, `p
 |---|---|
 | `DATABASE_URL` | your connection string from Step 1 |
 | `DB_DRIVER` | `pg` (change to `neon` only if Step 5 shows a connection timeout and you use Neon) |
-| `OPENAI_API_KEY` | your OpenAI key (optional) |
+| `AI_PROVIDER` | `gemini` or `openai` (optional; see "AI meal estimates" below) |
+| `GEMINI_API_KEY` | your Google Gemini key, if you use Gemini |
+| `OPENAI_API_KEY` | your OpenAI key, if you use OpenAI |
+| `AI_MODEL` | *Optional.* Defaults: `gemini-3.8-flash` or `gpt-4o-mini` |
 | `AI_LOOKUPS_PER_DAY` | `30` |
 | `ALLOW_SIGNUPS` | `true` (set `false` later to stop new sign-ups) |
 | `ADMIN_EMAILS` | your login email, e.g. `you@example.com` (comma-separate several). These accounts are admin-only (dashboard, no tracking) and can promote other admins |
@@ -147,6 +150,16 @@ SELECT json_build_object(
 Import **replaces** that account's data, so running it twice won't create duplicates.
 
 ---
+
+## AI meal estimates
+
+"Photo or describe" on Eat needs one AI key. Pick one:
+
+**Google Gemini (has a free tier).** Go to aistudio.google.com → sign in with a Google account → **Get API key** → **Create API key**. In cPanel → Setup Node.js App → your app → Environment variables add `AI_PROVIDER` = `gemini` and `GEMINI_API_KEY` = the key, then **Restart**. On the free tier Google may use what's sent to improve its products and limits are lower; turning on billing in Google AI Studio removes both.
+
+**OpenAI.** Go to platform.openai.com → **Settings → Billing** → add a card and buy credits → **API keys → Create new secret key** (copy it now, it's shown once). Add `OPENAI_API_KEY` = the key (and `AI_PROVIDER` = `openai` if you also set a Gemini key), then **Restart**.
+
+Each person can run `AI_LOOKUPS_PER_DAY` estimates a day (default 30). If something's wrong, the app now says what (missing key, key rejected, out of credit).
 
 ## 3. Admin dashboard
 

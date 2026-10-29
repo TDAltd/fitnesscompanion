@@ -6,24 +6,42 @@ import OpenAI from "openai";
  *   OpenAI:        AI_PROVIDER=openai (or leave it out), OPENAI_API_KEY=...
  * AI_MODEL overrides the default model for either.
  */
-export type AiSetup = { client: OpenAI; model: string; provider: "gemini" | "openai"; jsonMode: boolean };
+export type AiSetup = {
+  client: OpenAI;
+  model: string;
+  /** Tried in order when a model is busy or unavailable */
+  models: string[];
+  provider: "gemini" | "openai";
+  jsonMode: boolean;
+  apiKey: string;
+  /** Room for the answer (Gemini's newer models also spend tokens thinking) */
+  maxTokens: number;
+};
+
+/** Lighter Gemini models to fall back to when the main one is busy (503/429) or not available (404). */
+const GEMINI_FALLBACKS = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-flash-latest"];
 
 export function aiSetup(): AiSetup | null {
   const provider = (process.env.AI_PROVIDER ?? "").toLowerCase() === "gemini" || (!process.env.OPENAI_API_KEY && process.env.GEMINI_API_KEY) ? "gemini" : "openai";
   if (provider === "gemini") {
     const apiKey = process.env.GEMINI_API_KEY ?? process.env.AI_API_KEY;
     if (!apiKey) return null;
+    const model = process.env.AI_MODEL || "gemini-3.8-flash";
     return {
       provider,
+      apiKey,
       // Gemini's OpenAI-compatible endpoint: same request format, Google's models
-      client: new OpenAI({ apiKey, baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/", timeout: 30_000, maxRetries: 0 }),
-      model: process.env.AI_MODEL || "gemini-3.8-flash",
+      client: new OpenAI({ apiKey, baseURL: process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai/", timeout: 20_000, maxRetries: 0 }),
+      model,
+      models: [...new Set([model, ...GEMINI_FALLBACKS])],
       jsonMode: false,
+      maxTokens: 4000,
     };
   }
   const apiKey = process.env.OPENAI_API_KEY ?? process.env.AI_API_KEY;
   if (!apiKey) return null;
-  return { provider, client: new OpenAI({ apiKey, timeout: 30_000, maxRetries: 0 }), model: process.env.AI_MODEL || "gpt-4o-mini", jsonMode: true };
+  const model = process.env.AI_MODEL || "gpt-4o-mini";
+  return { provider, apiKey, client: new OpenAI({ apiKey, timeout: 30_000, maxRetries: 0 }), model, models: [model], jsonMode: true, maxTokens: 700 };
 }
 
 /** Pull the JSON object out of a reply, even if it's wrapped in ```json fences or a sentence. */
@@ -54,4 +72,52 @@ export function aiErrorDetail(err: unknown): string {
     .join(" · ")
     .replace(/(sk-[\w-]{4})[\w-]+|(AIza[\w-]{4})[\w-]+/g, "$1$2…")
     .slice(0, 300);
+}
+
+const retryable = (err: unknown) => {
+  const status = (err as { status?: number }).status;
+  return status === 503 || status === 429 || status === 404 || status === 500 || status === 502;
+};
+
+/**
+ * Ask for a chat completion, moving on to the next model when one is busy or unavailable.
+ * Stops after about 30 seconds in total. Returns the text and the model that answered.
+ */
+export async function completeWithFallback(
+  ai: AiSetup,
+  params: Omit<Parameters<OpenAI["chat"]["completions"]["create"]>[0], "model" | "stream">,
+): Promise<{ text: string; model: string }> {
+  const started = Date.now();
+  let lastErr: unknown;
+  for (const model of ai.models) {
+    if (Date.now() - started > 25_000) break;
+    try {
+      const r = (await ai.client.chat.completions.create({ ...params, model, stream: false })) as OpenAI.Chat.Completions.ChatCompletion;
+      const text = r.choices[0]?.message?.content ?? "";
+      if (!text.trim()) throw Object.assign(new Error("The AI returned an empty answer"), { status: 503 });
+      return { text, model };
+    } catch (err) {
+      lastErr = err;
+      if (!retryable(err)) throw err;
+    }
+  }
+  throw lastErr;
+}
+
+/** Gemini only: which models this key can use (also proves the key and the connection work). */
+export async function geminiModels(apiKey: string): Promise<{ status: number; models: string[]; body: string }> {
+  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", {
+    headers: { "x-goog-api-key": apiKey },
+    signal: AbortSignal.timeout(15_000),
+  });
+  const body = await res.text();
+  let models: string[] = [];
+  try {
+    models = ((JSON.parse(body) as { models?: { name: string; supportedGenerationMethods?: string[] }[] }).models ?? [])
+      .filter((m) => m.supportedGenerationMethods?.includes("generateContent"))
+      .map((m) => m.name.replace(/^models\//, ""));
+  } catch {
+    /* not JSON */
+  }
+  return { status: res.status, models, body: body.slice(0, 200) };
 }

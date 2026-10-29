@@ -437,7 +437,7 @@ function AiStep({ onEstimate }: { onEstimate: (p: Pick) => void }) {
               : `${Math.round(result.low * scale).toLocaleString()}–${Math.round(result.high * scale).toLocaleString()} kcal`}
           </p>
           <p className="text-xs text-muted-foreground">
-            {edited ? "Tap Reanalyze to update the estimate with your changes." : `We'll log ${kcal.toLocaleString()} kcal, the middle of the range.`}
+            {edited ? "Tap Reanalyze to update the estimate with your changes." : `We'll log ${kcal.toLocaleString()} kcal, the AI's best estimate.`}
             {result.notes && !edited ? ` ${result.notes}` : ""}
           </p>
         </div>
@@ -452,7 +452,7 @@ function AiStep({ onEstimate }: { onEstimate: (p: Pick) => void }) {
             onClick={() =>
               onEstimate({
                 name: items.length === result.items.length ? result.mealName : items.map((i) => i.name).slice(0, 3).join(" and "),
-                portion: items.map((i) => `${i.amount} ${i.name}`.trim()).join(", ").slice(0, 90),
+                portion: items.map((i) => (i.amount ? `${i.name} (${i.amount})` : i.name)).join(", ").slice(0, 90),
                 calories: kcal,
                 protein: total("protein"),
                 carbs: total("carbs"),

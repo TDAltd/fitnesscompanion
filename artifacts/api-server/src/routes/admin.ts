@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { db, usersTable, sessionsTable, appSettingsTable } from "@workspace/db";
 import { envAdmins, hashPassword, requireAdmin, signupsOpen, uid } from "../lib/auth";
-import { aiErrorDetail, aiSetup } from "../lib/ai";
+import { aiErrorDetail, aiSetup, completeWithFallback, geminiModels } from "../lib/ai";
 
 /**
  * Admin dashboard API. Shows usage and profile basics only: never weights, meals, sleep or body data.
@@ -257,16 +257,35 @@ router.get("/admin/ai-check", async (_req, res) => {
     return;
   }
   const started = Date.now();
+  // Gemini: first check the key and connection by listing models
+  let listing = "";
+  if (ai.provider === "gemini") {
+    try {
+      const l = await geminiModels(ai.apiKey);
+      const flash = l.models.filter((m) => /flash/.test(m)).slice(0, 6);
+      listing =
+        l.status === 200
+          ? `Key and connection OK (${l.models.length} models). ${l.models.includes(ai.model) ? `${ai.model} is available.` : `${ai.model} is NOT in your list.`} Flash models: ${flash.join(", ") || "none"}.`
+          : `Listing models failed: HTTP ${l.status} ${l.body || "(no body)"}${l.status === 503 && !l.body ? " – this usually means the hosting network is blocking or proxying the request." : ""}`;
+    } catch (err) {
+      listing = `Couldn't reach Google at all: ${aiErrorDetail(err)}`;
+    }
+  }
   try {
-    const r = await ai.client.chat.completions.create({
-      model: ai.model,
+    const r = await completeWithFallback(ai, {
       messages: [{ role: "user", content: 'Reply with exactly this JSON: {"ok":true}' }],
-      max_tokens: 20,
+      max_tokens: ai.maxTokens,
     });
-    const text = r.choices[0]?.message?.content ?? "";
-    res.json({ configured: true, ok: true, provider: ai.provider, model: ai.model, ms: Date.now() - started, detail: `Answered: ${text.slice(0, 60)}` });
+    res.json({
+      configured: true,
+      ok: true,
+      provider: ai.provider,
+      model: r.model,
+      ms: Date.now() - started,
+      detail: [r.model !== ai.model ? `${ai.model} was busy or unavailable, so ${r.model} answered.` : `Answered: ${r.text.slice(0, 40)}`, listing].filter(Boolean).join(" "),
+    });
   } catch (err) {
-    res.json({ configured: true, ok: false, provider: ai.provider, model: ai.model, ms: Date.now() - started, detail: aiErrorDetail(err) });
+    res.json({ configured: true, ok: false, provider: ai.provider, model: ai.model, ms: Date.now() - started, detail: [aiErrorDetail(err), listing].filter(Boolean).join(" | ") });
   }
 });
 

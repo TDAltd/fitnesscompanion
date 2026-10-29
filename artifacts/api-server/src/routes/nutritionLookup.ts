@@ -1,6 +1,6 @@
 import { tidyFoodName } from "../lib/food-name";
 import { Router } from "express";
-import { aiErrorDetail, aiSetup, parseJsonReply } from "../lib/ai";
+import { aiErrorDetail, aiSetup, completeWithFallback, parseJsonReply } from "../lib/ai";
 import { rateLimit, uid } from "../lib/auth";
 import { db, usageEventsTable } from "@workspace/db";
 
@@ -57,7 +57,6 @@ router.post("/nutrition-lookup", async (req, res) => {
     res.status(503).json({ error: "AI estimates aren't switched on yet: the app owner needs to add a Gemini or OpenAI key. Use search or quick add for now." });
     return;
   }
-  const { client } = ai;
   try {
     const prompt = `Estimate the nutrition of a meal, item by item.
 ${mealName ? `The user's description: "${mealName}"` : "Identify every food and drink visible and estimate typical portions."}
@@ -83,15 +82,13 @@ Example: {"mealName":"Banana and groundnuts","items":[{"name":"Banana","amount":
           }]
         : []),
     ];
-    const completion = await client.chat.completions.create({
-      model: ai.model,
+    const { text: raw, model: usedModel } = await completeWithFallback(ai, {
       messages: [{ role: "user", content }],
       ...(ai.jsonMode ? { response_format: { type: "json_object" as const } } : {}),
-      max_tokens: 700,
+      max_tokens: ai.maxTokens,
       temperature: 0.2,
     });
-
-    const raw = completion.choices[0]?.message?.content ?? "{}";
+    if (usedModel !== ai.model) req.log.warn({ wanted: ai.model, used: usedModel }, "AI estimate used a fallback model");
     const result = parseJsonReply(raw);
 
     const toMacro = (value: unknown) => {

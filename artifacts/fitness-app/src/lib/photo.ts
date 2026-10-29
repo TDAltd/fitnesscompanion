@@ -12,7 +12,7 @@ export async function compressMealPhoto(file: File) {
 
   const bitmap = await createImageBitmap(file);
   try {
-    const maxEdge = 1200;
+    const maxEdge = 1024;
     const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));

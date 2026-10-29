@@ -11,6 +11,7 @@ import MealsPage from "@/pages/meals";
 import WorkoutPage from "@/pages/workout";
 import OnboardingPage from "@/pages/onboarding";
 import AuthPage from "@/pages/auth";
+import { UpdateBanner } from "@/components/layout/update-banner";
 import PrivacyPage from "@/pages/privacy";
 import RemindersPage from "@/pages/reminders";
 import ResetPasswordPage from "@/pages/reset-password";
@@ -139,6 +140,7 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={BASE}>
           <AuthGate />
+          <UpdateBanner />
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

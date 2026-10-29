@@ -331,6 +331,13 @@ function AiStep({ onEstimate }: { onEstimate: (p: Pick) => void }) {
   const input = useRef<HTMLInputElement>(null);
   const library = useRef<HTMLInputElement>(null);
   const lookup = useNutritionLookup();
+  // Reassure people when the AI is slow (it gives up after 30 seconds)
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!lookup.isPending) return setSlow(false);
+    const t = window.setTimeout(() => setSlow(true), 10_000);
+    return () => window.clearTimeout(t);
+  }, [lookup.isPending]);
   const { toast } = useToast();
 
   const run = (description: string, withPhoto: boolean) =>
@@ -524,6 +531,7 @@ function AiStep({ onEstimate }: { onEstimate: (p: Pick) => void }) {
         {lookup.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
         {lookup.isPending ? "Estimating…" : "Estimate calories"}
       </Button>
+      {slow && <p className="text-center text-xs text-muted-foreground" role="status">Still working… photos can take up to 30 seconds.</p>}
       <p className="text-xs text-muted-foreground">Photos go to our AI provider for the estimate and aren't stored by us. You can fix anything it gets wrong next.</p>
     </div>
   );

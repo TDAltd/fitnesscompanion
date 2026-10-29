@@ -16,14 +16,14 @@ export function aiSetup(): AiSetup | null {
     return {
       provider,
       // Gemini's OpenAI-compatible endpoint: same request format, Google's models
-      client: new OpenAI({ apiKey, baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/" }),
+      client: new OpenAI({ apiKey, baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/", timeout: 30_000, maxRetries: 0 }),
       model: process.env.AI_MODEL || "gemini-3.8-flash",
       jsonMode: false,
     };
   }
   const apiKey = process.env.OPENAI_API_KEY ?? process.env.AI_API_KEY;
   if (!apiKey) return null;
-  return { provider, client: new OpenAI({ apiKey }), model: process.env.AI_MODEL || "gpt-4o-mini", jsonMode: true };
+  return { provider, client: new OpenAI({ apiKey, timeout: 30_000, maxRetries: 0 }), model: process.env.AI_MODEL || "gpt-4o-mini", jsonMode: true };
 }
 
 /** Pull the JSON object out of a reply, even if it's wrapped in ```json fences or a sentence. */

@@ -79,7 +79,7 @@ Example: {"mealName":"Banana and groundnuts","items":[{"name":"Banana","amount":
       ...(validatedImageData
         ? [{
             type: "image_url" as const,
-            image_url: { url: validatedImageData, detail: "high" as const },
+            image_url: { url: validatedImageData, detail: "auto" as const },
           }]
         : []),
     ];
@@ -157,6 +157,11 @@ Example: {"mealName":"Banana and groundnuts","items":[{"name":"Banana","amount":
     const status = (err as { status?: number }).status;
     const code = (err as { code?: string }).code;
     req.log.error({ err, status, code, provider: ai.provider, model: ai.model }, "AI nutrition estimate failed");
+    const name = (err as { name?: string }).name ?? "";
+    if (name.includes("Timeout") || (err as { constructor?: { name?: string } }).constructor?.name === "APIConnectionTimeoutError") {
+      res.status(504).json({ error: `The AI (${ai.provider === "gemini" ? "Gemini" : "OpenAI"}) took too long to answer. Try again, or describe the meal in words instead.` });
+      return;
+    }
     if (status === 404 || status === 400) {
       res.status(503).json({ error: `The AI model "${ai.model}" wasn't accepted. The app owner should check AI_MODEL in cPanel.` });
       return;

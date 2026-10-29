@@ -57,6 +57,19 @@ export function createApp(staticDir?: string): Express {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // Which build of the web app is live (the hashed main script in index.html).
+  // Open tabs and Home Screen apps compare this with their own and offer a refresh.
+  app.get("/api/version", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    let build: string | null = null;
+    try {
+      if (staticDir) build = fs.readFileSync(path.join(staticDir, "index.html"), "utf8").match(/assets\/(index-[\w-]+\.js)/)?.[1] ?? null;
+    } catch {
+      /* not built */
+    }
+    res.json({ build });
+  });
+
   app.use("/api", router);
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: "Not found" });

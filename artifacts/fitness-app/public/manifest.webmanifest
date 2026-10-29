@@ -1,6 +1,6 @@
 {
   "name": "Fitness Companion",
-  "short_name": "Companion",
+  "short_name": "Fitness Companion",
   "description": "Your plan, workouts, meals, sleep and steps in one calm place.",
   "start_url": "./",
   "scope": "./",

@@ -1,6 +1,6 @@
 import { tidyFoodName } from "../lib/food-name";
 import { Router } from "express";
-import { aiSetup, parseJsonReply } from "../lib/ai";
+import { aiErrorDetail, aiSetup, parseJsonReply } from "../lib/ai";
 import { rateLimit, uid } from "../lib/auth";
 import { db, usageEventsTable } from "@workspace/db";
 
@@ -173,7 +173,10 @@ Example: {"mealName":"Banana and groundnuts","items":[{"name":"Banana","amount":
     } else if (err instanceof SyntaxError) {
       res.status(502).json({ error: "The AI's answer came back garbled. Please try again." });
     } else {
-      res.status(502).json({ error: "Couldn't reach the AI service. Try again, or use quick add." });
+      const detail = aiErrorDetail(err);
+      res.status(502).json({
+        error: `Couldn't get an estimate from ${ai.provider === "gemini" ? "Gemini" : "OpenAI"}. Details: ${detail || "unknown error"}`,
+      });
     }
   }
 });

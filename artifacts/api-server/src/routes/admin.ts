@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { db, usersTable, sessionsTable, appSettingsTable } from "@workspace/db";
 import { envAdmins, hashPassword, requireAdmin, signupsOpen, uid } from "../lib/auth";
+import { aiErrorDetail, aiSetup } from "../lib/ai";
 
 /**
  * Admin dashboard API. Shows usage and profile basics only: never weights, meals, sleep or body data.
@@ -247,6 +248,27 @@ router.delete("/admin/users/:id", async (req, res) => {
 });
 
 // ---------- settings ----------
+
+/** One tiny request to the AI service, to check the key, model and connection. */
+router.get("/admin/ai-check", async (_req, res) => {
+  const ai = aiSetup();
+  if (!ai) {
+    res.json({ configured: false, ok: false, detail: "No key set. Add GEMINI_API_KEY (with AI_PROVIDER=gemini) or OPENAI_API_KEY in cPanel, then Restart." });
+    return;
+  }
+  const started = Date.now();
+  try {
+    const r = await ai.client.chat.completions.create({
+      model: ai.model,
+      messages: [{ role: "user", content: 'Reply with exactly this JSON: {"ok":true}' }],
+      max_tokens: 20,
+    });
+    const text = r.choices[0]?.message?.content ?? "";
+    res.json({ configured: true, ok: true, provider: ai.provider, model: ai.model, ms: Date.now() - started, detail: `Answered: ${text.slice(0, 60)}` });
+  } catch (err) {
+    res.json({ configured: true, ok: false, provider: ai.provider, model: ai.model, ms: Date.now() - started, detail: aiErrorDetail(err) });
+  }
+});
 
 router.put("/admin/settings", async (req, res) => {
   if (typeof req.body?.signupsOpen !== "boolean") {

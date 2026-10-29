@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAdminAction, useAdminOverview, useAdminUsers, type AdminUser } from "@/lib/admin";
 import { useCurrentUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { withBase } from "@/lib/base-path";
 
 const FILTERS = ["All", "Active this week", "Admins", "Disabled"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -92,6 +93,8 @@ export default function AdminPage() {
         </div>
       ) : (
         <>
+          <AiCheck />
+
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4" data-testid="admin-stats">
             <Stat label="People" value={overview.totals.users} sub={`${overview.totals.new7d} joined this week`} />
             <Stat label="Active today" value={overview.totals.active1d} />
@@ -450,5 +453,46 @@ function UserDialog({ user, meId, onClose }: { user: AdminUser | null; meId?: nu
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+type AiCheckResult = { configured: boolean; ok: boolean; provider?: string; model?: string; ms?: number; detail: string };
+
+/** Owner tool: check the AI meal-estimate setup with one tiny request. */
+function AiCheck() {
+  const [result, setResult] = useState<AiCheckResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const run = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch(withBase("/api/admin/ai-check"), { credentials: "same-origin" });
+      setResult((await res.json()) as AiCheckResult);
+    } catch (e) {
+      setResult({ configured: false, ok: false, detail: `Couldn't reach the app server: ${(e as Error).message}` });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 text-sm">
+          <p className="font-semibold">AI meal estimates</p>
+          {result ? (
+            <p className={cn("break-words", result.ok ? "text-primary" : "text-destructive")} data-testid="ai-check-result">
+              {result.ok ? "Working" : "Not working"}
+              {result.provider ? ` · ${result.provider === "gemini" ? "Gemini" : "OpenAI"} (${result.model})` : ""}
+              {result.ms != null ? ` · ${(result.ms / 1000).toFixed(1)} s` : ""}
+              <span className="block text-muted-foreground">{result.detail}</span>
+            </p>
+          ) : (
+            <p className="text-muted-foreground">Check the key, model and connection in one tap.</p>
+          )}
+        </div>
+        <Button variant="outline" className="shrink-0" onClick={() => void run()} disabled={busy} data-testid="button-ai-check">
+          {busy ? "Testing…" : "Test AI connection"}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

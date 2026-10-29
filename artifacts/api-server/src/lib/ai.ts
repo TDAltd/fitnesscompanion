@@ -38,3 +38,20 @@ export function parseJsonReply(text: string): Record<string, unknown> {
     throw new SyntaxError("No JSON in AI reply");
   }
 }
+
+/** A short, key-free description of an AI error, for messages the owner can act on. */
+export function aiErrorDetail(err: unknown): string {
+  // Walk the cause chain (SDK error → fetch error → network error) for codes like ENOTFOUND or ECONNRESET
+  const parts: string[] = [];
+  let e = err as { status?: number; code?: string; message?: string; cause?: unknown } | undefined;
+  for (let depth = 0; e && depth < 4; depth++) {
+    if (e.status) parts.push(`HTTP ${e.status}`);
+    if (e.code) parts.push(e.code);
+    if (e.message) parts.push(e.message);
+    e = e.cause as typeof e;
+  }
+  return [...new Set(parts)]
+    .join(" · ")
+    .replace(/(sk-[\w-]{4})[\w-]+|(AIza[\w-]{4})[\w-]+/g, "$1$2…")
+    .slice(0, 300);
+}

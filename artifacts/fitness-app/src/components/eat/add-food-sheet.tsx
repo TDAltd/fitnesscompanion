@@ -37,7 +37,8 @@ export function AddFoodSheet({
   date: string;
   slot: Slot;
 }) {
-  const [mode, setMode] = useState<"search" | "ai" | "quick">("search");
+  // "ai" is the main Log a meal screen: describe / photo first, quick picks below
+  const [mode, setMode] = useState<"search" | "ai" | "quick">("ai");
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<Pick | null>(null);
   const [servings, setServings] = useState(1);
@@ -50,7 +51,7 @@ export function AddFoodSheet({
   // Reset each time the sheet opens
   useEffect(() => {
     if (open) {
-      setMode("search");
+      setMode("ai");
       setQuery("");
       setPicked(null);
       setServings(1);
@@ -114,19 +115,19 @@ export function AddFoodSheet({
       >
         <SheetHeader className="space-y-1 border-b px-5 pb-4 pt-5 text-left">
           <div className="flex items-center gap-2">
-            {(picked || mode !== "search") && (
+            {(picked || mode !== "ai") && (
               <Button
                 variant="ghost"
                 size="icon"
                 className="-ml-2 h-8 w-8"
                 aria-label="Back"
-                onClick={() => (picked ? setPicked(null) : setMode("search"))}
+                onClick={() => (picked ? setPicked(null) : setMode("ai"))}
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
             <SheetTitle className="font-display text-xl font-medium">
-              {picked ? "How much?" : mode === "ai" ? "Describe or snap it" : mode === "quick" ? "Quick add" : "Log a meal"}
+              {picked ? "How much?" : mode === "ai" ? "Log a meal" : mode === "quick" ? "Quick add" : "Search foods"}
             </SheetTitle>
           </div>
           <SheetDescription className="sr-only">Search for a food, use a photo, or type calories to add it to your diary.</SheetDescription>
@@ -154,7 +155,30 @@ export function AddFoodSheet({
           {picked ? (
             <PortionStep picked={picked} servings={servings} setServings={setServings} />
           ) : mode === "ai" ? (
-            <AiStep onEstimate={(p) => { setPicked(p); setServings(1); }} />
+            <AiStep
+              onEstimate={(p) => { setPicked(p); setServings(1); }}
+              quickPicks={
+                <section className="space-y-3 border-t pt-4" data-testid="quick-picks">
+                  <p className="text-xs font-semibold text-muted-foreground">Or pick quickly</p>
+                  {results.mine.length > 0 && (
+                    <div>
+                      <h3 className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                        <History className="h-3.5 w-3.5" /> You often have
+                      </h3>
+                      <FoodList items={results.mine.slice(0, 5)} onPick={(p) => { setPicked(p); setServings(1); }} />
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" className="h-11 justify-start gap-2" onClick={() => setMode("search")} data-testid="button-food-search">
+                      <Search className="h-4 w-4 text-primary" /> Search foods
+                    </Button>
+                    <Button variant="outline" className="h-11 justify-start gap-2" onClick={() => setMode("quick")} data-testid="button-food-quick">
+                      <PencilLine className="h-4 w-4 text-primary" /> Quick add calories
+                    </Button>
+                  </div>
+                </section>
+              }
+            />
           ) : mode === "quick" ? (
             <QuickStep busy={add.isPending} onSave={(f) => void save({ ...f, source: "quick" }, 1)} />
           ) : (
@@ -162,6 +186,7 @@ export function AddFoodSheet({
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search: jollof, eba, egg, suya…"
@@ -174,15 +199,6 @@ export function AddFoodSheet({
                     <X className="h-4 w-4" />
                   </button>
                 )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" className="h-11 justify-start gap-2" onClick={() => setMode("ai")} data-testid="button-food-ai">
-                  <Camera className="h-4 w-4 text-primary" /> Photo or describe
-                </Button>
-                <Button variant="outline" className="h-11 justify-start gap-2" onClick={() => setMode("quick")} data-testid="button-food-quick">
-                  <PencilLine className="h-4 w-4 text-primary" /> Quick add calories
-                </Button>
               </div>
 
               {results.mine.length > 0 && (
@@ -322,7 +338,7 @@ function PortionStep({ picked, servings, setServings }: { picked: Pick; servings
 type AiItem = { name: string; amount: string; calories: number; protein: number; carbs: number; fat: number };
 type AiResult = { mealName: string; items: AiItem[]; low: number; high: number; ignored: string[]; notes: string };
 
-function AiStep({ onEstimate }: { onEstimate: (p: Pick) => void }) {
+function AiStep({ onEstimate, quickPicks }: { onEstimate: (p: Pick) => void; quickPicks?: React.ReactNode }) {
   const [text, setText] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const [result, setResult] = useState<AiResult | null>(null);
@@ -534,6 +550,7 @@ function AiStep({ onEstimate }: { onEstimate: (p: Pick) => void }) {
       </Button>
       {slow && <p className="text-center text-xs text-muted-foreground" role="status">Still working… photos can take up to 30 seconds.</p>}
       <p className="text-xs text-muted-foreground">Photos go to our AI provider for the estimate and aren't stored by us. You can fix anything it gets wrong next.</p>
+      {!lookup.isPending && quickPicks}
     </div>
   );
 }

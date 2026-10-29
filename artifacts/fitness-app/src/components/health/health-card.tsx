@@ -30,8 +30,8 @@ export function HealthCard() {
           <div className="flex items-center gap-3">
             <Smartphone className="h-6 w-6 text-primary" />
             <div>
-              <p className="font-bold">Sync steps & sleep from your iPhone</p>
-              <p className="text-sm text-muted-foreground">Connect Apple Health so your watch data fills in automatically.</p>
+              <p className="font-bold">Sync steps & sleep from your phone or watch</p>
+              <p className="text-sm text-muted-foreground">Works with iPhone, Apple Watch, Oraimo, Xiaomi, Huawei, Amazfit and smart rings.</p>
             </div>
           </div>
           <Button asChild variant="outline" size="sm" data-testid="link-connect-health">

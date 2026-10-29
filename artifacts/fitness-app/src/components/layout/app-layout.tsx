@@ -35,7 +35,7 @@ const TITLES: Record<string, string> = {
   "/plan": "My plan",
   "/body": "Body",
   "/account": "Account",
-  "/connect-health": "Apple Health",
+  "/connect-health": "Connect devices",
   "/reminders": "Reminders",
   "/privacy": "Privacy",
 };

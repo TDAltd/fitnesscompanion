@@ -71,13 +71,13 @@ export default function AccountPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Apple Health</CardTitle>
-          <CardDescription>Sync steps, sleep and active calories from your iPhone and watch every night.</CardDescription>
+          <CardTitle>Health devices</CardTitle>
+          <CardDescription>Sync steps, sleep and active calories from your iPhone, watch or ring every night.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button asChild variant="outline" className="gap-2">
             <Link href="/connect-health" data-testid="link-account-connect-health">
-              <HeartPulse className="h-4 w-4" /> Connect Apple Health
+              <HeartPulse className="h-4 w-4" /> Connect a device
             </Link>
           </Button>
         </CardContent>

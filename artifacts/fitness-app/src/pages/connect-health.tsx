@@ -1,12 +1,14 @@
 import { useState, type ReactNode } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Check, Copy, HeartPulse, KeyRound, Loader2, Smartphone, TriangleAlert, Unplug } from "lucide-react";
+import { Check, Copy, KeyRound, ListOrdered, Loader2, Smartphone, TriangleAlert, Unplug, Watch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { syncUrl, useCreateSyncKey, useRevokeSyncKey, useSyncStatus } from "@/lib/health";
+import { DEVICES, deviceById, saveDevice, savedDevice, type DeviceId } from "@/lib/devices";
+import { cn } from "@/lib/utils";
 
 function CopyField({ label, value, testId }: { label: string; value: string; testId: string }) {
   const [copied, setCopied] = useState(false);
@@ -64,6 +66,13 @@ export default function ConnectHealthPage() {
   const revokeKey = useRevokeSyncKey();
   const { toast } = useToast();
   const [key, setKey] = useState<string | null>(null);
+  const [deviceId, setDeviceId] = useState<DeviceId | null>(savedDevice);
+  const device = deviceById(deviceId);
+  const pick = (id: DeviceId) => {
+    setDeviceId(id);
+    saveDevice(id);
+  };
+  const noSleep = device?.id === "iphone";
 
   const makeKey = async () => {
     if (status?.connected && !window.confirm("Make a new key? The old one stops working, so you'll need to update your Shortcut.")) return;
@@ -85,9 +94,97 @@ export default function ConnectHealthPage() {
   return (
     <div className="space-y-6 pb-20">
       <PageHeader
-        title="Apple Health"
-        description="Send your daily steps, sleep and active calories from your iPhone (and any watch that saves to Apple Health, like Oraimo) to this app every night."
+        title="Connect your devices"
+        description="Your phone, watch or ring saves to the iPhone Health app. A small Shortcut then sends each day's steps, sleep and active calories here every night."
       />
+
+      {/* 1. Device */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Watch className="h-4 w-4 text-primary" /> 1. What do you track with?
+          </CardTitle>
+          <CardDescription>Pick your main device. The steps below change to match.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" role="radiogroup" aria-label="Your device">
+            {DEVICES.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                role="radio"
+                aria-checked={deviceId === d.id}
+                onClick={() => pick(d.id)}
+                className={cn(
+                  "min-h-[64px] rounded-xl border p-3 text-left transition-colors",
+                  deviceId === d.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "hover:bg-muted/60",
+                )}
+                data-testid={`device-${d.id}`}
+              >
+                <span className="block text-sm font-semibold">{d.name}</span>
+                <span className="block text-xs text-muted-foreground">{d.examples}</span>
+              </button>
+            ))}
+          </div>
+
+          {device && (
+            <div className="space-y-4 rounded-xl bg-muted/40 p-4" data-testid="device-guide">
+              <div className="flex flex-wrap gap-1.5 text-xs">
+                {[
+                  ["Steps", device.gives.steps],
+                  ["Sleep", device.gives.sleep],
+                  ["Active calories", device.gives.energy],
+                ].map(([label, v]) => (
+                  <span
+                    key={label as string}
+                    className={cn("rounded-full px-2.5 py-1 font-semibold", v ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground line-through")}
+                  >
+                    {label as string}
+                    {v === "needs-setup" ? " (after setup)" : v === "estimate" ? " (estimate)" : ""}
+                  </span>
+                ))}
+              </div>
+              <div>
+                <p className="mb-1.5 text-sm font-semibold">
+                  {device.app ? `Turn on Apple Health in ${device.app}` : "Get it ready"}
+                </p>
+                <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+                  {device.setup.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ol>
+              </div>
+              {device.tip && <p className="text-sm">{device.tip}</p>}
+              {device.app && (
+                <div className="border-t pt-3 text-sm">
+                  <p className="font-semibold">Check it worked</p>
+                  <p className="text-muted-foreground">
+                    Open the iPhone <Q>Health</Q> app → tap your photo (top right) → <Q>Apps</Q> → <Q>{device.app}</Q>{" "}
+                    → <Q>Turn On All</Q>. Then check <Q>Browse → Activity → Steps</Q> shows today's steps.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-3 rounded-xl border p-4 text-sm">
+            <ListOrdered className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <div className="space-y-1">
+              <p className="font-semibold">Phone and watch both counting steps?</p>
+              <p className="text-muted-foreground">
+                That's fine: Apple Health counts each step once, using whichever device is higher in its list. To choose
+                which one wins, open Health → <Q>Browse</Q> → <Q>Activity</Q> → <Q>Steps</Q> → <Q>Data Sources &amp; Access</Q> →{" "}
+                <Q>Edit</Q>, and drag your watch or ring to the top.
+              </p>
+            </div>
+          </div>
+
+          <p className="rounded-xl bg-muted/40 p-4 text-sm text-muted-foreground" data-testid="android-note">
+            <Q>Android phone?</Q> Not yet, sorry. A web app can't read Google's Health Connect. For now, type your steps
+            into the daily checklist on Today.
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Status */}
       <Card>
@@ -128,7 +225,7 @@ export default function ConnectHealthPage() {
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <KeyRound className="h-4 w-4 text-primary" /> Your sync details
+            <KeyRound className="h-4 w-4 text-primary" /> 2. Your sync details
           </CardTitle>
           <CardDescription>
             Do this part on your iPhone if you can, so you can copy and paste straight into the Shortcuts app.
@@ -159,7 +256,7 @@ export default function ConnectHealthPage() {
       {/* Instructions */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Set up the Shortcut on your iPhone (about 10 minutes, once)</CardTitle>
+          <CardTitle className="text-base">3. Set up the Shortcut on your iPhone (about 10 minutes, once)</CardTitle>
           <CardDescription>
             Open the <Q>Shortcuts</Q> app, tap <Q>+</Q> and name the new shortcut <Q>Sync Fitness</Q>. Add every action
             below to this one shortcut, in order, using <Q>Search Actions</Q> at the bottom. Shortcuts saves as you go;
@@ -169,20 +266,22 @@ export default function ConnectHealthPage() {
         <CardContent>
           <div className="mb-5 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
             Every health item uses the same three actions: <Q>Find Health Samples</Q> → <Q>Calculate Statistics</Q> →{" "}
-            <Q>Set Variable</Q>. On newer iPhones the result is called <Q>Sum</Q>; that's the one to pick. Add the
-            filter <Q>Source is oraimo health</Q> each time, so steps your phone also counted aren't added twice.
+            <Q>Set Variable</Q>. On newer iPhones the result is called <Q>Sum</Q>; that's the one to pick. Don't add a
+            Source filter: setting <Q>Group By</Q> to <Q>Day</Q> gives Health's own daily total, with each step counted once.
           </div>
           <ol className="space-y-5">
             <Step n={1} title="Steps">
               <ul className="list-disc space-y-1 pl-5">
-                <li><Q>Find Health Samples</Q>: Type is <Q>Steps</Q>, Start Date is <Q>today</Q>, Source is <Q>oraimo health</Q>. Leave Unit, Group by, Sort by and Limit as they are.</li>
+                <li><Q>Find Health Samples</Q>: Type is <Q>Steps</Q>, Start Date is <Q>today</Q>. Set <Q>Group By</Q> to <Q>Day</Q>. Leave Unit, Sort by and Limit as they are.</li>
                 <li><Q>Calculate Statistics</Q>: <Q>Sum</Q></li>
                 <li><Q>Set Variable</Q>: name <Q>Steps</Q>, to <Q>Sum</Q></li>
               </ul>
             </Step>
-            <Step n={2} title="Sleep">
-              <ul className="list-disc space-y-1 pl-5">
-                <li><Q>Find Health Samples</Q>: Type is <Q>Sleep</Q>, Start Date is <Q>in the last 1 days</Q>, Source is <Q>oraimo health</Q>. If a <Q>Value</Q> filter is offered, add <Q>Value is not In Bed</Q>.</li>
+            <Step n={2} title={noSleep ? "Sleep (skip this with iPhone only)" : "Sleep"}>
+              {noSleep && <p>Your iPhone can't measure sleep, so skip this step and leave <Q>sleep</Q> out in step 5.</p>}
+              <ul className={cn("list-disc space-y-1 pl-5", noSleep && "opacity-60")}>
+                <li><Q>Find Health Samples</Q>: Type is <Q>Sleep</Q>, Start Date is <Q>in the last 1 days</Q>, and add the filter <Q>Value is not In Bed</Q>.</li>
+                <li>Wear two sleep trackers to bed (say a watch and a ring)? Also add <Q>Source is</Q> the one you trust, or sleep is counted twice.</li>
                 <li><Q>Get Details of Health Samples</Q>: <Q>Duration</Q></li>
                 <li><Q>Calculate Statistics</Q>: <Q>Sum</Q> (it reads "Sum of Duration")</li>
                 <li><Q>Set Variable</Q>: name <Q>Sleep</Q>, to the <Q>Sum</Q> directly above</li>
@@ -190,7 +289,7 @@ export default function ConnectHealthPage() {
             </Step>
             <Step n={3} title="Active calories">
               <ul className="list-disc space-y-1 pl-5">
-                <li><Q>Find Health Samples</Q>: Type is <Q>Active Energy</Q>, Start Date is <Q>today</Q>, Source is <Q>oraimo health</Q>. Set <Q>Unit</Q> to <Q>kcal</Q> (not "cal").</li>
+                <li><Q>Find Health Samples</Q>: Type is <Q>Active Energy</Q>, Start Date is <Q>today</Q>, <Q>Group By</Q> <Q>Day</Q>. Set <Q>Unit</Q> to <Q>kcal</Q> (not "cal").</li>
                 <li><Q>Calculate Statistics</Q>: <Q>Sum</Q></li>
                 <li><Q>Set Variable</Q>: name <Q>Energy</Q>, to the <Q>Sum</Q> directly above</li>
               </ul>
@@ -224,9 +323,13 @@ export default function ConnectHealthPage() {
             </Step>
             <Step n={6} title="Test it">
               <p>
-                Open the oraimo health app first so the watch syncs. Then tap <Q>▶</Q> in your shortcut and allow Health
+                {device?.app ? <>Open <Q>{device.app}</Q> first so your device syncs. Then tap</> : <>Tap</>} <Q>▶</Q> in your shortcut and allow Health
                 access when asked. You should see a notification like <em>"Synced 2026-10-24: 8,432 steps, 7h 32m sleep,
                 412 kcal active"</em>, and this page will show the sync time.
+              </p>
+              <p>
+                If steps look about double what your device shows, open <Q>Find Health Samples</Q> for Steps and add{" "}
+                <Q>Source is</Q> your watch or ring app.
               </p>
             </Step>
             <Step n={7} title="Run it every night">
@@ -254,8 +357,7 @@ export default function ConnectHealthPage() {
       )}
 
       <p className="text-xs text-muted-foreground">
-        Steps from Apple Health replace the steps in your daily checklist for that day. Workouts aren't synced: oraimo
-        health doesn't share them with Apple Health, so keep logging them in the app.
+        Synced steps fill in your daily checklist automatically. Workouts aren't synced yet, so keep logging them in Train.
       </p>
     </div>
   );

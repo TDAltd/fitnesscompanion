@@ -20,12 +20,12 @@ import { cn } from "@/lib/utils";
 
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
 
+/** The main meal for the time of day: breakfast until 11, lunch until 4 PM, dinner after that. */
 function defaultSlot(): Slot {
   const h = new Date().getHours();
-  if (h < 11) return "Breakfast";
-  if (h < 16) return "Lunch";
-  if (h < 21) return "Dinner";
-  return "Snack";
+  if (h >= 4 && h < 11) return "Breakfast";
+  if (h >= 11 && h < 16) return "Lunch";
+  return "Dinner";
 }
 
 export default function Meals() {
@@ -46,7 +46,7 @@ export default function Meals() {
         description={view === "diary" ? "Log what you eat. Everything here counts towards today." : "Ideas that fit your plan. Add one to your diary in a tap."}
         action={
           <Button className="gap-1.5" onClick={() => openAdd(defaultSlot())} data-testid="button-add-food-header">
-            <Plus className="h-4 w-4" /> Add food
+            <Plus className="h-4 w-4" /> Log a meal
           </Button>
         }
       />

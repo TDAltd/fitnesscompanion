@@ -46,7 +46,7 @@ export function LowIntakeNote({ message, onAdd }: { message: string | null; onAd
       </p>
       {onAdd && (
         <Button size="sm" variant="outline" className="shrink-0" onClick={onAdd}>
-          Add food
+          Log a meal
         </Button>
       )}
     </div>

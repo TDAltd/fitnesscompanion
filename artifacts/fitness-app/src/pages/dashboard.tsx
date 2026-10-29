@@ -230,7 +230,7 @@ export default function DashboardPage() {
               </div>
             )}
             <Button asChild variant="outline" size="sm" className="mt-auto w-fit">
-              <Link href="/eat?add=1">Add food</Link>
+              <Link href="/eat?add=1">Log a meal</Link>
             </Button>
           </CardContent>
         </Card>

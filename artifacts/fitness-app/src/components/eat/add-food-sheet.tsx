@@ -108,6 +108,8 @@ export function AddFoodSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
+        // Don't jump into the search box on open: on phones that pops the keyboard over the choices
+        onOpenAutoFocus={(e) => e.preventDefault()}
         className="mx-auto flex max-h-[92dvh] w-full max-w-xl flex-col gap-0 rounded-t-3xl p-0 pb-[env(safe-area-inset-bottom)] md:inset-auto md:bottom-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-3xl md:border md:pb-0 md:data-[state=open]:slide-in-from-bottom-4 md:data-[state=closed]:slide-out-to-bottom-4 md:data-[state=open]:zoom-in-95 md:max-h-[85vh]"
       >
         <SheetHeader className="space-y-1 border-b px-5 pb-4 pt-5 text-left">
@@ -124,7 +126,7 @@ export function AddFoodSheet({
               </Button>
             )}
             <SheetTitle className="font-display text-xl font-medium">
-              {picked ? "How much?" : mode === "ai" ? "Describe or snap it" : mode === "quick" ? "Quick add" : "Add food"}
+              {picked ? "How much?" : mode === "ai" ? "Describe or snap it" : mode === "quick" ? "Quick add" : "Log a meal"}
             </SheetTitle>
           </div>
           <SheetDescription className="sr-only">Search for a food, use a photo, or type calories to add it to your diary.</SheetDescription>
@@ -160,7 +162,6 @@ export function AddFoodSheet({
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search: jollof, eba, egg, suya…"

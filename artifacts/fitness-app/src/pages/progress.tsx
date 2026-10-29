@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useWeekScores } from "@/lib/day-score";
+import { CalorieChart } from "@/components/progress/calorie-chart";
 
 export default function ProgressPage() {
   const week = useWeekScores(7);
@@ -107,6 +108,8 @@ export default function ProgressPage() {
 
       {/* WEEKLY SUMMARY */}
       <WeeklySummary />
+
+      <CalorieChart />
 
       {/* STEPS FROM APPLE HEALTH */}
       <HealthTrends />

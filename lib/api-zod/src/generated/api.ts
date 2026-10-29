@@ -266,7 +266,18 @@ export const NutritionLookupResponse = zod.object({
   "protein": zod.number(),
   "carbs": zod.number(),
   "fat": zod.number(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "name": zod.string(),
+  "amount": zod.string(),
+  "calories": zod.number(),
+  "protein": zod.number(),
+  "carbs": zod.number(),
+  "fat": zod.number()
+})).optional().describe('Every food the AI found, with its own estimate. Totals are the sum of these.'),
+  "low": zod.number().optional().describe('Realistic lowest total kcal'),
+  "high": zod.number().optional().describe('Realistic highest total kcal'),
+  "ignored": zod.array(zod.string()).optional().describe('Words the AI could not count')
 })
 
 
@@ -302,6 +313,10 @@ export const GetProfileResponse = zod.object({
   "dailySchedule": zod.string().nullish(),
   "workoutTimePreference": zod.string().nullish(),
   "workoutDurationMinutes": zod.number().nullish(),
+  "healthFlags": zod.array(zod.string()).optional().describe('Screening answers that change the plan (pregnant, breastfeeding, diabetes, eating-disorder)'),
+  "why": zod.string().nullish(),
+  "equipment": zod.array(zod.string()).optional(),
+  "dateOfBirth": zod.string().nullish().describe('YYYY-MM-DD'),
   "updatedAt": zod.string()
 })
 
@@ -309,6 +324,15 @@ export const GetProfileResponse = zod.object({
 /**
  * @summary Create or update user profile
  */
+export const upsertProfileBodyHealthFlagsMax = 4;
+
+export const upsertProfileBodyWhyMax = 200;
+
+export const upsertProfileBodyEquipmentMax = 10;
+
+export const upsertProfileBodyDateOfBirthRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
 export const UpsertProfileBody = zod.object({
   "name": zod.string().optional(),
   "ageYears": zod.number().optional(),
@@ -328,7 +352,11 @@ export const UpsertProfileBody = zod.object({
   "waterIntakeLiters": zod.number().nullish(),
   "dailySchedule": zod.string().nullish(),
   "workoutTimePreference": zod.union([zod.literal('Morning'),zod.literal('Midday'),zod.literal('Evening'),zod.literal('Flexible'),zod.literal(null)]).nullish(),
-  "workoutDurationMinutes": zod.union([zod.literal(15),zod.literal(30),zod.literal(45),zod.literal(60),zod.literal(null)]).nullish()
+  "workoutDurationMinutes": zod.union([zod.literal(15),zod.literal(30),zod.literal(45),zod.literal(60),zod.literal(null)]).nullish(),
+  "healthFlags": zod.array(zod.enum(['pregnant', 'breastfeeding', 'diabetes', 'eating-disorder'])).max(upsertProfileBodyHealthFlagsMax).optional(),
+  "why": zod.string().max(upsertProfileBodyWhyMax).nullish(),
+  "equipment": zod.array(zod.enum(['dumbbells', 'resistance-bands', 'kettlebell', 'pull-up-bar', 'skipping-rope', 'cardio-machine', 'yoga-mat'])).max(upsertProfileBodyEquipmentMax).optional(),
+  "dateOfBirth": zod.string().regex(upsertProfileBodyDateOfBirthRegExp).nullish()
 })
 
 export const UpsertProfileResponse = zod.object({
@@ -352,6 +380,10 @@ export const UpsertProfileResponse = zod.object({
   "dailySchedule": zod.string().nullish(),
   "workoutTimePreference": zod.string().nullish(),
   "workoutDurationMinutes": zod.number().nullish(),
+  "healthFlags": zod.array(zod.string()).optional().describe('Screening answers that change the plan (pregnant, breastfeeding, diabetes, eating-disorder)'),
+  "why": zod.string().nullish(),
+  "equipment": zod.array(zod.string()).optional(),
+  "dateOfBirth": zod.string().nullish().describe('YYYY-MM-DD'),
   "updatedAt": zod.string()
 })
 

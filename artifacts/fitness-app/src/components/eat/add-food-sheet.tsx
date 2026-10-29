@@ -10,6 +10,7 @@ import { FOODS } from "@/lib/foods";
 import { RECIPES, matchesDietaryPreference } from "@/lib/recipes";
 import { SLOTS, formatServings, useAddFood, useRecentFoods, type Slot } from "@/lib/food-log";
 import { compressMealPhoto } from "@/lib/photo";
+import { dailyShuffle } from "@/lib/daily";
 import { cn } from "@/lib/utils";
 
 type Pick = {
@@ -72,8 +73,10 @@ export function AddFoodSheet({
       .map<Pick>((r) => ({ name: r.name, portion: "1 portion, same as last time", calories: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat, source: "recent" }));
     if (!q) {
       // No search yet: your recent foods, then popular picks for this meal
-      const popular = FOODS.filter((f) => f.slot === slot)
-        .filter((f) => matchesDietaryPreference({ name: f.name, ingredients: f.ingredients, protein: f.protein }, diet))
+      // A fresh set of popular foods each day (stable within the day)
+      const pool = FOODS.filter((f) => f.slot === slot && !/teaspoon|tablespoon/.test(f.portion) && !/beer|soft drink|malt/i.test(f.name))
+        .filter((f) => matchesDietaryPreference({ name: f.name, ingredients: f.ingredients, protein: f.protein }, diet));
+      const popular = dailyShuffle(pool, `popular-${slot}`)
         .slice(0, 8)
         .map<Pick>((f) => ({ name: f.name, portion: f.portion, calories: f.calories, protein: f.protein, carbs: f.carbs, fat: f.fat, source: "food" }));
       return { mine, list: popular };
@@ -192,7 +195,7 @@ export function AddFoodSheet({
 
               <section>
                 <h3 className="mb-1.5 text-xs font-semibold text-muted-foreground">
-                  {q ? "Foods and recipes" : `Popular for ${slot === "Snack" ? "snacks" : slot.toLowerCase()}`}
+                  {q ? "Foods and recipes" : `Today's picks for ${slot === "Snack" ? "snacks" : slot.toLowerCase()}`}
                 </h3>
                 {results.list.length ? (
                   <FoodList items={results.list} onPick={(p) => { setPicked(p); setServings(1); }} />
@@ -228,7 +231,7 @@ function FoodList({ items, onPick }: { items: Pick[]; onPick: (p: Pick) => void 
   return (
     <ul className="divide-y overflow-hidden rounded-xl border">
       {items.map((f) => (
-        <li key={`${f.source}-${f.name}`}>
+        <li key={`${f.source}-${f.name}-${f.portion}`}>
           <button
             type="button"
             onClick={() => onPick(f)}
@@ -315,38 +318,152 @@ function PortionStep({ picked, servings, setServings }: { picked: Pick; servings
   );
 }
 
+type AiItem = { name: string; amount: string; calories: number; protein: number; carbs: number; fat: number };
+type AiResult = { mealName: string; items: AiItem[]; low: number; high: number; ignored: string[]; notes: string };
+
 function AiStep({ onEstimate }: { onEstimate: (p: Pick) => void }) {
   const [text, setText] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
+  const [result, setResult] = useState<AiResult | null>(null);
+  const [items, setItems] = useState<AiItem[]>([]);
+  const [extra, setExtra] = useState("");
+  const [edited, setEdited] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const lookup = useNutritionLookup();
   const { toast } = useToast();
 
-  const estimate = () =>
+  const run = (description: string, withPhoto: boolean) =>
     lookup.mutate(
-      { data: { mealName: text.trim() || undefined, imageData: photo || undefined } },
+      { data: { mealName: description.trim().slice(0, 300) || undefined, imageData: (withPhoto && photo) || undefined } },
       {
-        onSuccess: (r) =>
-          onEstimate({
-            name: r.mealName,
-            portion: text.trim() ? `as described: "${text.trim().slice(0, 60)}"` : "the portion in your photo",
-            calories: r.calories,
-            protein: r.protein,
-            carbs: r.carbs,
-            fat: r.fat,
-            source: "ai",
-            note: r.notes ? `AI estimate: ${r.notes}` : "AI estimate: check it looks right.",
-          }),
+        onSuccess: (r) => {
+          const list: AiItem[] = r.items?.length
+            ? r.items
+            : [{ name: r.mealName, amount: "1 portion", calories: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat }];
+          setResult({ mealName: r.mealName, items: list, low: r.low ?? Math.round(r.calories * 0.85), high: r.high ?? Math.round(r.calories * 1.15), ignored: r.ignored ?? [], notes: r.notes ?? "" });
+          setItems(list);
+          setEdited(false);
+          setExtra("");
+        },
         onError: (err) =>
           toast({
             title: "Couldn't estimate that",
-            description: (err as { status?: number }).status === 429
-              ? "You've reached today's limit of AI estimates. Use search or quick add."
-              : "Try describing it differently, or use quick add.",
+            // Show the server's reason (missing key, out of credit, daily limit...)
+            description:
+              (err as { data?: { error?: string } | null }).data?.error ??
+              "Couldn't reach the server. Check your connection and try again.",
             variant: "destructive",
           }),
       },
     );
+
+  // Reanalyze: describe the edited list item by item, so nothing is dropped
+  const reanalyze = () => {
+    const parts = items.map((i) => `${i.amount} ${i.name}`.trim());
+    if (extra.trim()) parts.push(extra.trim());
+    run(`Items: ${parts.join("; ")}`, false);
+  };
+
+  const total = (k: keyof Omit<AiItem, "name" | "amount">) => items.reduce((t, i) => t + i[k], 0);
+  const kcal = total("calories");
+  // Keep the AI's range proportional when items are removed before reanalysing
+  const scale = result && result.items.length ? kcal / Math.max(1, result.items.reduce((t, i) => t + i.calories, 0)) : 1;
+
+  if (result) {
+    return (
+      <div className="space-y-4" data-testid="ai-result">
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground">What we found</p>
+          <ul className="mt-2 space-y-2">
+            {items.map((it, i) => (
+              <li key={i} className="flex items-center gap-2 rounded-xl border p-2.5" data-testid="ai-item">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{it.name}</p>
+                  <input
+                    value={it.amount}
+                    onChange={(e) => {
+                      setItems((list) => list.map((x, j) => (j === i ? { ...x, amount: e.target.value } : x)));
+                      setEdited(true);
+                    }}
+                    aria-label={`Amount of ${it.name}`}
+                    className="w-full rounded-md bg-muted/60 px-2 py-1 text-xs"
+                  />
+                </div>
+                <span className="shrink-0 text-sm tabular-nums">{it.calories} kcal</span>
+                <button
+                  type="button"
+                  aria-label={`Remove ${it.name}`}
+                  onClick={() => {
+                    setItems((list) => list.filter((_, j) => j !== i));
+                    setEdited(true);
+                  }}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <Input
+            value={extra}
+            onChange={(e) => {
+              setExtra(e.target.value);
+              setEdited(Boolean(e.target.value.trim()) || edited);
+            }}
+            placeholder="Missed something? e.g. 1 sachet of Milo"
+            className="mt-2 h-10"
+            aria-label="Add a missing item"
+          />
+        </div>
+
+        {result.ignored.length > 0 && (
+          <p className="rounded-lg bg-dusk/10 px-3 py-2 text-sm" data-testid="ai-ignored">
+            Not counted: <b>{result.ignored.join(", ")}</b>. Add an amount above and tap Reanalyze, or it won't be in your total.
+          </p>
+        )}
+
+        <div className="rounded-xl bg-muted/50 p-3 text-center">
+          <p className="font-display text-2xl font-medium tabular-nums" data-testid="ai-range">
+            {edited
+              ? `About ${kcal.toLocaleString()} kcal`
+              : `${Math.round(result.low * scale).toLocaleString()}–${Math.round(result.high * scale).toLocaleString()} kcal`}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {edited ? "Tap Reanalyze to update the estimate with your changes." : `We'll log ${kcal.toLocaleString()} kcal, the middle of the range.`}
+            {result.notes && !edited ? ` ${result.notes}` : ""}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" className="h-12 gap-2" disabled={!edited || lookup.isPending || (!items.length && !extra.trim())} onClick={reanalyze} data-testid="button-reanalyze">
+            {lookup.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Reanalyze
+          </Button>
+          <Button
+            className="h-12"
+            disabled={!items.length || lookup.isPending}
+            onClick={() =>
+              onEstimate({
+                name: items.length === result.items.length ? result.mealName : items.map((i) => i.name).slice(0, 3).join(" and "),
+                portion: items.map((i) => `${i.amount} ${i.name}`.trim()).join(", ").slice(0, 90),
+                calories: kcal,
+                protein: total("protein"),
+                carbs: total("carbs"),
+                fat: total("fat"),
+                source: "ai",
+                note: "AI estimate. Change the portion below if you had more or less.",
+              })
+            }
+            data-testid="button-use-estimate"
+          >
+            Use this
+          </Button>
+        </div>
+        <button type="button" className="w-full text-center text-xs font-semibold text-primary" onClick={() => setResult(null)}>
+          Start again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -361,6 +478,7 @@ function AiStep({ onEstimate }: { onEstimate: (p: Pick) => void }) {
           maxLength={300}
           data-testid="input-ai-describe"
         />
+        <p className="text-xs text-muted-foreground">Tip: tap the microphone on your keyboard to say it instead of typing. Mention amounts for a better estimate.</p>
       </div>
       <input
         ref={input}
@@ -388,11 +506,11 @@ function AiStep({ onEstimate }: { onEstimate: (p: Pick) => void }) {
           <Camera className="h-4 w-4" /> Take or choose a photo
         </Button>
       )}
-      <Button className="h-12 w-full gap-2 text-base" disabled={(!text.trim() && !photo) || lookup.isPending} onClick={estimate} data-testid="button-ai-estimate">
+      <Button className="h-12 w-full gap-2 text-base" disabled={(!text.trim() && !photo) || lookup.isPending} onClick={() => run(text, true)} data-testid="button-ai-estimate">
         {lookup.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
         {lookup.isPending ? "Estimating…" : "Estimate calories"}
       </Button>
-      <p className="text-xs text-muted-foreground">Photos are sent to OpenAI for the estimate and aren't stored. You can adjust the portion next.</p>
+      <p className="text-xs text-muted-foreground">Photos are sent to OpenAI for the estimate and aren't stored. You can fix anything it gets wrong next.</p>
     </div>
   );
 }

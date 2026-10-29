@@ -89,3 +89,21 @@ export const formatServings = (s: number) => {
   const f = frac === 0.5 ? "½" : frac === 0.25 ? "¼" : frac === 0.75 ? "¾" : frac ? String(frac) : "";
   return `${whole || ""}${f}` || "0";
 };
+
+// ---------- planned treat meal ----------
+export type Treats = { extraKcal: number; dates: string[] };
+
+export const useTreats = (from: string, to: string) =>
+  useQuery({ queryKey: ["food-log", "treats", from, to], queryFn: () => api<Treats>(`/api/treats?from=${from}&to=${to}`) });
+
+export function useSetTreat() {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: (body: { date: string; on: boolean }) => api<{ date: string; on: boolean }>("/api/treats", { method: "PUT", body: JSON.stringify(body) }),
+    onSuccess: () => void refresh(),
+  });
+}
+
+/** The calorie target for one day: the plan's target, plus the treat allowance on a planned treat day. */
+export const targetFor = (date: string, base: number, treats?: Treats) =>
+  base + (treats?.dates.includes(date) ? treats.extraKcal : 0);

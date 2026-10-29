@@ -14,6 +14,8 @@ export const habitLogsTable = pgTable("habit_logs", {
   biscuitsAvoided: boolean("biscuits_avoided").notNull().default(false),
   caloriesConsumed: integer("calories_consumed"),
   proteinGrams: integer("protein_grams"),
+  /** A planned treat meal: the day's calorie target gets a small allowance (max once a week) */
+  treatMeal: boolean("treat_meal").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex("habit_logs_user_date_idx").on(t.userId, t.date)]);
 

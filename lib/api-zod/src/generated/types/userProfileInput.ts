@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { UserProfileInputDietaryPreference } from './userProfileInputDietaryPreference';
+import type { UserProfileInputEquipmentItem } from './userProfileInputEquipmentItem';
 import type { UserProfileInputFitnessGoal } from './userProfileInputFitnessGoal';
+import type { UserProfileInputHealthFlagsItem } from './userProfileInputHealthFlagsItem';
 import type { UserProfileInputTrainingExperience } from './userProfileInputTrainingExperience';
 import type { UserProfileInputWorkoutDaysPerWeek } from './userProfileInputWorkoutDaysPerWeek';
 import type { UserProfileInputWorkoutDurationMinutes } from './userProfileInputWorkoutDurationMinutes';
@@ -40,4 +42,18 @@ export interface UserProfileInput {
   workoutTimePreference?: UserProfileInputWorkoutTimePreference;
   /** @nullable */
   workoutDurationMinutes?: UserProfileInputWorkoutDurationMinutes;
+  /** @maxItems 4 */
+  healthFlags?: UserProfileInputHealthFlagsItem[];
+  /**
+     * @maxLength 200
+     * @nullable
+     */
+  why?: string | null;
+  /** @maxItems 10 */
+  equipment?: UserProfileInputEquipmentItem[];
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  dateOfBirth?: string | null;
 }

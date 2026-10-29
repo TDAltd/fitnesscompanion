@@ -9,7 +9,7 @@
  * Point it at a local or staging server, never at the live site: it creates (then deletes) a test account.
  */
 import { createRequire } from "node:module";
-import { buildPlan } from "@workspace/plan";
+import { buildPlan, computeTargets, isBirthday } from "@workspace/plan";
 
 const BASE = (process.argv.slice(2).find((a) => a.startsWith("http")) ?? "http://localhost:3998/fitnesscompanion").replace(/\/$/, "");
 const TZ = "Africa/Lagos";
@@ -87,6 +87,31 @@ async function main() {
     body: JSON.stringify({ slot: "Dinner", name: "A mixed grill platter featuring various cuts of grill", servings: 1, calories: 600, protein: 40 }),
   });
   check("long AI sentence stored as a short name", food.body.name === "Mixed grill platter", food.body.name);
+
+  // --- Treat days: at most one in any 7 days
+  check("treat day can be set today", (await api("/treats", { method: "PUT", body: JSON.stringify({ date: today, on: true }) })).status === 200);
+  const second = await api("/treats", { method: "PUT", body: JSON.stringify({ date: last7[3], on: true }) });
+  check("a second treat day in the same week is refused", second.status === 409, String(second.status));
+
+  // --- Plan safety rules (pure engine checks)
+  const t = (extra: Record<string, unknown>, overrides: Record<string, unknown> = {}) => computeTargets({ ...profile, ...extra }, overrides);
+  const maintenance = t({}).maintenance ?? 0;
+  check("pregnant: no calorie deficit", t({ healthFlags: ["pregnant"] }).calories >= maintenance - 25 && !t({ healthFlags: ["pregnant"] }).paceAvailable);
+  check("eating-disorder history: no deficit, habit focus", t({ healthFlags: ["eating-disorder"] }).habitFocus && t({ healthFlags: ["eating-disorder"] }).calories >= maintenance - 25);
+  check("diabetes: gentle pace only", JSON.stringify(t({ healthFlags: ["diabetes"] }).allowedPaces) === '["gentle"]' && t({ healthFlags: ["diabetes"] }, { pace: "faster" }).pace === "gentle");
+  check("typed target can't go under the safe minimum", t({}, { calorieTarget: 900 }).calories === 1200, String(t({}, { calorieTarget: 900 }).calories));
+
+  // --- Equipment changes home exercises (and their videos)
+  const names = (equipment: string[]) => buildPlan({ ...profile, equipment }).sessions.flatMap((s) => s.exercises.map((e) => e.name));
+  check("dumbbells swap in dumbbell moves at home", names(["dumbbells"]).includes("Dumbbell Goblet Squat") && !names([]).includes("Dumbbell Goblet Squat"));
+  check("no kit: clear bodyweight names", names([]).includes("Bodyweight Squat"));
+
+  // --- Birthday: age comes from the date of birth
+  const dob = `${Number(today.slice(0, 4)) - 30}-${today.slice(5)}`;
+  const withDob = await api<{ ageYears: number }>("/profile", { method: "POST", body: JSON.stringify({ ...profile, dateOfBirth: dob }) });
+  check("date of birth sets age", withDob.body.ageYears === 30, String(withDob.body.ageYears));
+  check("birthday is recognised", isBirthday(dob, today));
+  check("silly birth dates are refused", (await api("/profile", { method: "POST", body: JSON.stringify({ ...profile, dateOfBirth: "2030-01-01" }) })).status === 400);
 
   // --- Screens: Today's ring and Progress' today column use the same rules
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

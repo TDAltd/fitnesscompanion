@@ -71,17 +71,28 @@ export function computeTargets(p: PlanProfile, overrides: TargetOverrides = {}):
   let pace: Pace | null = null;
   let paceIsDefault = false;
   const underweight = bodyMassIndex != null && bodyMassIndex < 18.5;
-  const paceAvailable = wantsToLose && !isMinor && !underweight && goal !== "Build strength";
-  if (isMinor) {
+  const flags = new Set(p.healthFlags ?? []);
+  const pregnantOrFeeding = flags.has("pregnant") || flags.has("breastfeeding");
+  const habitFocus = flags.has("eating-disorder");
+  const noDeficit = pregnantOrFeeding || habitFocus;
+  const allowedPaces: Pace[] = flags.has("diabetes") ? ["gentle"] : ["gentle", "steady", "faster"];
+  const paceAvailable = wantsToLose && !isMinor && !underweight && !noDeficit && goal !== "Build strength";
+  if (pregnantOrFeeding) {
+    notes.push("Pregnant or breastfeeding: the plan aims for maintenance, not weight loss. Follow your midwife's or doctor's advice on food and exercise.");
+  } else if (habitFocus) {
+    notes.push("Your plan focuses on regular, balanced meals rather than cutting calories. A doctor or dietitian can help you set safe goals.");
+  } else if (isMinor) {
     notes.push("Under 18: the plan aims for maintenance, not a calorie deficit.");
   } else if (bodyMassIndex != null && bodyMassIndex < 18.5 && wantsToLose) {
     notes.push("Your BMI is already in the underweight range, so the plan does not cut calories.");
   } else if (paceAvailable) {
     // Your chosen pace, else the app's pick: steady with a BMI of 30+, gentle otherwise
-    pace = isPace(overrides.pace) ? overrides.pace : bodyMassIndex != null && bodyMassIndex >= 30 ? "steady" : "gentle";
-    paceIsDefault = !isPace(overrides.pace);
+    const chosen = isPace(overrides.pace) && allowedPaces.includes(overrides.pace) ? overrides.pace : null;
+    pace = chosen ?? (bodyMassIndex != null && bodyMassIndex >= 30 && allowedPaces.includes("steady") ? "steady" : "gentle");
+    paceIsDefault = !chosen;
+    if (flags.has("diabetes")) notes.push("Diabetes: the plan keeps to a gentle pace. Check with your doctor, especially if you take medicine that can cause low blood sugar.");
     adjustment = -PACES[pace].deficit;
-  } else if (goal === "Build strength") {
+  } else if (goal === "Build strength" && !noDeficit) {
     adjustment = bodyMassIndex != null && bodyMassIndex >= 25 ? 0 : 200;
   }
 
@@ -107,7 +118,10 @@ export function computeTargets(p: PlanProfile, overrides: TargetOverrides = {}):
   // ---- water (about 33 ml per kg, 2-4 L) ----
   const autoWater = clamp(Math.round(weight * 0.033 * 4) / 4, 2, 4);
 
-  const calories = valid(overrides.calorieTarget, 800, 6000) ? Math.round(overrides.calorieTarget) : autoCalories;
+  const typed = valid(overrides.calorieTarget, 800, 6000) ? Math.round(overrides.calorieTarget) : null;
+  // A typed target can't go under the safe minimum, or under maintenance when a deficit isn't advised
+  const minimum = noDeficit && maintenance != null ? roundTo(maintenance, 25) : floor;
+  const calories = typed != null ? Math.max(typed, minimum) : autoCalories;
   const protein = valid(overrides.proteinTarget, 20, 400) ? Math.round(overrides.proteinTarget) : autoProtein;
   const steps = valid(overrides.stepsGoal, 1000, 50000) ? Math.round(overrides.stepsGoal) : autoSteps;
   const waterLitres = valid(overrides.waterGoalLitres, 0.5, 8) ? overrides.waterGoalLitres : autoWater;
@@ -134,5 +148,7 @@ export function computeTargets(p: PlanProfile, overrides: TargetOverrides = {}):
     pace,
     paceIsDefault,
     paceAvailable,
+    habitFocus,
+    allowedPaces,
   };
 }

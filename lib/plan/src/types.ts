@@ -16,6 +16,12 @@ export interface PlanProfile {
   sleepHoursPerNight?: number | null;
   workoutTimePreference?: string | null;
   workoutDurationMinutes?: number | null;
+  /** Screening answers: pregnant, breastfeeding, diabetes, eating-disorder */
+  healthFlags?: string[] | null;
+  /** Home workout kit: dumbbells, resistance-bands, kettlebell, pull-up-bar, skipping-rope, cardio-machine, yoga-mat */
+  equipment?: string[] | null;
+  /** YYYY-MM-DD; when set, age is worked out from it */
+  dateOfBirth?: string | null;
 }
 
 /** Targets a user typed in themselves on the My plan page. null = use the automatic value. */
@@ -49,6 +55,10 @@ export interface Targets {
   paceAvailable: boolean;
   /** True when the app picked the pace because the person hasn't chosen one */
   paceIsDefault: boolean;
+  /** Eating-disorder history: no deficit, and screens focus on regular meals instead of calories left */
+  habitFocus: boolean;
+  /** Paces the person may choose (diabetes limits this to gentle) */
+  allowedPaces: Pace[];
 }
 
 export type SessionType = "FULL" | "LOWER" | "UPPER" | "CORE" | "CARDIO" | "INTERVALS" | "LONG";

@@ -5,6 +5,7 @@
  * Fitness accountability app API
  * OpenAPI spec version: 0.1.0
  */
+import type { NutritionLookupResultItemsItem } from './nutritionLookupResultItemsItem';
 
 export interface NutritionLookupResult {
   mealName: string;
@@ -13,4 +14,12 @@ export interface NutritionLookupResult {
   carbs: number;
   fat: number;
   notes?: string;
+  /** Every food the AI found, with its own estimate. Totals are the sum of these. */
+  items?: NutritionLookupResultItemsItem[];
+  /** Realistic lowest total kcal */
+  low?: number;
+  /** Realistic highest total kcal */
+  high?: number;
+  /** Words the AI could not count */
+  ignored?: string[];
 }

@@ -536,6 +536,20 @@ components:
           type: ["string", "null"]
         workoutDurationMinutes:
           type: ["integer", "null"]
+        healthFlags:
+          type: array
+          items:
+            type: string
+          description: Screening answers that change the plan (pregnant, breastfeeding, diabetes, eating-disorder)
+        why:
+          type: ["string", "null"]
+        equipment:
+          type: array
+          items:
+            type: string
+        dateOfBirth:
+          type: ["string", "null"]
+          description: YYYY-MM-DD
         updatedAt:
           type: string
 
@@ -587,6 +601,24 @@ components:
         workoutDurationMinutes:
           type: ["integer", "null"]
           enum: [15, 30, 45, 60, null]
+        healthFlags:
+          type: array
+          maxItems: 4
+          items:
+            type: string
+            enum: [pregnant, breastfeeding, diabetes, eating-disorder]
+        why:
+          type: ["string", "null"]
+          maxLength: 200
+        equipment:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            enum: [dumbbells, resistance-bands, kettlebell, pull-up-bar, skipping-rope, cardio-machine, yoga-mat]
+        dateOfBirth:
+          type: ["string", "null"]
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
 
     BodyMeasurement:
       type: object
@@ -712,3 +744,33 @@ components:
           type: integer
         notes:
           type: string
+        items:
+          type: array
+          description: Every food the AI found, with its own estimate. Totals are the sum of these.
+          items:
+            type: object
+            required: [name, amount, calories, protein, carbs, fat]
+            properties:
+              name:
+                type: string
+              amount:
+                type: string
+              calories:
+                type: integer
+              protein:
+                type: integer
+              carbs:
+                type: integer
+              fat:
+                type: integer
+        low:
+          type: integer
+          description: Realistic lowest total kcal
+        high:
+          type: integer
+          description: Realistic highest total kcal
+        ignored:
+          type: array
+          description: Words the AI could not count
+          items:
+            type: string

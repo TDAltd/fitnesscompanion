@@ -3,6 +3,9 @@ import { Link, useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { ageFromBirthDate, EQUIPMENT, type EquipmentId } from "@workspace/plan";
+
+const todayIso = () => new Date().toLocaleDateString("en-CA");
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
@@ -72,6 +75,10 @@ const profileSchema = z.object({
   fitnessGoal: requiredSelect(FITNESS_GOALS, "Choose a direction for your plan."),
   dietaryPreference: requiredSelect(DIETARY_PREFERENCES, "Choose the food approach that suits you."),
   guiltyPleasure: z.string().trim().max(80, "Keep this under 80 characters.").optional(),
+  why: z.string().trim().max(200, "Keep this under 200 characters.").optional(),
+  dateOfBirth: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/, "Use the date picker.").optional(),
+  equipment: z.array(z.enum(["dumbbells", "resistance-bands", "kettlebell", "pull-up-bar", "skipping-rope", "cardio-machine", "yoga-mat"])).optional(),
+  healthFlags: z.array(z.enum(["pregnant", "breastfeeding", "diabetes", "eating-disorder"])).optional(),
   sleepHoursPerNight: optionalNumericInput("Sleep hours", 0, 16),
   mealSchedule: optionalTextInput("Meal timing", 160),
   waterIntakeLiters: optionalNumericInput("Daily water intake", 0, 15),
@@ -97,6 +104,10 @@ const EMPTY_PROFILE: ProfileFormInput = {
   fitnessGoal: undefined,
   dietaryPreference: undefined,
   guiltyPleasure: "",
+  why: "",
+  healthFlags: [],
+  dateOfBirth: "",
+  equipment: [],
   sleepHoursPerNight: "",
   mealSchedule: "",
   waterIntakeLiters: "",
@@ -110,6 +121,10 @@ const EMPTY_PROFILE: ProfileFormInput = {
 
 const OPTIONAL_PROFILE_FIELDS = new Set([
   "guiltyPleasure",
+  "why",
+  "healthFlags",
+  "dateOfBirth",
+  "equipment",
   "sleepHoursPerNight",
   "mealSchedule",
   "waterIntakeLiters",
@@ -117,6 +132,13 @@ const OPTIONAL_PROFILE_FIELDS = new Set([
   "workoutTimePreference",
   "workoutDurationMinutes",
 ]);
+
+const HEALTH_FLAGS = [
+  { id: "pregnant", label: "I'm pregnant" },
+  { id: "breastfeeding", label: "I'm breastfeeding" },
+  { id: "diabetes", label: "I have diabetes or take blood-sugar medicine" },
+  { id: "eating-disorder", label: "I have had an eating disorder" },
+] as const;
 
 const SELECT_TEST_IDS = {
   sex: "select-sex",
@@ -156,6 +178,10 @@ export default function OnboardingPage() {
       fitnessGoal: (profile.fitnessGoal as ProfileFormInput["fitnessGoal"]) ?? undefined,
       dietaryPreference: (profile.dietaryPreference as ProfileFormInput["dietaryPreference"]) ?? undefined,
       guiltyPleasure: profile.guiltyPleasure ?? "",
+      why: profile.why ?? "",
+      dateOfBirth: profile.dateOfBirth ?? "",
+      equipment: (profile.equipment ?? []) as ProfileFormInput["equipment"],
+      healthFlags: (profile.healthFlags ?? []) as ProfileFormInput["healthFlags"],
       sleepHoursPerNight: profile.sleepHoursPerNight == null ? "" : String(profile.sleepHoursPerNight),
       mealSchedule: profile.mealSchedule ?? "",
       waterIntakeLiters: profile.waterIntakeLiters == null ? "" : String(profile.waterIntakeLiters),
@@ -188,6 +214,10 @@ export default function OnboardingPage() {
       fitnessGoal: values.fitnessGoal,
       dietaryPreference: values.dietaryPreference,
       guiltyPleasure: values.guiltyPleasure?.trim() || null,
+      why: values.why?.trim() || null,
+      dateOfBirth: values.dateOfBirth || null,
+      equipment: values.equipment ?? [],
+      healthFlags: values.healthFlags ?? [],
       sleepHoursPerNight: values.sleepHoursPerNight.trim() ? Number(values.sleepHoursPerNight) : null,
       mealSchedule: values.mealSchedule.trim() || null,
       waterIntakeLiters: values.waterIntakeLiters.trim() ? Number(values.waterIntakeLiters) : null,
@@ -308,10 +338,43 @@ export default function OnboardingPage() {
                         <FormMessage />
                       </FormItem>
                     )} />
+                    <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date of birth</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            max={todayIso()}
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                              const age = ageFromBirthDate(e.target.value, todayIso());
+                              if (age != null) form.setValue("ageYears", String(age), { shouldValidate: true });
+                            }}
+                            data-testid="input-date-of-birth"
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">Keeps your age up to date, and we'll celebrate your birthday.</p>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
                     <FormField control={form.control} name="ageYears" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Age</FormLabel>
-                        <FormControl><Input type="number" min="10" max="110" inputMode="numeric" placeholder="Years" {...field} data-testid="input-age" /></FormControl>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="10"
+                            max="110"
+                            inputMode="numeric"
+                            placeholder="Years"
+                            readOnly={Boolean(form.watch("dateOfBirth"))}
+                            className={form.watch("dateOfBirth") ? "bg-muted/50 text-muted-foreground" : undefined}
+                            {...field}
+                            data-testid="input-age"
+                          />
+                        </FormControl>
+                        {form.watch("dateOfBirth") ? <p className="text-xs text-muted-foreground">Worked out from your date of birth.</p> : null}
                         <FormMessage />
                       </FormItem>
                     )} />
@@ -429,6 +492,37 @@ export default function OnboardingPage() {
                         <FormMessage />
                       </FormItem>
                     )} />
+                    <FormField control={form.control} name="why" render={({ field }) => (
+                      <FormItem className="sm:col-span-2">
+                        <FormLabel>Why does this matter to you? <span className="font-normal text-muted-foreground">(optional)</span></FormLabel>
+                        <FormControl>
+                          <Input maxLength={200} placeholder="e.g. to keep up with my kids, to feel strong again" autoComplete="off" {...field} data-testid="input-why" />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">We'll show you this on harder days.</p>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="healthFlags" render={({ field }) => {
+                      const value = field.value ?? [];
+                      const toggle = (flag: (typeof HEALTH_FLAGS)[number]["id"]) =>
+                        field.onChange(value.includes(flag) ? value.filter((f) => f !== flag) : [...value, flag]);
+                      return (
+                        <FormItem className="sm:col-span-2">
+                          <FormLabel>Do any of these apply to you? <span className="font-normal text-muted-foreground">(optional, private)</span></FormLabel>
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            {HEALTH_FLAGS.map((f) => (
+                              <label key={f.id} className="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                                <input type="checkbox" className="h-5 w-5 accent-[hsl(var(--primary))]" checked={value.includes(f.id)} onChange={() => toggle(f.id)} data-testid={`flag-${f.id}`} />
+                                {f.label}
+                              </label>
+                            ))}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            These keep your plan safe: no calorie cut while pregnant, breastfeeding or recovering from an eating disorder, and a gentle pace with diabetes. Only used to build your plan; admins can't see them.
+                          </p>
+                        </FormItem>
+                      );
+                    }} />
                   </CardContent>
                 </Card>
 
@@ -539,6 +633,28 @@ export default function OnboardingPage() {
                         <FormMessage />
                       </FormItem>
                     )} />
+                    {(form.watch("workoutLocation") === "Home" || form.watch("workoutLocation") === "Mixed" || form.watch("workoutLocation") === "Outdoors") && (
+                      <FormField control={form.control} name="equipment" render={({ field }) => {
+                        const value = field.value ?? [];
+                        const toggle = (id: EquipmentId) => field.onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id]);
+                        return (
+                          <FormItem className="sm:col-span-2">
+                            <FormLabel>What do you have to work out with? <span className="font-normal text-muted-foreground">(tick all that apply)</span></FormLabel>
+                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                              {EQUIPMENT.map((e) => (
+                                <label key={e.id} className="flex min-h-[44px] cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                                  <input type="checkbox" className="h-5 w-5 accent-[hsl(var(--primary))]" checked={value.includes(e.id)} onChange={() => toggle(e.id)} data-testid={`equipment-${e.id}`} />
+                                  {e.label}
+                                </label>
+                              ))}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {value.length ? "Your home sessions and videos will use this kit." : "Nothing? No problem: your plan uses bodyweight moves and things like a backpack or water bottles."}
+                            </p>
+                          </FormItem>
+                        );
+                      }} />
+                    )}
                     <FormField control={form.control} name="trainingExperience" render={({ field }) => (
                       <FormItem className="sm:col-span-2">
                         <FormLabel>How does training feel for you?</FormLabel>

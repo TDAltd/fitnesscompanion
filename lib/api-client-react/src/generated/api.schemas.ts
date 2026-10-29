@@ -127,6 +127,16 @@ export interface UserProfile {
   workoutTimePreference?: string | null;
   /** @nullable */
   workoutDurationMinutes?: number | null;
+  /** Screening answers that change the plan (pregnant, breastfeeding, diabetes, eating-disorder) */
+  healthFlags?: string[];
+  /** @nullable */
+  why?: string | null;
+  equipment?: string[];
+  /**
+     * YYYY-MM-DD
+     * @nullable
+     */
+  dateOfBirth?: string | null;
   updatedAt: string;
 }
 
@@ -207,6 +217,29 @@ export const UserProfileInputWorkoutDurationMinutes = {
   NUMBER_60: 60,
 } as const;
 
+export type UserProfileInputHealthFlagsItem = typeof UserProfileInputHealthFlagsItem[keyof typeof UserProfileInputHealthFlagsItem];
+
+
+export const UserProfileInputHealthFlagsItem = {
+  pregnant: 'pregnant',
+  breastfeeding: 'breastfeeding',
+  diabetes: 'diabetes',
+  'eating-disorder': 'eating-disorder',
+} as const;
+
+export type UserProfileInputEquipmentItem = typeof UserProfileInputEquipmentItem[keyof typeof UserProfileInputEquipmentItem];
+
+
+export const UserProfileInputEquipmentItem = {
+  dumbbells: 'dumbbells',
+  'resistance-bands': 'resistance-bands',
+  kettlebell: 'kettlebell',
+  'pull-up-bar': 'pull-up-bar',
+  'skipping-rope': 'skipping-rope',
+  'cardio-machine': 'cardio-machine',
+  'yoga-mat': 'yoga-mat',
+} as const;
+
 export interface UserProfileInput {
   name?: string;
   ageYears?: number;
@@ -234,6 +267,20 @@ export interface UserProfileInput {
   workoutTimePreference?: UserProfileInputWorkoutTimePreference;
   /** @nullable */
   workoutDurationMinutes?: UserProfileInputWorkoutDurationMinutes;
+  /** @maxItems 4 */
+  healthFlags?: UserProfileInputHealthFlagsItem[];
+  /**
+     * @maxLength 200
+     * @nullable
+     */
+  why?: string | null;
+  /** @maxItems 10 */
+  equipment?: UserProfileInputEquipmentItem[];
+  /**
+     * @nullable
+     * @pattern ^\d{4}-\d{2}-\d{2}$
+     */
+  dateOfBirth?: string | null;
 }
 
 export interface BodyMeasurement {
@@ -308,6 +355,15 @@ export interface NutritionLookupInput {
   imageData?: string;
 }
 
+export type NutritionLookupResultItemsItem = {
+  name: string;
+  amount: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
 export interface NutritionLookupResult {
   mealName: string;
   calories: number;
@@ -315,6 +371,14 @@ export interface NutritionLookupResult {
   carbs: number;
   fat: number;
   notes?: string;
+  /** Every food the AI found, with its own estimate. Totals are the sum of these. */
+  items?: NutritionLookupResultItemsItem[];
+  /** Realistic lowest total kcal */
+  low?: number;
+  /** Realistic highest total kcal */
+  high?: number;
+  /** Words the AI could not count */
+  ignored?: string[];
 }
 
 export type GetMealPlanParams = {

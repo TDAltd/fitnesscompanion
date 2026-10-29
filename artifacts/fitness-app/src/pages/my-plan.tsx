@@ -261,8 +261,8 @@ function PaceCard({ plan }: { plan: Plan }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Weight-loss pace">
-          {(Object.keys(PACES) as Pace[]).map((p) => {
+        <div className={cn("grid gap-2", t.allowedPaces.length > 1 && "sm:grid-cols-3")} role="radiogroup" aria-label="Weight-loss pace">
+          {t.allowedPaces.map((p) => {
             const on = t.pace === p && !t.overridden.calories;
             const kcal = t.maintenance ? Math.max(t.maintenance - PACES[p].deficit, 0) : null;
             return (

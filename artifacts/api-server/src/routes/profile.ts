@@ -3,11 +3,18 @@ import { uid } from "../lib/auth";
 import { db, userProfileTable, weightLogsTable } from "@workspace/db";
 import { UpsertProfileBody } from "@workspace/api-zod";
 import { desc, eq } from "drizzle-orm";
+import { ageFromBirthDate } from "@workspace/plan";
+import { todayFor } from "../lib/dates";
 
 const router = Router();
 
 router.get("/profile", async (req, res) => {
-  const [profile] = await db.select().from(userProfileTable).where(eq(userProfileTable.userId, uid(req))).limit(1);
+  let [profile] = await db.select().from(userProfileTable).where(eq(userProfileTable.userId, uid(req))).limit(1);
+  // Birthdays move the age on by itself
+  const age = profile ? ageFromBirthDate(profile.dateOfBirth, todayFor(req)) : null;
+  if (profile && age != null && age !== profile.ageYears) {
+    [profile] = await db.update(userProfileTable).set({ ageYears: age }).where(eq(userProfileTable.id, profile.id)).returning();
+  }
 
   if (!profile) {
     res.json({
@@ -31,6 +38,10 @@ router.get("/profile", async (req, res) => {
       dailySchedule: null,
       workoutTimePreference: null,
       workoutDurationMinutes: null,
+      healthFlags: [],
+      why: null,
+      equipment: [],
+      dateOfBirth: null,
       updatedAt: new Date().toISOString(),
     });
     return;
@@ -57,12 +68,25 @@ router.get("/profile", async (req, res) => {
     dailySchedule: profile.dailySchedule,
     workoutTimePreference: profile.workoutTimePreference,
     workoutDurationMinutes: profile.workoutDurationMinutes,
+    healthFlags: profile.healthFlags,
+    why: profile.why,
+    equipment: profile.equipment,
+    dateOfBirth: profile.dateOfBirth,
     updatedAt: profile.updatedAt.toISOString(),
   });
 });
 
 router.post("/profile", async (req, res) => {
   const body = UpsertProfileBody.parse(req.body);
+  // A birth date sets the age (and keeps it right every year)
+  if (body.dateOfBirth) {
+    const age = ageFromBirthDate(body.dateOfBirth, todayFor(req));
+    if (age == null || age < 13 || age > 110) {
+      res.status(400).json({ error: "Check your date of birth." });
+      return;
+    }
+    body.ageYears = age;
+  }
 
   const [existing] = await db.select().from(userProfileTable).where(eq(userProfileTable.userId, uid(req))).limit(1);
 
@@ -90,6 +114,10 @@ router.post("/profile", async (req, res) => {
         dailySchedule: body.dailySchedule !== undefined ? body.dailySchedule : existing.dailySchedule,
         workoutTimePreference: body.workoutTimePreference !== undefined ? body.workoutTimePreference : existing.workoutTimePreference,
         workoutDurationMinutes: body.workoutDurationMinutes !== undefined ? body.workoutDurationMinutes : existing.workoutDurationMinutes,
+        healthFlags: body.healthFlags !== undefined ? [...new Set(body.healthFlags)] : existing.healthFlags,
+        why: body.why !== undefined ? (body.why?.trim().slice(0, 200) || null) : existing.why,
+        equipment: body.equipment !== undefined ? [...new Set(body.equipment)] : existing.equipment,
+        dateOfBirth: body.dateOfBirth !== undefined ? body.dateOfBirth : existing.dateOfBirth,
         updatedAt: new Date(),
       })
       .where(eq(userProfileTable.userId, uid(req)))
@@ -119,6 +147,10 @@ router.post("/profile", async (req, res) => {
         dailySchedule: body.dailySchedule ?? null,
         workoutTimePreference: body.workoutTimePreference ?? null,
         workoutDurationMinutes: body.workoutDurationMinutes ?? null,
+        healthFlags: [...new Set(body.healthFlags ?? [])],
+        why: body.why?.trim().slice(0, 200) || null,
+        equipment: [...new Set(body.equipment ?? [])],
+        dateOfBirth: body.dateOfBirth ?? null,
         updatedAt: new Date(),
       })
       .returning();
@@ -161,6 +193,10 @@ router.post("/profile", async (req, res) => {
     dailySchedule: profile.dailySchedule,
     workoutTimePreference: profile.workoutTimePreference,
     workoutDurationMinutes: profile.workoutDurationMinutes,
+    healthFlags: profile.healthFlags,
+    why: profile.why,
+    equipment: profile.equipment,
+    dateOfBirth: profile.dateOfBirth,
     updatedAt: profile.updatedAt.toISOString(),
   });
 });

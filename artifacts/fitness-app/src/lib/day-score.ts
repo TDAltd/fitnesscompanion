@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { format, startOfDay, subDays } from "date-fns";
 import { useListHabits, getListHabitsQueryKey, useListWorkouts, getListWorkoutsQueryKey } from "@workspace/api-client-react";
 import { usePlan } from "./plan";
-import { useFoodTotals } from "./food-log";
+import { targetFor, useFoodTotals, useTreats } from "./food-log";
 
 /**
  * One set of rules for "did I hit it today?", shared by the Today ring and the Progress week grid,
@@ -13,7 +13,9 @@ import { useFoodTotals } from "./food-log";
  */
 export type Status = "met" | "missed" | "rest" | "none";
 
-export const caloriesMet = (kcal: number, target: number) => kcal >= target * 0.8 && kcal <= target + 50;
+/** On target = 80–100% of the day's target (+50 kcal). With habitFocus, eating enough is all that counts. */
+export const caloriesMet = (kcal: number, target: number, habitFocus = false) =>
+  kcal >= target * 0.8 && (habitFocus || kcal <= target + 50);
 export const proteinMet = (grams: number, target: number) => grams >= target - 10;
 
 export interface DayScore {
@@ -43,6 +45,7 @@ export function useWeekScores(days = 7) {
   const habitsQ = useListHabits({ query: { queryKey: getListHabitsQueryKey() } });
   const workoutsQ = useListWorkouts({ query: { queryKey: getListWorkoutsQueryKey() } });
   const foodQ = useFoodTotals(from, to);
+  const treatsQ = useTreats(from, to);
 
   const scores = useMemo<DayScore[]>(() => {
     if (!plan) return [];
@@ -66,7 +69,7 @@ export function useWeekScores(days = 7) {
       const biscuits = yesNo(Boolean(habit?.biscuitsAvoided));
       const kcal = food?.calories ?? habit?.caloriesConsumed ?? 0;
       const prot = food?.protein ?? habit?.proteinGrams ?? 0;
-      const calories: Status = kcal ? yesNo(caloriesMet(kcal, t.calories)) : "none";
+      const calories: Status = kcal ? yesNo(caloriesMet(kcal, targetFor(date, t.calories, treatsQ.data), t.habitFocus)) : "none";
       const protein: Status = prot ? yesNo(proteinMet(prot, t.protein)) : "none";
 
       const all = [workout, steps, water, biscuits, calories, protein];
@@ -76,7 +79,7 @@ export function useWeekScores(days = 7) {
       const percent = possible ? Math.round((met / possible) * 100) : 0;
       return { date, isToday, workout, steps, water, biscuits, calories, protein, met, possible, percent, strong: percent >= 80 };
     });
-  }, [plan, habitsQ.data, workoutsQ.data, foodQ.data, days, to]);
+  }, [plan, habitsQ.data, workoutsQ.data, foodQ.data, treatsQ.data, days, to]);
 
   const past = scores.filter((s) => !s.isToday);
   return {

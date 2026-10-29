@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { addDays, format, isToday, isYesterday, parseISO } from "date-fns";
-import { BookOpen, ChevronDown, ChevronLeft, ChevronRight, Clock, Plus, Search, Trash2 } from "lucide-react";
+import { BookOpen, Cake, ChevronDown, ChevronLeft, ChevronRight, Clock, Plus, Search, Trash2 } from "lucide-react";
 import { useGetProfile, getGetProfileQueryKey } from "@workspace/api-client-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +11,11 @@ import { AddFoodSheet } from "@/components/eat/add-food-sheet";
 import { useToast } from "@/hooks/use-toast";
 import { usePlan } from "@/lib/plan";
 import { RECIPES, matchesDietaryPreference, type Cuisine, type Recipe } from "@/lib/recipes";
-import { SLOTS, formatServings, useAddFood, useFoodLog, useRemoveFood, type FoodEntry, type Slot } from "@/lib/food-log";
+import { SLOTS, formatServings, targetFor, useAddFood, useFoodLog, useRemoveFood, useSetTreat, useTreats, type FoodEntry, type Slot } from "@/lib/food-log";
+import { LowIntakeNote, lowIntakeMessage } from "@/components/eat/low-intake-note";
+import { MealIdeas } from "@/components/eat/meal-ideas";
+import { dailyShuffle } from "@/lib/daily";
+import { calorieFloor } from "@workspace/plan";
 import { cn } from "@/lib/utils";
 
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
@@ -27,7 +31,12 @@ function defaultSlot(): Slot {
 export default function Meals() {
   const [view, setView] = useState<"diary" | "recipes">("diary");
   const [date, setDate] = useState(() => iso(new Date()));
-  const [sheet, setSheet] = useState<{ open: boolean; slot: Slot }>({ open: false, slot: defaultSlot() });
+  // /eat?add=1 (from Today) opens the add sheet straight away, on the meal that fits the time of day
+  const [sheet, setSheet] = useState<{ open: boolean; slot: Slot }>(() => {
+    const open = new URLSearchParams(window.location.search).get("add") === "1";
+    if (open) window.history.replaceState(null, "", window.location.pathname);
+    return { open, slot: defaultSlot() };
+  });
   const openAdd = (slot: Slot) => setSheet({ open: true, slot });
 
   return (
@@ -35,6 +44,11 @@ export default function Meals() {
       <PageHeader
         title="Eat"
         description={view === "diary" ? "Log what you eat. Everything here counts towards today." : "Ideas that fit your plan. Add one to your diary in a tap."}
+        action={
+          <Button className="gap-1.5" onClick={() => openAdd(defaultSlot())} data-testid="button-add-food-header">
+            <Plus className="h-4 w-4" /> Add food
+          </Button>
+        }
       />
       <div className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1" role="tablist">
         {(["diary", "recipes"] as const).map((v) => (
@@ -80,9 +94,25 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
       ),
     [entries],
   );
-  const target = plan?.targets.calories ?? 0;
+  const { data: profile } = useGetProfile({ query: { queryKey: getGetProfileQueryKey() } });
+  const { data: treats } = useTreats(iso(addDays(d, -7)), iso(addDays(d, 7)));
+  const setTreat = useSetTreat();
+  const { toast } = useToast();
+  const habitFocus = Boolean(plan?.targets.habitFocus);
+  const isTreat = Boolean(treats?.dates.includes(date));
+  const target = plan ? targetFor(date, plan.targets.calories, treats) : 0;
   const proteinTarget = plan?.targets.protein ?? 0;
   const left = target - totals.calories;
+  const slotsLogged = new Set((entries ?? []).map((e) => e.slot)).size;
+  const lowNote = isLoading ? null : lowIntakeMessage({ calories: totals.calories, target, floor: calorieFloor(profile?.sex), isToday: atToday, habitFocus });
+  const toggleTreat = () =>
+    setTreat.mutate(
+      { date, on: !isTreat },
+      {
+        onSuccess: () => toast({ title: isTreat ? "Treat removed" : `Treat day: +${treats?.extraKcal ?? 300} kcal today`, description: isTreat ? undefined : "Enjoy it. Next one in a week." }),
+        onError: (e) => toast({ title: "Couldn't set a treat day", description: (e as Error).message, variant: "destructive" }),
+      },
+    );
 
   return (
     <div className="space-y-4">
@@ -102,8 +132,20 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
       {/* The one number that matters */}
       <Card>
         <CardContent className="flex items-center gap-5 p-5">
-          <CalorieRing eaten={totals.calories} target={target} />
+          {habitFocus ? (
+            <MealsDots logged={slotsLogged} />
+          ) : (
+            <CalorieRing eaten={totals.calories} target={target} />
+          )}
           <div className="min-w-0 flex-1 space-y-3">
+            {habitFocus ? (
+              <div>
+                <p className="font-display text-3xl font-medium tabular-nums" data-testid="text-meals-logged">
+                  {slotsLogged}<span className="ml-1 text-base font-normal text-muted-foreground">of 4 meals logged</span>
+                </p>
+                <p className="text-sm text-muted-foreground">Aim for regular meals and a snack. Your plan isn't about cutting calories.</p>
+              </div>
+            ) : (
             <div>
               <p className="font-display text-3xl font-medium tabular-nums" data-testid="text-calories-left">
                 {target ? Math.abs(left).toLocaleString() : totals.calories.toLocaleString()}
@@ -114,9 +156,11 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
               {target > 0 && (
                 <p className="text-sm text-muted-foreground">
                   {totals.calories.toLocaleString()} eaten of {target.toLocaleString()}
+                  {isTreat && ` (includes +${treats?.extraKcal ?? 300} treat)`}
                 </p>
               )}
             </div>
+            )}
             {proteinTarget > 0 && (
               <div>
                 <div className="mb-1 flex justify-between text-sm">
@@ -140,7 +184,22 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
             )}
           </div>
         </CardContent>
+        {!habitFocus && plan && (atToday || isTreat) && (
+          <div className="flex items-center justify-between gap-3 border-t px-5 py-3 text-sm">
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <Cake className="h-4 w-4 text-dusk" />
+              {isTreat ? `Treat day: +${treats?.extraKcal ?? 300} kcal added` : "Planning a treat? One a week, chosen ahead."}
+            </span>
+            <Button variant="ghost" size="sm" className="h-9 shrink-0 text-primary" disabled={setTreat.isPending} onClick={toggleTreat} data-testid="button-treat">
+              {isTreat ? "Remove" : "Make this a treat day"}
+            </Button>
+          </div>
+        )}
       </Card>
+
+      <LowIntakeNote message={lowNote} onAdd={() => onAdd(defaultSlot())} />
+
+      {atToday && !habitFocus && !isLoading && <MealIdeas left={left} date={date} slot={defaultSlot()} />}
 
       {/* Meal slots */}
       {isLoading ? (
@@ -199,6 +258,16 @@ function EntryRow({ entry, onRemove }: { entry: FoodEntry; onRemove: () => void 
   );
 }
 
+function MealsDots({ logged }: { logged: number }) {
+  return (
+    <div className="grid h-24 w-24 shrink-0 grid-cols-2 place-items-center gap-2 p-3" aria-hidden>
+      {[0, 1, 2, 3].map((i) => (
+        <span key={i} className={cn("h-7 w-7 rounded-full", i < logged ? "bg-primary" : "bg-muted")} />
+      ))}
+    </div>
+  );
+}
+
 function CalorieRing({ eaten, target }: { eaten: number; target: number }) {
   const r = 42;
   const c = 2 * Math.PI * r;
@@ -234,14 +303,17 @@ function Recipes({ date }: { date: string }) {
   const { toast } = useToast();
   const diet = profile?.dietaryPreference;
 
-  const list = useMemo(
-    () =>
-      RECIPES.filter((r) => matchesDietaryPreference(r, diet))
-        .filter((r) => cuisine === "Any" || r.cuisine === cuisine || r.cuisine === "Any")
-        .filter((r) => meal === "All" || (SLOT_OF[r.category] ?? "Snack") === meal)
-        .filter((r) => !q.trim() || `${r.name} ${r.ingredients.join(" ")}`.toLowerCase().includes(q.trim().toLowerCase())),
-    [diet, cuisine, meal, q],
-  );
+  const list = useMemo(() => {
+    const matches = RECIPES.filter((r) => matchesDietaryPreference(r, diet))
+      .filter((r) => cuisine === "Any" || r.cuisine === cuisine || r.cuisine === "Any")
+      .filter((r) => meal === "All" || (SLOT_OF[r.category] ?? "Snack") === meal)
+      .filter((r) => !q.trim() || `${r.name} ${r.ingredients.join(" ")}`.toLowerCase().includes(q.trim().toLowerCase()));
+    if (q.trim()) return matches;
+    // New order every day so the list doesn't feel stale; Nigerian dishes lead
+    const shuffled = dailyShuffle(matches, "recipes");
+    const rank = (c: string) => (c === "Nigerian" ? 0 : c === "International" ? 1 : 2);
+    return [...shuffled].sort((a, b) => rank(a.cuisine) - rank(b.cuisine));
+  }, [diet, cuisine, meal, q]);
 
   const addRecipe = (r: Recipe) => {
     const slot = SLOT_OF[r.category] ?? "Snack";

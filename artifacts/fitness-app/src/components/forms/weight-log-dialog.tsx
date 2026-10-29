@@ -27,7 +27,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useCreateWeightLog, getListWeightLogsQueryKey, getGetProgressSummaryQueryKey, getGetProfileQueryKey } from "@workspace/api-client-react";
+import { useCreateWeightLog, getListWeightLogsQueryKey, getGetProgressSummaryQueryKey, getGetProfileQueryKey, useGetProfile } from "@workspace/api-client-react";
+import { computeTargets } from "@workspace/plan";
+import { useTargetOverrides } from "@/lib/plan";
 
 const formSchema = z.object({
   weightKg: z.coerce.number().min(30, "Weight must be valid").max(200, "Weight must be valid"),
@@ -43,6 +45,8 @@ export function WeightLogDialog({ currentWeight }: WeightLogDialogProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const createWeightLog = useCreateWeightLog();
+  const { data: profile } = useGetProfile({ query: { queryKey: getGetProfileQueryKey() } });
+  const { data: overrides } = useTargetOverrides();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -69,9 +73,15 @@ export function WeightLogDialog({ currentWeight }: WeightLogDialogProps) {
           queryClient.invalidateQueries({ queryKey: getGetProfileQueryKey() });
           setOpen(false);
           form.reset();
+          // Tell people when their daily target moves because their weight changed
+          const before = profile ? computeTargets(profile, overrides ?? {}) : null;
+          const after = profile ? computeTargets({ ...profile, currentWeightKg: values.weightKg }, overrides ?? {}) : null;
+          const moved = before && after && !after.overridden.calories && Math.abs(after.calories - before.calories) >= 25;
           toast({
             title: "Weight logged",
-            description: "Logged. Watch the weekly trend, not single days.",
+            description: moved
+              ? `Your daily target is now ${after.calories.toLocaleString()} kcal (was ${before.calories.toLocaleString()}), to match your new weight.`
+              : "Logged. Watch the weekly trend, not single days.",
           });
         },
         onError: () => {

@@ -64,6 +64,20 @@
       "when": 1793302365901,
       "tag": "0008_clear_synced_sleep",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793302612958,
+      "tag": "0009_screening_why_treat",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793303089472,
+      "tag": "0010_equipment_birthday",
+      "breakpoints": true
     }
   ]
 }

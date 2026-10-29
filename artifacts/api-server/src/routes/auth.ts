@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull, lt, sql } from "drizzle-orm";
+import { todayFor } from "../lib/dates";
 import { randomBytes } from "node:crypto";
-import { db, passwordResetsTable, sessionsTable, usersTable } from "@workspace/db";
+import { activityDaysTable, db, passwordResetsTable, sessionsTable, usersTable } from "@workspace/db";
 import { appUrl, emailHtml, mailConfigured, sendMail } from "../lib/mail";
 import {
   createSession,
@@ -95,7 +96,14 @@ router.get("/auth/me", async (req, res) => {
     res.status(401).json({ error: "Not logged in" });
     return;
   }
-  res.json({ id: user.id, email: user.email, isAdmin: user.isAdmin });
+  // Days since the last visit before today (for a gentle welcome back after a break)
+  const today = todayFor(req);
+  const [prev] = await db
+    .select({ date: sql<string | null>`max(${activityDaysTable.date})` })
+    .from(activityDaysTable)
+    .where(and(eq(activityDaysTable.userId, user.id), lt(activityDaysTable.date, today)));
+  const daysAway = prev?.date ? Math.round((Date.parse(`${today}T12:00:00Z`) - Date.parse(`${prev.date}T12:00:00Z`)) / 864e5) : null;
+  res.json({ id: user.id, email: user.email, isAdmin: user.isAdmin, daysAway });
 });
 
 /** What the login screen needs to know before anyone is signed in. */

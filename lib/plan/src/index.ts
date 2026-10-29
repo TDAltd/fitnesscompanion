@@ -4,7 +4,7 @@ import type { Guideline, Plan, PlanProfile, Targets, TargetOverrides } from "./t
 
 export * from "./types";
 export { computeTargets, PACES, kgPerWeek, calorieFloor, restingCalories, bmi, ACTIVITY_MULTIPLIERS } from "./targets";
-export { buildSchedule, buildSessions, DAY_NAMES } from "./workouts";
+export { buildSchedule, buildSessions, DAY_NAMES, EQUIPMENT, type EquipmentId } from "./workouts";
 
 const fmtKg = (n: number) => `${Math.round(n * 10) / 10}kg`;
 const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -118,3 +118,21 @@ export function buildPlan(p: PlanProfile, overrides: TargetOverrides = {}): Plan
 }
 
 export { capitalise };
+
+/** Whole years between a YYYY-MM-DD birth date and today (YYYY-MM-DD). null if the date is unusable. */
+export function ageFromBirthDate(dateOfBirth: string | null | undefined, today: string): number | null {
+  if (!dateOfBirth || !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) return null;
+  const [by, bm, bd] = dateOfBirth.split("-").map(Number);
+  const [ty, tm, td] = today.split("-").map(Number);
+  const age = ty - by - (tm < bm || (tm === bm && td < bd) ? 1 : 0);
+  return age >= 0 && age <= 120 ? age : null;
+}
+
+/** True on the person's birthday (29 Feb birthdays are celebrated on 28 Feb in other years). */
+export function isBirthday(dateOfBirth: string | null | undefined, today: string): boolean {
+  if (!dateOfBirth || !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) return false;
+  const md = dateOfBirth.slice(5);
+  const [ty] = today.split("-").map(Number);
+  const leap = (ty % 4 === 0 && ty % 100 !== 0) || ty % 400 === 0;
+  return today.slice(5) === md || (md === "02-29" && !leap && today.slice(5) === "02-28");
+}

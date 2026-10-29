@@ -1,5 +1,7 @@
 import { format } from "date-fns";
 import { InstallPrompt } from "@/components/today/install-prompt";
+import { Encouragement } from "@/components/today/encouragement";
+import { BirthdayCard } from "@/components/today/birthday";
 import { WeeklyCheckIn } from "@/components/today/weekly-check-in";
 import { Link } from "wouter";
 import { Check, Dumbbell, Footprints, Droplets, Salad, Beef, Ban, Scale, ChevronRight, Moon } from "lucide-react";
@@ -30,6 +32,9 @@ import { RhythmRing } from "@/components/today/rhythm-ring";
 import { usePlan } from "@/lib/plan";
 import { cn } from "@/lib/utils";
 import { caloriesMet, proteinMet } from "@/lib/day-score";
+import { targetFor, useTreats } from "@/lib/food-log";
+import { LowIntakeNote, lowIntakeMessage } from "@/components/eat/low-intake-note";
+import { calorieFloor } from "@workspace/plan";
 
 function greeting(hour: number) {
   if (hour < 12) return "Good morning";
@@ -42,7 +47,9 @@ export default function DashboardPage() {
   const todayStr = format(today, "yyyy-MM-dd");
   const { plan } = usePlan();
   const scheduled = plan?.schedule.find((d) => d.day === today.getDay());
-  const calTarget = plan?.targets.calories ?? 2000;
+  const { data: treats } = useTreats(todayStr, todayStr);
+  const habitFocus = Boolean(plan?.targets.habitFocus);
+  const calTarget = targetFor(todayStr, plan?.targets.calories ?? 2000, treats);
   const proteinTarget = plan?.targets.protein ?? 100;
 
   const { data: profile } = useGetProfile({ query: { queryKey: getGetProfileQueryKey() } });
@@ -90,10 +97,12 @@ export default function DashboardPage() {
     {
       key: "food",
       icon: Salad,
-      label: "Calories",
+      label: habitFocus ? "Regular meals" : "Calories",
       // "Done" once you've eaten most of your target without going over
-      done: caloriesMet(calories, calTarget),
-      detail: calories > 0 ? `${calories.toLocaleString()} of ${calTarget.toLocaleString()} kcal` : "Nothing logged yet",
+      done: caloriesMet(calories, calTarget, habitFocus),
+      detail: habitFocus
+        ? `${new Set((meals ?? []).map((m) => m.category)).size} meals logged`
+        : calories > 0 ? `${calories.toLocaleString()} of ${calTarget.toLocaleString()} kcal` : "Nothing logged yet",
     },
     {
       key: "protein",
@@ -123,6 +132,10 @@ export default function DashboardPage() {
           {greeting(today.getHours())}{firstName ? `, ${firstName}` : ""}
         </h1>
       </header>
+
+      <BirthdayCard />
+
+      <Encouragement />
 
       <InstallPrompt />
 
@@ -197,7 +210,7 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-4">
                 {[
-                  { label: "Calories", value: calories, target: calTarget, unit: " kcal", over: calories > calTarget },
+                  ...(habitFocus ? [] : [{ label: "Calories", value: calories, target: calTarget, unit: " kcal", over: calories > calTarget + 50 }]),
                   { label: "Protein", value: protein, target: proteinTarget, unit: "g", over: false },
                 ].map((m) => (
                   <div key={m.label} className="space-y-1.5">
@@ -217,11 +230,15 @@ export default function DashboardPage() {
               </div>
             )}
             <Button asChild variant="outline" size="sm" className="mt-auto w-fit">
-              <Link href="/eat">{(meals?.length ?? 0) > 0 ? "Add or change meals" : "Plan today's meals"}</Link>
+              <Link href="/eat?add=1">Add food</Link>
             </Button>
           </CardContent>
         </Card>
       </div>
+
+      <LowIntakeNote
+        message={loadingMeals ? null : lowIntakeMessage({ calories, target: calTarget, floor: calorieFloor(profile?.sex), isToday: true, habitFocus })}
+      />
 
       <WeeklyCheckIn />
 

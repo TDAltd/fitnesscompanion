@@ -92,6 +92,59 @@ const CARDIO_MODE: Record<Context, string> = {
 
 const SETS: Record<string, number> = { Beginner: 2, Intermediate: 3, Advanced: 4 };
 
+/** Home equipment people can tick in setup. */
+export const EQUIPMENT = [
+  { id: "dumbbells", label: "Dumbbells" },
+  { id: "resistance-bands", label: "Resistance bands" },
+  { id: "kettlebell", label: "Kettlebell" },
+  { id: "pull-up-bar", label: "Pull-up bar" },
+  { id: "skipping-rope", label: "Skipping rope" },
+  { id: "cardio-machine", label: "Treadmill or exercise bike" },
+  { id: "yoga-mat", label: "Exercise mat" },
+] as const;
+export type EquipmentId = (typeof EQUIPMENT)[number]["id"];
+
+/**
+ * Home exercises that get a better version when you own the kit.
+ * First match wins, so the order is the order of preference.
+ */
+const HOME_SWAPS: Record<string, [EquipmentId, string, string?][]> = {
+  "Bodyweight Squat": [["dumbbells", "Dumbbell Goblet Squat", "12"], ["kettlebell", "Kettlebell Goblet Squat", "12"]],
+  "Goblet or Bodyweight Squat": [["dumbbells", "Dumbbell Goblet Squat", "12"], ["kettlebell", "Kettlebell Goblet Squat", "12"]],
+  "Glute Bridge": [["dumbbells", "Dumbbell Glute Bridge", "12"], ["resistance-bands", "Banded Glute Bridge"]],
+  "Backpack or Dumbbell Row": [["dumbbells", "Dumbbell Row", "12 each"], ["resistance-bands", "Resistance Band Row", "15"], ["pull-up-bar", "Negative Pull-Ups", "5"]],
+  "Reverse Lunge": [["dumbbells", "Dumbbell Reverse Lunge"], ["kettlebell", "Kettlebell Swing", "15"]],
+  "Pike Push-Ups": [["dumbbells", "Dumbbell Shoulder Press", "10"], ["resistance-bands", "Band Overhead Press", "12"]],
+  "Hammer Curls (water bottles OK)": [["dumbbells", "Dumbbell Hammer Curls"], ["resistance-bands", "Resistance Band Curls", "15"]],
+  "Lateral Raises": [["dumbbells", "Dumbbell Lateral Raises"], ["resistance-bands", "Band Lateral Raises"]],
+  "Calf Raises": [["dumbbells", "Dumbbell Calf Raises"]],
+  "Dead Bugs": [["pull-up-bar", "Hanging Knee Raises", "8"]],
+  "Single-Leg Glute Bridge": [["resistance-bands", "Banded Lateral Walk", "12 each"]],
+};
+
+/** Without any kit, label the home version clearly so the video search matches. */
+const HOME_FALLBACK: Record<string, string> = {
+  "Goblet or Bodyweight Squat": "Bodyweight Squat",
+  "Backpack or Dumbbell Row": "Backpack Row",
+  "Hammer Curls (water bottles OK)": "Water-Bottle Hammer Curls",
+  "Lateral Raises": "Water-Bottle Lateral Raises",
+};
+
+function homeVersion(name: string, reps: string, kit: Set<string>): [string, string] {
+  const swap = (HOME_SWAPS[name] ?? []).find(([id]) => kit.has(id));
+  if (swap) return [swap[1], swap[2] ?? reps];
+  return [HOME_FALLBACK[name] ?? name, reps];
+}
+
+function homeCardioMode(kit: Set<string>): string {
+  const modes = [
+    kit.has("cardio-machine") ? "treadmill or exercise bike" : null,
+    kit.has("skipping-rope") ? "skipping" : null,
+    "brisk walk, step-ups or a dance/cardio video",
+  ].filter(Boolean);
+  return modes.slice(0, 2).join(", or ");
+}
+
 function contextFor(location: string | null | undefined, type: SessionType): Context {
   if (location === "Gym") return "gym";
   if (location === "Outdoors") return "outdoors";
@@ -106,8 +159,8 @@ function exerciseCount(minutes: number): number {
   return 6;
 }
 
-function cardioExercises(type: "CARDIO" | "INTERVALS" | "LONG", ctx: Context, minutes: number, experience: string): Exercise[] {
-  const mode = CARDIO_MODE[ctx];
+function cardioExercises(type: "CARDIO" | "INTERVALS" | "LONG", ctx: Context, minutes: number, experience: string, kit: Set<string>): Exercise[] {
+  const mode = ctx === "home" ? homeCardioMode(kit) : CARDIO_MODE[ctx];
   const warm = minutes <= 15 ? 3 : 5;
   if (type === "INTERVALS") {
     const work = experience === "Advanced" ? 40 : experience === "Intermediate" ? 30 : 20;
@@ -179,6 +232,7 @@ export function buildSessions(p: PlanProfile): Session[] {
   const experience = p.trainingExperience ?? "Beginner";
   const sets = SETS[experience] ?? 2;
   const timeLabel = p.workoutTimePreference && p.workoutTimePreference !== "Flexible" ? p.workoutTimePreference : null;
+  const kit = new Set(p.equipment ?? []);
 
   const order: SessionType[] = [];
   for (const d of schedule) if (d.sessionId && !order.includes(d.sessionId)) order.push(d.sessionId);
@@ -189,13 +243,11 @@ export function buildSessions(p: PlanProfile): Session[] {
     const duration = type === "LONG" ? longMinutes(minutes) : minutes;
     const exercises: Exercise[] =
       type === "CARDIO" || type === "INTERVALS" || type === "LONG"
-        ? cardioExercises(type, ctx, minutes, experience)
-        : STRENGTH[type][ctx].slice(0, exerciseCount(minutes)).map(([name, reps]) => ({
-            name,
-            sets: type === "CORE" ? Math.max(2, sets - 1) : sets,
-            reps,
-            url: yt(name),
-          }));
+        ? cardioExercises(type, ctx, minutes, experience, kit)
+        : STRENGTH[type][ctx].slice(0, exerciseCount(minutes)).map(([baseName, baseReps]) => {
+            const [name, reps] = ctx === "home" ? homeVersion(baseName, baseReps, kit) : [baseName, baseReps];
+            return { name, sets: type === "CORE" ? Math.max(2, sets - 1) : sets, reps, url: yt(name) };
+          });
 
     let note: string | undefined;
     if (type === "FULL" || type === "LOWER" || type === "UPPER") {

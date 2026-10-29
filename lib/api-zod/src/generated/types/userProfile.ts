@@ -46,5 +46,15 @@ export interface UserProfile {
   workoutTimePreference?: string | null;
   /** @nullable */
   workoutDurationMinutes?: number | null;
+  /** Screening answers that change the plan (pregnant, breastfeeding, diabetes, eating-disorder) */
+  healthFlags?: string[];
+  /** @nullable */
+  why?: string | null;
+  equipment?: string[];
+  /**
+     * YYYY-MM-DD
+     * @nullable
+     */
+  dateOfBirth?: string | null;
   updatedAt: string;
 }

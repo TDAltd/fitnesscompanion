@@ -106,6 +106,24 @@ const ROWS: Row[] = [
   ["Avocado", "½ avocado", 160, 2, 9, 15, "Snack", ["avocado"]],
   ["Garden egg", "3 garden eggs", 40, 2, 9, 0, "Snack", ["garden egg"]],
   ["Agbalumo (African star apple)", "3 fruits", 100, 1, 24, 0, "Snack", ["agbalumo"]],
+  // Local measures and packed foods (approximate; check the pack where you can)
+  ["Stew", "1 cooking spoon", 90, 1, 5, 8, "Lunch", ["tomato", "pepper", "oil"]],
+  ["White rice", "1 cooking spoon", 80, 2, 18, 0, "Lunch", ["rice"]],
+  ["Jollof rice", "1 cooking spoon", 110, 2, 19, 3, "Lunch", ["rice", "tomato", "oil"]],
+  ["Palm oil", "1 tablespoon", 120, 0, 0, 14, "Lunch", ["palm oil"]],
+  ["Vegetable oil", "1 tablespoon", 120, 0, 0, 14, "Lunch", ["oil"]],
+  ["Sugar", "1 teaspoon or 1 cube", 16, 0, 4, 0, "Breakfast", ["sugar"]],
+  ["Nescafé 3-in-1", "1 sachet", 70, 1, 12, 2, "Breakfast", ["coffee", "milk", "sugar"]],
+  ["Barissimo 3-in-1", "1 sachet", 80, 1, 14, 2, "Breakfast", ["coffee", "milk", "sugar"]],
+  ["Milo", "1 sachet (20 g), with water", 80, 2, 14, 2, "Breakfast", ["cocoa", "milk", "sugar"]],
+  ["Peak milk powder", "1 sachet (about 14 g)", 70, 4, 5, 4, "Breakfast", ["milk"]],
+  ["Evaporated milk (Peak)", "2 tablespoons", 40, 2, 3, 2, "Breakfast", ["milk"]],
+  ["Gala sausage roll", "1 roll", 220, 6, 22, 12, "Snack", ["sausage", "wheat flour"]],
+  ["Hollandia yoghurt", "1 bottle (315 ml)", 285, 9, 45, 7, "Snack", ["milk", "sugar"]],
+  ["Chi Exotic juice", "1 glass", 120, 0, 30, 0, "Snack", ["fruit", "sugar"]],
+  ["Golden Morn with milk", "1 bowl", 220, 7, 36, 5, "Breakfast", ["maize", "milk", "sugar"]],
+  ["Cornflakes with milk", "1 bowl", 200, 6, 36, 3, "Breakfast", ["corn", "milk", "sugar"]],
+  ["Sliced bread", "2 slices", 160, 5, 30, 2, "Breakfast", ["wheat flour"]],
 ];
 
 export const FOODS: Food[] = ROWS.map(([name, portion, calories, protein, carbs, fat, slot, ingredients], i) => ({

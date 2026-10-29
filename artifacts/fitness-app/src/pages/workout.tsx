@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ExternalLink, Info, Play, Youtube } from "lucide-react";
-import type { Session } from "@workspace/plan";
+import { EQUIPMENT, type Session } from "@workspace/plan";
 import { SessionLogger } from "@/components/train/session-logger";
 import { Link } from "wouter";
 import { useGetProfile, getGetProfileQueryKey } from "@workspace/api-client-react";
@@ -68,7 +68,16 @@ export default function WorkoutPage() {
               <p className="text-[10px] font-bold text-primary">Your training setup</p>
               <h2 className="mt-1 text-lg font-semibold">{profile.fitnessGoal || "General fitness"}</h2>
               <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                {profile.workoutDaysPerWeek ?? 3} training days per week · {profile.workoutLocation || "Flexible location"} · {profile.trainingExperience || "Beginner"} level.
+                {profile.workoutDaysPerWeek ?? 3} training days per week · {profile.workoutLocation || "Flexible location"} · {profile.trainingExperience || "Beginner"} level
+                {profile.workoutLocation !== "Gym" && (
+                  <>
+                    {" · "}
+                    {profile.equipment?.length
+                      ? `Kit: ${EQUIPMENT.filter((e) => profile.equipment?.includes(e.id)).map((e) => e.label.toLowerCase()).join(", ")}`
+                      : "No equipment needed"}
+                  </>
+                )}
+                .
                 {" "}Each session below matches a day in your weekly plan. Adjust around how you feel and recover.
               </p>
               {(profile.workoutTimePreference || profile.workoutDurationMinutes != null || profile.sleepHoursPerNight != null) && (
@@ -85,7 +94,7 @@ export default function WorkoutPage() {
               )}
             </div>
             <Button variant="outline" size="sm" className="shrink-0" asChild>
-              <Link href="/plan">My plan</Link>
+              <Link href="/onboarding">Change setup</Link>
             </Button>
           </CardContent>
         </Card>

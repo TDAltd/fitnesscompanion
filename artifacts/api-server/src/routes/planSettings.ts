@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { db, userProfileTable } from "@workspace/db";
-import { computeTargets, type Targets } from "@workspace/plan";
+import { ageFromBirthDate, computeTargets, type Targets } from "@workspace/plan";
+import { dateInTz, DEFAULT_TZ } from "../lib/dates";
 import { uid } from "../lib/auth";
 
 /**
@@ -26,7 +27,8 @@ async function loadProfile(userId: number) {
 /** The user's current targets (automatic values with their overrides applied). Used by habit tracking. */
 export async function targetsForUser(userId: number): Promise<Targets> {
   const profile = await loadProfile(userId);
-  return computeTargets(profile ?? {}, toResponse(profile));
+  const age = profile ? ageFromBirthDate(profile.dateOfBirth, dateInTz(new Date(), DEFAULT_TZ)) : null;
+  return computeTargets(profile ? { ...profile, ageYears: age ?? profile.ageYears } : {}, toResponse(profile));
 }
 
 const toResponse = (p: Awaited<ReturnType<typeof loadProfile>>) => ({

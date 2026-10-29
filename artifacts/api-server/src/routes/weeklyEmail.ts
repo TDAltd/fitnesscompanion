@@ -12,7 +12,9 @@ import {
   usageEventsTable,
   userProfileTable,
 } from "@workspace/db";
-import { computeTargets } from "@workspace/plan";
+import { calorieFloor } from "@workspace/plan";
+import { targetsForUser } from "./planSettings";
+import { TREAT_KCAL } from "./foodLog";
 import { addDays, dateInTz, DEFAULT_TZ, validTimezone } from "../lib/dates";
 import { appUrl, checkUnsubscribe, emailHtml, mailConfigured, sendMail, unsubscribeToken } from "../lib/mail";
 import { envAdmins } from "../lib/auth";
@@ -43,13 +45,7 @@ async function summarise(user: typeof usersTable.$inferSelect): Promise<Summary 
 
   const [profile] = await db.select().from(userProfileTable).where(eq(userProfileTable.userId, user.id));
   if (!profile) return null; // never finished setting up
-  const targets = computeTargets(profile, {
-    calorieTarget: profile.calorieTarget,
-    proteinTarget: profile.proteinTarget,
-    stepsGoal: profile.stepsGoal,
-    waterGoalLitres: profile.waterGoalLitres,
-    pace: profile.pace as "gentle" | "steady" | "faster" | null,
-  });
+  const targets = await targetsForUser(user.id);
 
   const [workouts] = await db
     .select({ n: sql<number>`count(*)::int` })
@@ -62,7 +58,17 @@ async function summarise(user: typeof usersTable.$inferSelect): Promise<Summary 
     .from(mealPlanTable)
     .where(and(eq(mealPlanTable.userId, user.id), between(mealPlanTable.date, from, to)))
     .groupBy(mealPlanTable.date);
-  const onTarget = food.filter((d) => d.kcal <= targets.calories + 50).length;
+  // Same rule as the app: on target means 80–100% of the target (+50 kcal). Very low days are not wins.
+  const treats = new Set(
+    (await db
+      .select({ date: habitLogsTable.date })
+      .from(habitLogsTable)
+      .where(and(eq(habitLogsTable.userId, user.id), eq(habitLogsTable.treatMeal, true), between(habitLogsTable.date, from, to)))).map((r) => r.date),
+  );
+  const targetOn = (date: string) => targets.calories + (treats.has(date) ? TREAT_KCAL : 0);
+  const onTarget = food.filter((d) => d.kcal >= targetOn(d.date) * 0.8 && d.kcal <= targetOn(d.date) + 50).length;
+  const floor = calorieFloor(profile.sex);
+  const lowDays = food.filter((d) => d.kcal < floor).length;
 
   const steps = await db
     .select({ steps: healthDailyTable.steps })
@@ -111,6 +117,8 @@ async function summarise(user: typeof usersTable.$inferSelect): Promise<Summary 
     else if (workouts.n > 0) lines.push(`${workouts.n} workout${workouts.n === 1 ? "" : "s"} done. Next week, aim for ${Math.min(plannedSessions, workouts.n + 1)}.`);
     if (food.length >= 5) lines.push("Great food logging this week. The more you log, the more accurate your plan gets.");
     else lines.push("Try logging food on a few more days next week. Even rough entries help.");
+    if (lowDays > 0)
+      lines.push(`${lowDays} day${lowDays === 1 ? " looks" : "s look"} very low (under ${floor.toLocaleString("en-GB")} kcal). If you forgot to log some meals, add them. If you really ate that little, it's too little to lose weight safely.`);
   }
   return { rows, lines };
 }

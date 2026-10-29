@@ -42,6 +42,17 @@ export default function MePage() {
         </div>
       )}
 
+      {profile?.why ? (
+        <p className="rounded-2xl bg-primary/5 px-4 py-3 text-sm" data-testid="me-why">
+          <span className="text-muted-foreground">Your why: </span>
+          <q className="font-semibold">{profile.why}</q>
+        </p>
+      ) : (
+        <Link href="/onboarding" className="block rounded-2xl border border-dashed px-4 py-3 text-sm text-muted-foreground hover:bg-muted/50">
+          Add <b className="text-foreground">your why</b>: one line we'll show you on harder days.
+        </Link>
+      )}
+
       <nav className="overflow-hidden rounded-2xl border bg-card" aria-label="Settings and tools">
         {LINKS.map(({ href, icon: Icon, title, body }, i) => (
           <Link

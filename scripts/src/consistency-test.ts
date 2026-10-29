@@ -92,6 +92,16 @@ async function main() {
   });
   check("long AI sentence stored as a short name", food.body.name === "Mixed grill platter", food.body.name);
 
+  // --- Editing a logged food
+  const id = (food.body as unknown as { id: number }).id;
+  const moved = await api<{ slot: string; servings: number; calories: number }>(`/food-log/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ slot: "Lunch", servings: 1.5, calories: 900 }),
+  });
+  check("edit: move to another meal and change portions", moved.body.slot === "Lunch" && moved.body.servings === 1.5 && moved.body.calories === 900, JSON.stringify(moved.body));
+  check("edit: future days are refused", (await api(`/food-log/${id}`, { method: "PATCH", body: JSON.stringify({ date: "2099-01-01" }) })).status === 400);
+  check("edit: someone else's entry can't be changed", (await api(`/food-log/999999999`, { method: "PATCH", body: JSON.stringify({ slot: "Lunch" }) })).status === 404);
+
   // --- Milestones: one source of truth, no reward for very low days
   await api("/food-log", { method: "POST", body: JSON.stringify({ date: last7[1], slot: "Lunch", name: "Tiny snack", servings: 1, calories: 150, protein: 2 }) });
   const ms = await api<M>("/milestones");

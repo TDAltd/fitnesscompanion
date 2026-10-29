@@ -107,3 +107,15 @@ export function useSetTreat() {
 /** The calorie target for one day: the plan's target, plus the treat allowance on a planned treat day. */
 export const targetFor = (date: string, base: number, treats?: Treats) =>
   base + (treats?.dates.includes(date) ? treats.extraKcal : 0);
+
+/** Fix a logged food. Numbers are totals for the entry. */
+export type FoodEdit = Partial<{ slot: Slot; name: string; date: string; servings: number; calories: number; protein: number; carbs: number; fat: number }>;
+
+export function useEditFood() {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: ({ id, ...changes }: FoodEdit & { id: number }) =>
+      api<FoodEntry>(`/api/food-log/${id}`, { method: "PATCH", body: JSON.stringify(changes) }),
+    onSuccess: () => void refresh(),
+  });
+}

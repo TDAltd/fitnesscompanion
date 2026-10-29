@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { addDays, format, isToday, isYesterday, parseISO } from "date-fns";
-import { BookOpen, Cake, ChevronDown, ChevronLeft, ChevronRight, Clock, Plus, Search, Trash2 } from "lucide-react";
+import { BookOpen, Cake, Pencil, ChevronDown, ChevronLeft, ChevronRight, Clock, Plus, Search, Trash2 } from "lucide-react";
 import { useGetProfile, getGetProfileQueryKey } from "@workspace/api-client-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { RECIPES, matchesDietaryPreference, type Cuisine, type Recipe } from "@/
 import { SLOTS, formatServings, targetFor, useAddFood, useFoodLog, useRemoveFood, useSetTreat, useTreats, type FoodEntry, type Slot } from "@/lib/food-log";
 import { LowIntakeNote, lowIntakeMessage } from "@/components/eat/low-intake-note";
 import { MealIdeas } from "@/components/eat/meal-ideas";
+import { EditFoodSheet } from "@/components/eat/edit-food-sheet";
 import { dailyShuffle } from "@/lib/daily";
 import { calorieFloor } from "@workspace/plan";
 import { cn } from "@/lib/utils";
@@ -81,6 +82,7 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
   const { plan } = usePlan();
   const remove = useRemoveFood();
   const [showMacros, setShowMacros] = useState(false);
+  const [editing, setEditing] = useState<FoodEntry | null>(null);
 
   const d = parseISO(date);
   const label = isToday(d) ? "Today" : isYesterday(d) ? "Yesterday" : format(d, "EEE d MMM");
@@ -227,7 +229,7 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
                 {items.length > 0 && (
                   <ul className="divide-y border-t">
                     {items.map((e) => (
-                      <EntryRow key={e.id} entry={e} onRemove={() => remove.mutate(e.id)} />
+                      <EntryRow key={e.id} entry={e} onEdit={() => setEditing(e)} onRemove={() => remove.mutate(e.id)} />
                     ))}
                   </ul>
                 )}
@@ -236,22 +238,32 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
           );
         })
       )}
+      <EditFoodSheet entry={editing} onClose={() => setEditing(null)} />
     </div>
   );
 }
 
-function EntryRow({ entry, onRemove }: { entry: FoodEntry; onRemove: () => void }) {
+function EntryRow({ entry, onEdit, onRemove }: { entry: FoodEntry; onEdit: () => void; onRemove: () => void }) {
   return (
-    <li className="group flex items-center gap-3 px-4 py-2.5">
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{entry.name}</p>
-        <p className="text-xs text-muted-foreground">
-          {entry.servings !== 1 && `${formatServings(entry.servings)} portions · `}
-          {entry.protein} g protein
-        </p>
-      </div>
-      <span className="text-sm tabular-nums">{entry.calories}</span>
-      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label={`Remove ${entry.name}`} onClick={onRemove}>
+    <li className="flex items-center">
+      <button
+        type="button"
+        onClick={onEdit}
+        className="flex min-w-0 flex-1 items-center gap-3 py-2.5 pl-4 pr-2 text-left transition-colors hover:bg-muted/50"
+        aria-label={`Edit ${entry.name}`}
+        data-testid="entry-row"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold">{entry.name}</span>
+          <span className="block text-xs text-muted-foreground">
+            {entry.servings !== 1 && `${formatServings(entry.servings)} portions · `}
+            {entry.protein} g protein
+          </span>
+        </span>
+        <span className="text-sm tabular-nums">{entry.calories}</span>
+        <Pencil className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+      </button>
+      <Button variant="ghost" size="icon" className="mr-1 h-11 w-11 shrink-0 text-muted-foreground hover:text-destructive" aria-label={`Remove ${entry.name}`} onClick={onRemove}>
         <Trash2 className="h-4 w-4" />
       </Button>
     </li>

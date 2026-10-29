@@ -81,6 +81,47 @@ router.post("/food-log", async (req, res) => {
   res.status(201).json(toEntry(row));
 });
 
+/**
+ * Fix a logged food: meal, name, portions, day, or the numbers themselves.
+ * Numbers here are totals for the entry (what the diary shows), not per portion.
+ */
+router.patch("/food-log/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const b = (req.body ?? {}) as Record<string, unknown>;
+  const [entry] = await db.select().from(mealPlanTable).where(and(eq(mealPlanTable.id, id), eq(mealPlanTable.userId, uid(req))));
+  if (!entry) return void res.status(404).json({ error: "That food isn't in your diary any more." });
+
+  const updates: Partial<typeof mealPlanTable.$inferInsert> = {};
+  if (b.slot !== undefined) {
+    if (typeof b.slot !== "string" || !(SLOTS as readonly string[]).includes(b.slot)) return void res.status(400).json({ error: "Choose breakfast, lunch, dinner or snack." });
+    updates.category = b.slot;
+  }
+  if (b.name !== undefined) {
+    const name = typeof b.name === "string" ? tidyFoodName(b.name).slice(0, 120) : "";
+    if (!name) return void res.status(400).json({ error: "Give the food a name." });
+    updates.mealName = name;
+  }
+  if (b.date !== undefined) {
+    if (!isDate(b.date) || b.date > addDays(todayFor(req), 1)) return void res.status(400).json({ error: "Choose a day that isn't in the future." });
+    updates.date = b.date;
+  }
+  if (b.servings !== undefined) {
+    const n = Number(b.servings);
+    if (!Number.isFinite(n) || n <= 0 || n > 10) return void res.status(400).json({ error: "Portion must be between 0.25 and 10." });
+    updates.servings = n;
+  }
+  const limits = { calories: 15000, protein: 1000, carbs: 2000, fat: 1000 } as const;
+  for (const k of Object.keys(limits) as (keyof typeof limits)[]) {
+    if (b[k] === undefined) continue;
+    const n = Number(b[k]);
+    if (!Number.isFinite(n) || n < 0 || n > limits[k]) return void res.status(400).json({ error: `${k[0].toUpperCase()}${k.slice(1)} must be a sensible number.` });
+    updates[k] = Math.round(n);
+  }
+  if (!Object.keys(updates).length) return void res.json(toEntry(entry));
+  const [row] = await db.update(mealPlanTable).set(updates).where(eq(mealPlanTable.id, entry.id)).returning();
+  res.json(toEntry(row));
+});
+
 router.delete("/food-log/:id", async (req, res) => {
   const id = Number(req.params.id);
   await db.delete(mealPlanTable).where(and(eq(mealPlanTable.id, id), eq(mealPlanTable.userId, uid(req))));

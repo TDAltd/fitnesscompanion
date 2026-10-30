@@ -88,7 +88,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Phone header */}
-        <header className="sticky top-0 z-40 flex items-center border-b border-border/60 bg-background/85 px-4 pb-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] backdrop-blur-md md:hidden">
+        <header className="sticky top-0 z-40 flex items-center border-b border-border/60 bg-background px-4 pb-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] md:hidden">
           <Link href="/today" className="flex items-center gap-2" aria-label="Fitness Companion home">
             <LogoMark className="h-7 w-7" />
             <span className="font-display text-[15px] font-medium">Fitness Companion</span>
@@ -103,7 +103,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Phone tab bar */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-card/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
         aria-label="Main"
       >
         <div className="mx-auto grid max-w-md grid-cols-5">

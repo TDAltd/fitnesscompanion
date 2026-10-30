@@ -10,7 +10,7 @@ export function AdminShell() {
   const { logout } = useAuthActions();
   return (
     <div className="min-h-[100dvh] bg-background">
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:px-10">
           <div className="flex items-center gap-3">
             <Logo />

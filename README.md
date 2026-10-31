@@ -124,6 +124,16 @@ Once Steps 1–5 work, every push to `main` builds the app on GitHub and uploads
 
 Without the SMTP variables the app works as before: no Forgot password link, no emails.
 
+### Reminders (notifications from the app)
+
+People turn them on in **Me → Reminders**. On iPhone this needs iOS 16.4+ and the app opened from the Home Screen. No keys to set up: the app creates its notification keys on first use. It needs `CRON_SECRET` (above) and one cron job.
+
+cPanel → **Cron Jobs** → *Add New Cron Job*. Common setting: *Once Per Fifteen Minutes* (`*/15 * * * *`). Command:
+```
+curl -s "https://tdaproducthub.com/fitnesscompanion/api/cron/reminders?key=YOUR_CRON_SECRET" > /dev/null
+```
+Running it more often never double-sends; each reminder goes out at most once a day (water at most every 2 hours).
+
 ---
 
 ## 2. Bring over your data from Replit

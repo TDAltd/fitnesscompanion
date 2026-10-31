@@ -134,6 +134,22 @@ async function main() {
     check("deleting a session removes its sets", Object.keys(after).length === 0, JSON.stringify(after));
   }
 
+  // Reminders
+  type RS = { water: boolean; wakeTime: string; bedTime: string; workoutTime: string; weighInDay: number; devices: number };
+  const rs = (await api<RS>("/reminders/settings")).body;
+  check("reminders: sensible defaults", rs.water === true && rs.wakeTime === "07:00" && rs.bedTime === "22:00" && rs.workoutTime === "17:30" && rs.devices === 0, JSON.stringify(rs));
+  const rs2 = await api<RS>("/reminders/settings", { method: "PUT", body: JSON.stringify({ water: false, wakeTime: "06:30", weighInDay: 5 }) });
+  check("reminders: settings save", rs2.status === 200 && rs2.body.water === false && rs2.body.wakeTime === "06:30" && rs2.body.weighInDay === 5, JSON.stringify(rs2.body));
+  check("reminders: bedtime before wake-up refused", (await api("/reminders/settings", { method: "PUT", body: JSON.stringify({ bedTime: "05:00" }) })).status === 400);
+  check("reminders: bad time refused", (await api("/reminders/settings", { method: "PUT", body: JSON.stringify({ wakeTime: "7am" }) })).status === 400);
+  const w0 = (await api<{ waterDoneLitres: number }>("/habits/today")).body.waterDoneLitres ?? 0;
+  const g = await api<{ waterDoneLitres: number }>("/reminders/water-glass", { method: "POST" });
+  check("reminders: 'I drank a glass' adds 0.5 L", g.status === 200 && Math.abs(g.body.waterDoneLitres - (w0 + 0.5)) < 0.01, `${w0} → ${g.body.waterDoneLitres}`);
+  check("push: incomplete subscription refused", (await api("/push/subscribe", { method: "POST", body: JSON.stringify({ endpoint: "https://x.example/1" }) })).status === 400);
+  check("push: test with no device explains itself", (await api("/push/test", { method: "POST" })).status === 409);
+  check("push: public key available", ((await api<{ key: string }>("/push/public-key")).body.key ?? "").length > 40);
+  check("cron: reminders need the key", (await api("/cron/reminders")).status === 403);
+
   check("treat day can be set today", (await api("/treats", { method: "PUT", body: JSON.stringify({ date: today, on: true }) })).status === 200);
   const second = await api("/treats", { method: "PUT", body: JSON.stringify({ date: last7[3], on: true }) });
   check("a second treat day in the same week is refused", second.status === 409, String(second.status));

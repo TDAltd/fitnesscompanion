@@ -17,6 +17,7 @@ import milestonesRouter from "./milestones";
 import adminRouter from "./admin";
 import accountRouter from "./account";
 import weeklyEmailRouter from "./weeklyEmail";
+import remindersRouter, { remindersCronRouter } from "./reminders";
 import { healthRouter as healthDataRouter, healthSyncPublicRouter } from "./healthSync";
 import { requireAuth } from "../lib/auth";
 
@@ -27,6 +28,7 @@ router.use(healthRouter);
 router.use(authRouter);
 router.use(healthSyncPublicRouter); // uses its own sync key instead of a login
 router.use(weeklyEmailRouter); // cron (secret key) + signed unsubscribe links
+router.use(remindersCronRouter); // cron (secret key)
 
 // Everything below needs a logged-in user
 router.use(requireAuth);
@@ -56,5 +58,6 @@ router.use(healthDataRouter);
 router.use(foodLogRouter);
 router.use(exerciseSetsRouter);
 router.use(milestonesRouter);
+router.use(remindersRouter);
 
 export default router;

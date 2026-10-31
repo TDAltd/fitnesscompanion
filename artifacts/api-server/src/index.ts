@@ -25,6 +25,8 @@ async function main() {
   await runMigrations(migrationsDir);
 
   const app = createApp(staticDir);
+  const { startReminderLoop } = await import("./lib/reminders");
+  startReminderLoop();
   app.listen(port, () => {
     logger.info({ port, basePath: process.env.BASE_PATH }, "Server listening");
   });

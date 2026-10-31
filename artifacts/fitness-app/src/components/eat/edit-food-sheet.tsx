@@ -3,6 +3,7 @@ import { Loader2, Trash2 } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PortionInput } from "@/components/eat/portion-input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { SLOTS, formatServings, useEditFood, useRemoveFood, type FoodEntry, type Slot } from "@/lib/food-log";
@@ -130,20 +131,7 @@ export function EditFoodSheet({ entry, onClose }: { entry: FoodEntry | null; onC
                 </button>
               ))}
             </div>
-            <div className="mt-2 flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Other amount:</span>
-              <Input
-                type="number"
-                inputMode="decimal"
-                min={0.25}
-                max={10}
-                step={0.25}
-                value={servings}
-                onChange={(e) => changePortions(Number(e.target.value))}
-                className="h-9 w-24"
-                aria-label="Number of portions"
-              />
-            </div>
+            <PortionInput value={servings} onChange={changePortions} />
           </div>
 
           <div>

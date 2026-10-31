@@ -4,6 +4,7 @@ import { useGetProfile, getGetProfileQueryKey, useNutritionLookup } from "@works
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PortionInput } from "@/components/eat/portion-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -298,23 +299,7 @@ function PortionStep({ picked, servings, setServings }: { picked: Pick; servings
             </button>
           ))}
         </div>
-        <div className="mt-2 flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">Other amount:</span>
-          <Input
-            type="number"
-            inputMode="decimal"
-            min={0.25}
-            max={10}
-            step={0.25}
-            value={servings}
-            onChange={(e) => {
-              const n = Number(e.target.value);
-              if (n > 0 && n <= 10) setServings(n);
-            }}
-            className="h-9 w-24"
-            aria-label="Number of portions"
-          />
-        </div>
+        <PortionInput value={servings} onChange={setServings} />
       </div>
       <dl className="grid grid-cols-4 gap-2 rounded-xl bg-muted/50 p-3 text-center">
         {[

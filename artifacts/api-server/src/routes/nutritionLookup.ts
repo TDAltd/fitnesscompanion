@@ -65,6 +65,11 @@ Rules:
 - List EVERY separate food or drink as its own item. Each food word in the description must become an item; never merge or drop one silently.
 - If you cannot estimate something the user mentioned, put that word in "ignored" instead.
 - Use the amounts given; otherwise assume a typical single portion and say so in "amount".
+- "calories" is the MOST LIKELY value, not a cautious high one. Put uncertainty in "low"/"high" instead.
+- Base values on standard food composition data (USDA FoodData Central, West African Food Composition Table), for the edible part as cooked.
+- Foods counted in pieces (chicken wings, drumsticks, puff-puff, suya, meat in stew): use the typical edible weight of ONE piece as served in Nigeria and show it in "amount", e.g. "6 pieces (~25 g each)". A "piece" of chicken wing usually means one section (drumette or flat, ~25 g edible), not a whole wing.
+- Stews and sauces: count in cooking spoons (~60 g); an oily tomato or pepper stew is about 90 kcal per cooking spoon.
+- If the cooking method isn't given, assume the most common one for that dish and name it in "notes".
 Return ONLY JSON:
 {"mealName": short dish name, 2-5 words, max 40 chars, no articles,
  "items": [{"name": short name, "amount": e.g. "1 medium" or "30 g" or "1 cooking spoon", "calories": int, "protein": int g, "carbs": int g, "fat": int g}],

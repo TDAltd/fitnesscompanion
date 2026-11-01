@@ -158,7 +158,7 @@ export function AddFoodSheet({
             <PortionStep picked={picked} servings={servings} setServings={setServings} />
           ) : mode === "ai" ? (
             <AiStep
-              onEstimate={(p) => { setPicked(p); setServings(1); }}
+              onEstimate={(p) => void save(p, 1)}
               quickPicks={
                 <section className="space-y-3 border-t pt-4" data-testid="quick-picks">
                   <p className="text-xs font-semibold text-muted-foreground">Or pick quickly</p>
@@ -461,12 +461,12 @@ function AiStep({ onEstimate, quickPicks }: { onEstimate: (p: Pick) => void; qui
                 carbs: total("carbs"),
                 fat: total("fat"),
                 source: "ai",
-                note: "AI estimate. Change the portion below if you had more or less.",
+                note: "AI estimate",
               })
             }
             data-testid="button-use-estimate"
           >
-            Use this
+            {`Log ${kcal.toLocaleString()} kcal`}
           </Button>
         </div>
         <button type="button" className="w-full text-center text-xs font-semibold text-primary" onClick={() => setResult(null)}>

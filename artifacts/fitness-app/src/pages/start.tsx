@@ -36,11 +36,11 @@ type Answers = {
   trainingExperience?: string;
   workoutLocation?: string;
   equipment: string[];
-  workoutDaysPerWeek: number;
-  workoutDurationMinutes: number;
+  workoutDaysPerWeek?: number;
+  workoutDurationMinutes?: number;
   workoutTimePreference?: string;
   dietaryPreference?: string;
-  habit?: string; // "" = nothing in particular
+  habits: string[]; // may include "other"
   habitOther: string;
   why: string;
   name: string;
@@ -51,8 +51,7 @@ const EMPTY: Answers = {
   heightUnit: "cm",
   weightUnit: "kg",
   equipment: [],
-  workoutDaysPerWeek: 3,
-  workoutDurationMinutes: 30,
+  habits: [],
   habitOther: "",
   why: "",
   name: "",
@@ -64,7 +63,7 @@ function loadSaved(): { answers: Answers; step: string } | null {
     const raw = localStorage.getItem(STORE);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    return { answers: { ...EMPTY, ...parsed.answers }, step: parsed.step };
+    return { answers: { ...EMPTY, ...parsed.answers, habits: parsed.answers?.habits ?? [] }, step: parsed.step };
   } catch {
     return null;
   }
@@ -112,7 +111,6 @@ const WORKLOAD: Opt[] = [
   { value: "At home", label: "At home or retired", emoji: "🌴" },
   { value: "Student", label: "Student", emoji: "📚" },
 ];
-const SUGGESTED_TIME: Record<string, string> = { "9 to 5": "Evening", "Shifts or nights": "Flexible", Flexible: "Morning", "At home": "Morning", Student: "Evening" };
 const EXPERIENCE: Opt[] = [
   { value: "Beginner", label: "I'm just getting started", emoji: "🌱" },
   { value: "Intermediate", label: "I have a routine I know", emoji: "👍🏾" },
@@ -144,7 +142,6 @@ const HABITS: Opt[] = [
   { value: "late-night snacks", label: "Late-night eating", emoji: "🌙" },
   { value: "alcohol", label: "Alcohol", emoji: "🍺" },
   { value: "other", label: "Something else", emoji: "✏️" },
-  { value: "", label: "Nothing in particular", emoji: "🙌🏾" },
 ];
 const HEALTH: (Opt & { women?: boolean })[] = [
   { value: "pregnant", label: "I'm pregnant", emoji: "🤰🏾", women: true },
@@ -177,6 +174,14 @@ const noWeightGoal = (a: Answers) => flagged(a, "eating-disorder", "pregnant", "
 // Unanswered goal counts as "asks", so the "4 / 18" total doesn't jump after the first answer
 const asksGoalWeight = (a: Answers) => !noWeightGoal(a) && (!a.fitnessGoal || a.fitnessGoal === "Weight loss" || a.fitnessGoal === "General fitness");
 
+/** "sugary drinks and fried snacks": one daily tick-box covering every habit picked. */
+function habitText(a: Answers): string | null {
+  const list = (a.habits ?? []).map((h) => (h === "other" ? a.habitOther.trim() : h)).filter(Boolean);
+  if (!list.length) return null;
+  const text = list.length === 1 ? list[0] : `${list.slice(0, -1).join(", ")} and ${list.at(-1)}`;
+  return text.slice(0, 80);
+}
+
 function toPlanProfile(a: Answers): PlanProfile {
   return {
     name: a.name.trim() || null,
@@ -189,7 +194,7 @@ function toPlanProfile(a: Answers): PlanProfile {
     activityLevel: a.activityLevel ?? null,
     fitnessGoal: a.fitnessGoal ?? null,
     dietaryPreference: a.dietaryPreference ?? null,
-    guiltyPleasure: a.habit === "other" ? a.habitOther.trim() || null : a.habit || null,
+    guiltyPleasure: habitText(a),
     workoutDaysPerWeek: a.workoutDaysPerWeek,
     workoutLocation: a.workoutLocation ?? null,
     trainingExperience: a.trainingExperience ?? null,
@@ -437,23 +442,52 @@ function UnitToggle<T extends string>({ value, options, onChange }: { value: T; 
   );
 }
 
-/** A big number you change with the phone's own scroll wheel (a native select). */
-function Wheel({ value, options, onChange, unit, label, testId }: { value: number; options: number[]; onChange: (n: number) => void; unit: string; label: string; testId?: string }) {
+/** A big empty number you type on the number keypad. Reports undefined until it's a number. */
+function NumberField({ value, onChange, unit, label, decimal, testId, autoFocus }: { value?: number; onChange: (n: number | undefined) => void; unit: string; label: string; decimal?: boolean; testId?: string; autoFocus?: boolean }) {
+  const [text, setText] = useState(value != null ? String(value) : "");
   return (
-    <label className="relative flex items-baseline justify-center gap-1.5">
+    <label className="flex items-baseline justify-center gap-1.5">
       <span className="sr-only">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="cursor-pointer appearance-none rounded-2xl bg-transparent px-2 text-center text-6xl font-semibold tabular-nums tracking-tight underline decoration-primary/30 decoration-4 underline-offset-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      <input
+        type="text"
+        inputMode={decimal ? "decimal" : "numeric"}
+        autoComplete="off"
+        autoFocus={autoFocus}
+        placeholder="0"
+        value={text}
+        onChange={(e) => {
+          const t = e.target.value.replace(decimal ? /[^\d.,]/g : /\D/g, "").slice(0, decimal ? 5 : 3);
+          setText(t);
+          const n = Number(t.replace(",", "."));
+          onChange(t && Number.isFinite(n) && n > 0 ? n : undefined);
+        }}
+        className="w-[3.2ch] bg-transparent text-center text-6xl font-semibold tabular-nums tracking-tight placeholder:text-foreground/15 focus:outline-none"
+        style={{ width: `${Math.max(1, text.length || 1) + 0.4}ch` }}
         data-testid={testId}
-      >
-        {options.map((n) => (
-          <option key={n} value={n}>{n}</option>
-        ))}
-      </select>
+      />
       <span className="text-xl font-semibold text-muted-foreground">{unit}</span>
     </label>
+  );
+}
+
+function Hint({ children, tone = "muted" }: { children: ReactNode; tone?: "muted" | "warn" }) {
+  return (
+    <p className={cn("mx-auto mt-8 max-w-xs rounded-2xl p-4 text-center text-sm shadow-sm", tone === "warn" ? "bg-[hsl(var(--dusk)/0.15)] text-foreground" : "bg-card text-muted-foreground")} data-testid="text-number-hint">
+      {children}
+    </p>
+  );
+}
+
+function FeetInches({ cm, onChange }: { cm?: number; onChange: (cm: number | undefined) => void }) {
+  const start = cm ? cmToFtIn(cm) : null;
+  const [ft, setFt] = useState<number | undefined>(start?.ft);
+  const [inch, setInch] = useState<number | undefined>(start?.inch);
+  const update = (f?: number, i?: number) => onChange(f != null ? ftInToCm(f, i ?? 0) : undefined);
+  return (
+    <div className="flex justify-center gap-6">
+      <NumberField autoFocus label="Feet" value={ft} onChange={(n) => { setFt(n); update(n, inch); }} unit="ft" testId="input-height-ft" />
+      <NumberField label="Inches" value={inch} onChange={(n) => { setInch(n); update(ft, n); }} unit="in" testId="input-height-in" />
+    </div>
   );
 }
 
@@ -513,8 +547,6 @@ function Step({ step, a, set, next, member, onLogin, hasSaved }: { step: StepId;
             onPick={(v) =>
               next({
                 sex: v,
-                heightCm: a.heightCm ?? (v === "Male" ? 175 : 163),
-                weightKg: a.weightKg ?? (v === "Male" ? 85 : 75),
                 healthFlags: v === "Male" ? a.healthFlags.filter((f) => f !== "pregnant" && f !== "breastfeeding") : a.healthFlags,
               })
             }
@@ -575,79 +607,97 @@ function Step({ step, a, set, next, member, onLogin, hasSaved }: { step: StepId;
     }
 
     case "height": {
-      const cm = a.heightCm ?? 163;
-      const { ft, inch } = cmToFtIn(cm);
+      const cm = a.heightCm;
+      const ftIn = cm ? cmToFtIn(cm) : null;
+      const ok = cm != null && cm >= 120 && cm <= 230;
       return (
         <>
           <Title>How tall are you?</Title>
           <UnitToggle value={a.heightUnit} options={["cm", "ft"]} onChange={(u) => set({ heightUnit: u })} />
           {a.heightUnit === "cm" ? (
-            <Wheel label="Height in cm" value={cm} options={range(120, 220)} onChange={(n) => set({ heightCm: n })} unit="cm" testId="wheel-height" />
+            <NumberField key="cm" autoFocus label="Height in cm" value={cm} onChange={(n) => set({ heightCm: n })} unit="cm" testId="input-height" />
           ) : (
-            <div className="flex justify-center gap-4">
-              <Wheel label="Feet" value={ft} options={range(4, 7)} onChange={(n) => set({ heightCm: ftInToCm(n, inch) })} unit="ft" />
-              <Wheel label="Inches" value={inch} options={range(0, 11)} onChange={(n) => set({ heightCm: ftInToCm(ft, n) })} unit="in" />
-            </div>
+            <FeetInches key="ft" cm={cm} onChange={(n) => set({ heightCm: n })} />
           )}
-          <p className="mt-6 text-center text-sm text-muted-foreground">Tap the number to change it.</p>
+          {cm != null && !ok && <Hint tone="warn">Check the number: we expect between {a.heightUnit === "cm" ? "120 and 230 cm" : "4 ft and 7 ft 6 in"}.</Hint>}
+          {ok && a.heightUnit === "ft" && ftIn && <Hint>That's {cm} cm.</Hint>}
           <Footer>
-            <Next onClick={() => next({ heightCm: cm })} />
+            <Next onClick={() => next()} disabled={!ok} />
           </Footer>
         </>
       );
     }
 
     case "weight": {
-      const kg = a.weightKg ?? 75;
+      const kg = a.weightKg;
+      const ok = kg != null && kg >= 30 && kg <= 350;
       return (
         <>
           <Title sub="Your starting point. Only you can see it.">What do you weigh now?</Title>
           <UnitToggle value={a.weightUnit} options={["kg", "lb"]} onChange={(u) => set({ weightUnit: u })} />
           {a.weightUnit === "kg" ? (
-            <Wheel label="Weight in kg" value={Math.round(kg)} options={range(35, 250)} onChange={(n) => set({ weightKg: n })} unit="kg" testId="wheel-weight" />
+            <NumberField key="kg" autoFocus decimal label="Weight in kg" value={kg != null ? Math.round(kg * 10) / 10 : undefined} onChange={(n) => set({ weightKg: n })} unit="kg" testId="input-weight" />
           ) : (
-            <Wheel label="Weight in lb" value={kgToLb(kg)} options={range(77, 550)} onChange={(n) => set({ weightKg: lbToKg(n) })} unit="lb" />
+            <NumberField key="lb" autoFocus label="Weight in lb" value={kg != null ? kgToLb(kg) : undefined} onChange={(n) => set({ weightKg: n != null ? lbToKg(n) : undefined })} unit="lb" testId="input-weight-lb" />
           )}
-          <p className="mx-auto mt-8 max-w-xs rounded-2xl bg-card p-4 text-center text-sm text-muted-foreground shadow-sm">
-            No crash diets. Your plan aims for a steady pace you can keep up.
-          </p>
+          {kg != null && !ok ? (
+            <Hint tone="warn">Check the number: we expect between {a.weightUnit === "kg" ? "30 and 350 kg" : "66 and 770 lb"}.</Hint>
+          ) : (
+            <Hint>No crash diets. Your plan aims for a steady pace you can keep up.</Hint>
+          )}
           <Footer>
-            <Next onClick={() => next({ weightKg: kg, goalWeightKg: a.goalWeightKg ?? kg })} />
+            <Next onClick={() => next()} disabled={!ok} />
           </Footer>
         </>
       );
     }
 
     case "goalWeight": {
-      const now = a.weightKg ?? 75;
-      const goal = a.goalWeightKg ?? now;
-      const diff = Math.round((now - goal) * 10) / 10;
-      const minKg = Math.max(35, Math.floor(now * 0.6));
-      const pace = buildPlan(toPlanProfile({ ...a, goalWeightKg: goal })).targets.pace ?? "gentle";
-      const when = goalDate({ ...a, goalWeightKg: goal }, pace);
+      const now = a.weightKg ?? 0;
+      const goal = a.goalWeightKg;
+      // Never below a healthy weight for their height (BMI 18.5)
+      const floorKg = a.heightCm ? Math.ceil(18.5 * (a.heightCm / 100) ** 2) : 30;
+      const tooLow = goal != null && goal < floorKg;
+      const ok = goal != null && goal >= 30 && goal <= 350 && !tooLow;
+      const diff = goal != null ? Math.round((now - goal) * 10) / 10 : 0;
+      const pace = ok ? buildPlan(toPlanProfile({ ...a, goalWeightKg: goal })).targets.pace ?? "gentle" : "gentle";
+      const when = ok ? goalDate({ ...a, goalWeightKg: goal }, pace) : null;
+      const show = (k: number) => (a.weightUnit === "kg" ? `${Math.round(k * 10) / 10} kg` : `${kgToLb(k)} lb`);
       return (
         <>
-          <Title sub="Pick what feels realistic. You can change it any time.">What weight are you aiming for?</Title>
+          <Title sub={`You weigh ${show(now)} now. Pick what feels realistic; you can change it any time.`}>What weight are you aiming for?</Title>
           <UnitToggle value={a.weightUnit} options={["kg", "lb"]} onChange={(u) => set({ weightUnit: u })} />
           {a.weightUnit === "kg" ? (
-            <Wheel label="Goal weight in kg" value={Math.round(goal)} options={range(minKg, Math.round(now) + 20)} onChange={(n) => set({ goalWeightKg: n })} unit="kg" testId="wheel-goal-weight" />
+            <NumberField key="gkg" autoFocus decimal label="Goal weight in kg" value={goal != null ? Math.round(goal * 10) / 10 : undefined} onChange={(n) => set({ goalWeightKg: n })} unit="kg" testId="input-goal-weight" />
           ) : (
-            <Wheel label="Goal weight in lb" value={kgToLb(goal)} options={range(kgToLb(minKg), kgToLb(now) + 44)} onChange={(n) => set({ goalWeightKg: lbToKg(n) })} unit="lb" />
+            <NumberField key="glb" autoFocus label="Goal weight in lb" value={goal != null ? kgToLb(goal) : undefined} onChange={(n) => set({ goalWeightKg: n != null ? lbToKg(n) : undefined })} unit="lb" testId="input-goal-weight-lb" />
           )}
-          <p className="mx-auto mt-8 max-w-xs rounded-2xl bg-card p-4 text-center text-sm shadow-sm" data-testid="text-goal-feedback">
-            {diff > 0.4 ? (
-              <>
-                That's <b>{a.weightUnit === "kg" ? `${diff} kg` : `${kgToLb(diff)} lb`}</b> to go
-                {when ? <>: about <b>{when.weeks < 9 ? `${when.weeks} weeks` : `${Math.round(when.weeks / 4.35)} months`}</b> at a safe pace.</> : "."}
-              </>
-            ) : diff < -0.4 ? (
-              "Aiming to gain? Your plan will focus on strength and enough food."
-            ) : (
-              "Staying where you are: your plan focuses on fitness and habits."
-            )}
-          </p>
+          {goal == null ? (
+            <div className="mt-8 text-center">
+              <button type="button" className="h-11 rounded-full px-4 text-sm font-semibold text-primary hover:bg-primary/10" onClick={() => next({ goalWeightKg: now })} data-testid="button-keep-weight">
+                I'm happy at my current weight
+              </button>
+            </div>
+          ) : tooLow ? (
+            <Hint tone="warn">That's below a healthy weight for your height. Pick {show(floorKg)} or more.</Hint>
+          ) : !ok ? (
+            <Hint tone="warn">Check the number.</Hint>
+          ) : (
+            <Hint>
+              {diff > 0.4 ? (
+                <>
+                  That's <b className="text-foreground">{show(diff)}</b> to go
+                  {when ? <>: about <b className="text-foreground">{when.weeks < 9 ? `${when.weeks} weeks` : `${Math.round(when.weeks / 4.35)} months`}</b> at a safe pace.</> : "."}
+                </>
+              ) : diff < -0.4 ? (
+                "Aiming to gain? Your plan will focus on strength and enough food."
+              ) : (
+                "Staying where you are: your plan focuses on fitness and habits."
+              )}
+            </Hint>
+          )}
           <Footer>
-            <Next onClick={() => next({ goalWeightKg: goal })} />
+            <Next onClick={() => next()} disabled={!ok} />
           </Footer>
         </>
       );
@@ -671,7 +721,7 @@ function Step({ step, a, set, next, member, onLogin, hasSaved }: { step: StepId;
           <Pick
             options={WORKLOAD}
             value={a.workload}
-            onPick={(v) => next({ workload: v, workoutTimePreference: a.workoutTimePreference ?? SUGGESTED_TIME[v] })}
+            onPick={(v) => next({ workload: v })}
           />
         </>
       );
@@ -757,10 +807,12 @@ function Step({ step, a, set, next, member, onLogin, hasSaved }: { step: StepId;
             ))}
           </div>
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Starting small is fine. {a.workoutDaysPerWeek} × {a.workoutDurationMinutes} min is {a.workoutDaysPerWeek * a.workoutDurationMinutes} minutes a week.
+            {a.workoutDaysPerWeek && a.workoutDurationMinutes
+              ? `Starting small is fine. ${a.workoutDaysPerWeek} × ${a.workoutDurationMinutes} min is ${a.workoutDaysPerWeek * a.workoutDurationMinutes} minutes a week.`
+              : "Starting small is fine. You can change this later."}
           </p>
           <Footer>
-            <Next onClick={() => next()} />
+            <Next onClick={() => next()} disabled={!a.workoutDaysPerWeek || !a.workoutDurationMinutes} />
           </Footer>
         </>
       );
@@ -781,30 +833,41 @@ function Step({ step, a, set, next, member, onLogin, hasSaved }: { step: StepId;
         </>
       );
 
-    case "habit":
+    case "habit": {
+      const list = a.habits ?? [];
+      const toggle = (v: string) => set({ habits: list.includes(v) ? list.filter((h) => h !== v) : [...list, v] });
+      const otherMissing = list.includes("other") && !a.habitOther.trim();
       return (
         <>
-          <Title sub="One habit to cut back on. It becomes a daily tick-box.">What's hardest to resist?</Title>
-          {a.habit === "other" ? (
-            <div className="space-y-3">
-              <Input
-                autoFocus
-                value={a.habitOther}
-                onChange={(e) => set({ habitOther: e.target.value.slice(0, 40) })}
-                placeholder="e.g. chin chin, ice cream"
-                className="h-14 rounded-2xl text-base"
-                data-testid="input-habit-other"
-              />
-              <button type="button" className="text-sm font-semibold text-primary" onClick={() => set({ habit: undefined })}>Back to the list</button>
-              <Footer>
-                <Next onClick={() => next()} disabled={!a.habitOther.trim()} />
-              </Footer>
-            </div>
-          ) : (
-            <Pick options={HABITS} value={a.habit} onPick={(v) => (v === "other" ? set({ habit: "other" }) : next({ habit: v }))} />
-          )}
+          <Title sub="Pick as many as you like. They become one daily tick-box.">What's hardest to resist?</Title>
+          <div className="space-y-3">
+            {HABITS.map((o) => (
+              <div key={o.value}>
+                <Choice opt={o} multi selected={list.includes(o.value)} onClick={() => toggle(o.value)} />
+                {o.value === "other" && list.includes("other") && (
+                  <Input
+                    autoFocus
+                    value={a.habitOther}
+                    onChange={(e) => set({ habitOther: e.target.value.slice(0, 40) })}
+                    placeholder="e.g. chin chin, ice cream"
+                    className="mt-2 h-14 rounded-2xl text-base"
+                    data-testid="input-habit-other"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+          {habitText(a) && <p className="mt-4 text-center text-sm text-muted-foreground" data-testid="text-habit-preview">Your daily tick-box: <b className="text-foreground">No {habitText(a)}</b></p>}
+          <Footer>
+            {list.length ? (
+              <Next onClick={() => next()} disabled={otherMissing} />
+            ) : (
+              <Next onClick={() => next({ habits: [] })}>Nothing in particular</Next>
+            )}
+          </Footer>
         </>
       );
+    }
 
     case "why":
       return (
@@ -1091,6 +1154,8 @@ function Account({ a, onLogin }: { a: Answers; onLogin: () => void }) {
       qc.removeQueries({ predicate: (q) => q.queryKey[0] !== AUTH_QUERY_KEY[0] });
       setLocation("/today");
       qc.setQueryData(AUTH_QUERY_KEY, user);
+      // Fetch the full account details (join date etc.) in the background
+      void qc.invalidateQueries({ queryKey: AUTH_QUERY_KEY });
     } catch (err) {
       const status = (err as { status?: number }).status;
       if (status === 409) setExists(true);

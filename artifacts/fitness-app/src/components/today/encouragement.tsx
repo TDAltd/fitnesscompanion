@@ -8,7 +8,7 @@ const KEY = "fc-encouragement-dismissed";
 const todayKey = () => new Date().toDateString();
 
 /**
- * Shown on harder days only: after 7+ days away, or the day after a weak day.
+ * Shown on the first day, after 7+ days away, or the day after a weak day (never for days before joining).
  * Brings back the person's own "why" from their setup answers.
  */
 export function Encouragement() {
@@ -27,11 +27,18 @@ export function Encouragement() {
   const why = profile?.why?.trim();
   const away = user?.daysAway ?? 0;
   const yesterday = scores.at(-2);
-  const toughYesterday = Boolean(yesterday && yesterday.possible > 0 && yesterday.percent < 50);
+  const today = scores.at(-1)?.date ?? new Date().toLocaleDateString("en-CA");
+  const joined = user?.joinedOn ?? null;
+  const firstDay = joined != null && joined >= today;
+  // Only judge yesterday if the account existed then
+  const toughYesterday = Boolean(yesterday && joined && yesterday.date >= joined && yesterday.possible > 0 && yesterday.percent < 50);
 
   let title: string | null = null;
   let body = "";
-  if (away >= 7) {
+  if (firstDay) {
+    title = "Welcome to day one.";
+    body = "No need to do it all today. Log one meal or take a short walk, and you're off.";
+  } else if (away >= 7) {
     title = `Welcome back. It's been ${away} days.`;
     body = "No catching up needed. Today, log one meal and take a short walk. That's a win.";
   } else if (toughYesterday && why) {

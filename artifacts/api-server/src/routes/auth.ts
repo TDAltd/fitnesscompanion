@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { and, eq, gt, isNull, lt, sql } from "drizzle-orm";
-import { todayFor } from "../lib/dates";
+import { dateInTz, todayFor, tzFor } from "../lib/dates";
 import { randomBytes } from "node:crypto";
 import { activityDaysTable, db, passwordResetsTable, sessionsTable, usersTable } from "@workspace/db";
 import { appUrl, emailHtml, mailConfigured, sendMail } from "../lib/mail";
@@ -103,7 +103,10 @@ router.get("/auth/me", async (req, res) => {
     .from(activityDaysTable)
     .where(and(eq(activityDaysTable.userId, user.id), lt(activityDaysTable.date, today)));
   const daysAway = prev?.date ? Math.round((Date.parse(`${today}T12:00:00Z`) - Date.parse(`${prev.date}T12:00:00Z`)) / 864e5) : null;
-  res.json({ id: user.id, email: user.email, isAdmin: user.isAdmin, daysAway });
+  // The local day the account was made, so screens don't judge days before it
+  const [row] = await db.select({ createdAt: usersTable.createdAt }).from(usersTable).where(eq(usersTable.id, user.id));
+  const joinedOn = row ? dateInTz(row.createdAt, tzFor(req)) : null;
+  res.json({ id: user.id, email: user.email, isAdmin: user.isAdmin, daysAway, joinedOn });
 });
 
 /** What the login screen needs to know before anyone is signed in. */

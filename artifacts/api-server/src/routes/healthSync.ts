@@ -66,7 +66,7 @@ healthSyncPublicRouter.post("/health-sync", async (req, res) => {
   // in the header, the body ("key") or the address (?key=)
   const header = req.get("authorization") ?? "";
   const token = extractKey(header) || extractKey(String(req.body?.key ?? "")) || extractKey(String(req.query.key ?? ""));
-  if (/PASTE|YOUR[-\s]?KEY/i.test(header)) {
+  if (!token.startsWith("fh_") && /PASTE|YOUR[-\s]?KEY/i.test(header)) {
     res.status(401).json({ ok: false, message: "This Shortcut doesn't have your key yet. Delete it, add it again from the Connect page and paste your key when asked." });
     return;
   }

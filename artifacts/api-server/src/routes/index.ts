@@ -19,6 +19,7 @@ import accountRouter from "./account";
 import weeklyEmailRouter from "./weeklyEmail";
 import remindersRouter, { remindersCronRouter } from "./reminders";
 import weeklyReviewRouter from "./weeklyReview";
+import { adminRecipesRouter, recipesRouter } from "./recipes";
 import { healthRouter as healthDataRouter, healthSyncPublicRouter } from "./healthSync";
 import { requireAuth } from "../lib/auth";
 
@@ -37,6 +38,9 @@ router.use(accountRouter);
 
 // Admin accounts are admin-only: they get the admin API and nothing else
 router.use(adminRouter);
+router.use(adminRecipesRouter);
+// Recipes (and their photos) for everyone signed in, admins included
+router.use(recipesRouter);
 router.use((req, res, next) => {
   if (req.user?.isAdmin) {
     res.status(403).json({ error: "Admin accounts can't use tracking features. Use a separate account to track your own fitness." });

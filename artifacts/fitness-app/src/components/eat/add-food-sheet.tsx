@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { FOODS } from "@/lib/foods";
-import { RECIPES, matchesDietaryPreference } from "@/lib/recipes";
+import { matchesDietaryPreference } from "@/lib/recipes";
+import { useRecipeLibrary } from "@/lib/recipe-library";
 import { foodCaution } from "@/lib/food-safety";
 import { SLOTS, formatServings, useAddFood, useRecentFoods, type Slot } from "@/lib/food-log";
 import { compressMealPhoto } from "@/lib/photo";
@@ -62,6 +63,7 @@ export function AddFoodSheet({
     }
   }, [open, initialSlot]);
 
+  const library = useRecipeLibrary();
   const diet = profile?.dietaryPreference;
   const flags = profile?.healthFlags ?? [];
   // Pregnancy/diabetes: skip unsuitable foods in suggestions, label them in search
@@ -76,7 +78,7 @@ export function AddFoodSheet({
     const foods = FOODS.filter((f) => matchesDietaryPreference({ name: f.name, ingredients: f.ingredients, protein: f.protein }, diet))
       .filter((f) => !q || f.name.toLowerCase().includes(q))
       .map<Pick>((f) => withNote({ name: f.name, portion: f.portion, calories: f.calories, protein: f.protein, carbs: f.carbs, fat: f.fat, source: "food" }, f.ingredients));
-    const recipes = RECIPES.filter((r) => matchesDietaryPreference(r, diet))
+    const recipes = library.filter((r) => matchesDietaryPreference(r, diet))
       .filter((r) => !q || r.name.toLowerCase().includes(q))
       .map<Pick>((r) => withNote({ name: r.name, portion: "1 serving (recipe)", calories: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat, source: "recipe" }, r.ingredients));
     const mine = (recent ?? [])
@@ -95,7 +97,7 @@ export function AddFoodSheet({
     }
     return { mine, list: [...foods, ...recipes].slice(0, 30) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, recent, diet, slot, flags.join(",")]);
+  }, [q, recent, diet, slot, flags.join(","), library]);
 
   const save = async (food: Pick | { name: string; calories: number; protein: number; carbs: number; fat: number; source: "quick" }, portions: number) => {
     try {

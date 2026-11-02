@@ -157,6 +157,11 @@ async function main() {
   check("weekly review: has a focus line", typeof wr.body.focus === "string" && wr.body.focus.length > 10);
   check("weekly review: weeks before joining are refused", (await api("/weekly-review?week=2020-01-06")).status === 400);
 
+  // Recipe library
+  const lib = await api<{ custom: unknown[]; hiddenBuiltin: number[] }>("/recipes");
+  check("recipes: library loads for users", lib.status === 200 && Array.isArray(lib.body.custom) && Array.isArray(lib.body.hiddenBuiltin));
+  check("recipes: only admins can add", (await api("/admin/recipes", { method: "POST", body: JSON.stringify({ name: "x", calories: 100 }) })).status === 403);
+
   check("treat day can be set today", (await api("/treats", { method: "PUT", body: JSON.stringify({ date: today, on: true }) })).status === 200);
   const second = await api("/treats", { method: "PUT", body: JSON.stringify({ date: last7[3], on: true }) });
   check("a second treat day in the same week is refused", second.status === 409, String(second.status));

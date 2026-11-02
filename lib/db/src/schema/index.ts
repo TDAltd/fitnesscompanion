@@ -9,3 +9,4 @@ export * from "./health";
 export * from "./exerciseSets";
 export * from "./milestones";
 export * from "./reminders";
+export * from "./recipes";

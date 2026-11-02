@@ -10,7 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AddFoodSheet } from "@/components/eat/add-food-sheet";
 import { useToast } from "@/hooks/use-toast";
 import { usePlan } from "@/lib/plan";
-import { RECIPES, matchesDietaryPreference, type Cuisine, type Recipe } from "@/lib/recipes";
+import { matchesDietaryPreference, type Cuisine } from "@/lib/recipes";
+import { useRecipeLibrary, type LibraryRecipe as Recipe } from "@/lib/recipe-library";
 import { SLOTS, formatServings, targetFor, useAddFood, useFoodLog, useRemoveFood, useSetTreat, useTreats, type FoodEntry, type Slot } from "@/lib/food-log";
 import { LowIntakeNote, lowIntakeMessage } from "@/components/eat/low-intake-note";
 import { HealthFoodNote } from "@/components/eat/health-food-note";
@@ -292,9 +293,10 @@ function Recipes({ date }: { date: string }) {
   const add = useAddFood();
   const { toast } = useToast();
   const diet = profile?.dietaryPreference;
+  const library = useRecipeLibrary();
 
   const list = useMemo(() => {
-    const matches = RECIPES.filter((r) => matchesDietaryPreference(r, diet))
+    const matches = library.filter((r) => matchesDietaryPreference(r, diet))
       .filter((r) => cuisine === "Any" || r.cuisine === cuisine || r.cuisine === "Any")
       .filter((r) => meal === "All" || (SLOT_OF[r.category] ?? "Snack") === meal)
       .filter((r) => !q.trim() || `${r.name} ${r.ingredients.join(" ")}`.toLowerCase().includes(q.trim().toLowerCase()));
@@ -303,7 +305,7 @@ function Recipes({ date }: { date: string }) {
     const shuffled = dailyShuffle(matches, "recipes");
     const rank = (c: string) => (c === "Nigerian" ? 0 : c === "International" ? 1 : 2);
     return [...shuffled].sort((a, b) => rank(a.cuisine) - rank(b.cuisine));
-  }, [diet, cuisine, meal, q]);
+  }, [diet, cuisine, meal, q, library]);
 
   const addRecipe = (r: Recipe) => {
     const slot = SLOT_OF[r.category] ?? "Snack";
@@ -342,6 +344,7 @@ function Recipes({ date }: { date: string }) {
               <Card>
                 <CardContent className="p-0">
                   <div className="flex items-center gap-3 p-4">
+                    {r.photoUrl && <img src={r.photoUrl} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-xl object-cover" />}
                     <button className="min-w-0 flex-1 text-left" onClick={() => setOpen(open === r.id ? null : r.id)} aria-expanded={open === r.id}>
                       <p className="font-semibold">{r.name}</p>
                       <p className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">

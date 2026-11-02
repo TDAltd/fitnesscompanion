@@ -47,6 +47,7 @@ export function createApp(staticDir?: string): Express {
   app.use("/api/nutrition-lookup", express.json({ limit: "4mb" }));
   app.use("/api/import", express.json({ limit: "25mb" }));
   app.use("/api/health-sync", express.json({ limit: "256kb" }));
+  app.use("/api/admin/recipes", express.json({ limit: "12mb" })); // photos and bulk imports
   // Some Shortcut setups send the body as text; accept it and parse as JSON if possible
   app.use("/api/health-sync", express.text({ type: ["text/*"], limit: "256kb" }), (req, _res, next) => {
     if (typeof req.body === "string") {

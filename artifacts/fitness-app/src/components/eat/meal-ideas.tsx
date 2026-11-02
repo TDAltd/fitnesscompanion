@@ -5,7 +5,8 @@ import { useGetProfile, getGetProfileQueryKey } from "@workspace/api-client-reac
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { RECIPES, matchesDietaryPreference } from "@/lib/recipes";
+import { matchesDietaryPreference } from "@/lib/recipes";
+import { useRecipeLibrary } from "@/lib/recipe-library";
 import { useAddFood, useRecentFoods, type Slot } from "@/lib/food-log";
 import { dailyShuffle } from "@/lib/daily";
 
@@ -19,6 +20,7 @@ export function MealIdeas({ left, date, slot }: { left: number; date: string; sl
   const { data: recent } = useRecentFoods();
   const { data: profile } = useGetProfile({ query: { queryKey: getGetProfileQueryKey() } });
   const add = useAddFood();
+  const library = useRecipeLibrary();
   const { toast } = useToast();
 
   const ideas = useMemo<Idea[]>(() => {
@@ -33,7 +35,7 @@ export function MealIdeas({ left, date, slot }: { left: number; date: string; sl
     const known = new Set(mine.map((m) => m.name.toLowerCase()));
     const slotCategory = slot === "Snack" ? "Fruit" : slot;
     const fresh = dailyShuffle(
-      RECIPES.filter((r) => matchesDietaryPreference(r, profile?.dietaryPreference)).filter(
+      library.filter((r) => matchesDietaryPreference(r, profile?.dietaryPreference)).filter(
         (r) => fits(r.calories) && r.protein >= 20 && !known.has(r.name.toLowerCase()) && ok(r.name, r.ingredients),
       ),
       `ideas-new-${slot}`,
@@ -42,7 +44,7 @@ export function MealIdeas({ left, date, slot }: { left: number; date: string; sl
     // A different new idea each day, matching the meal when possible
     const pick = fresh[0] ?? null;
     return [...mine, ...(pick ? [{ name: pick.name, calories: pick.calories, protein: pick.protein, carbs: pick.carbs, fat: pick.fat, why: "Something new, high in protein", source: "recipe" as const }] : [])];
-  }, [left, recent, profile?.dietaryPreference, profile?.healthFlags, slot, date]);
+  }, [left, recent, profile?.dietaryPreference, profile?.healthFlags, slot, date, library]);
 
   if (!ideas.length) return null;
   return (

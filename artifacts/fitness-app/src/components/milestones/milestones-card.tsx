@@ -1,10 +1,15 @@
+import { useEffect, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { Share2 } from "lucide-react";
 import { useGetProfile, getGetProfileQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { GROUP_LABELS, shareMilestone, useMilestones, type MilestoneGroup } from "@/lib/milestones";
+import { GROUP_LABELS, TIER_COLORS, TIER_LABEL, shareMilestone, tierOf, useMilestones, type Milestone, type MilestoneGroup } from "@/lib/milestones";
+import { Medal } from "@/components/milestones/medal";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+const SHONE = "fc-medals-shone";
 const fmt = (n: number) => (Number.isInteger(n) ? n.toLocaleString() : n.toFixed(1));
 
 /** Progress page: what you've reached, and the next milestone in each area. */
@@ -12,6 +17,24 @@ export function MilestonesCard() {
   const { data, isLoading } = useMilestones();
   const { data: profile } = useGetProfile({ query: { queryKey: getGetProfileQueryKey() } });
   const first = profile?.name?.trim().split(/\s+/)[0];
+
+  const [open, setOpen] = useState<Milestone | null>(null);
+  // Badges reached in the last 2 weeks shine once (remembered on this phone)
+  const [fresh, setFresh] = useState<Set<string>>(new Set());
+  const checked = useRef(false);
+  useEffect(() => {
+    if (!data || checked.current) return;
+    checked.current = true;
+    try {
+      const seen = new Set<string>(JSON.parse(localStorage.getItem(SHONE) ?? "[]"));
+      const cutoff = Date.now() - 14 * 864e5;
+      const now = data.milestones.filter((m) => m.earned && m.earnedAt && Date.parse(m.earnedAt) > cutoff && !seen.has(m.key)).map((m) => m.key);
+      if (now.length) localStorage.setItem(SHONE, JSON.stringify([...seen, ...now]));
+      setFresh(new Set(now));
+    } catch {
+      /* private mode: no shine */
+    }
+  }, [data]);
 
   if (isLoading || !data) {
     return (
@@ -64,23 +87,19 @@ export function MilestonesCard() {
         )}
         {earned.length > 0 && (
           <div>
-            <p className="mb-2 text-xs font-semibold text-muted-foreground">Reached</p>
-            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            <p className="mb-3 text-xs font-semibold text-muted-foreground">Reached</p>
+            <ul className="grid grid-cols-3 gap-x-2 gap-y-4 sm:grid-cols-4 lg:grid-cols-6">
               {earned.map((m) => (
                 <li key={m.key}>
                   <button
                     type="button"
-                    onClick={() => void shareMilestone(m, first)}
-                    className="flex h-full w-full items-start gap-2 rounded-xl bg-primary/5 p-3 text-left transition-colors hover:bg-primary/10"
-                    aria-label={`Share ${m.title}`}
+                    onClick={() => setOpen(m)}
+                    className="flex w-full flex-col items-center gap-2 rounded-2xl p-1.5 text-center transition-colors hover:bg-muted/50"
+                    aria-label={`${m.title}, ${TIER_LABEL[tierOf(m)]}`}
                     data-testid="milestone-earned"
                   >
-                    <span className="text-xl" aria-hidden>{m.icon}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-semibold leading-tight">{m.title}</span>
-                      {m.earnedAt && <span className="block text-xs text-muted-foreground">{format(parseISO(m.earnedAt), "d MMM yyyy")}</span>}
-                    </span>
-                    <Share2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <Medal m={m} size={68} shimmer={fresh.has(m.key)} />
+                    <span className="line-clamp-2 text-xs font-semibold leading-tight">{m.title}</span>
                   </button>
                 </li>
               ))}
@@ -91,6 +110,26 @@ export function MilestonesCard() {
           Days only count when you eat at least the safe minimum. Totals never reset, so a missed day is just a missed day.
         </p>
       </CardContent>
+      <Dialog open={Boolean(open)} onOpenChange={(o) => !o && setOpen(null)}>
+        <DialogContent className="max-w-sm text-center" data-testid="medal-detail">
+          {open && (
+            <>
+              <Medal m={open} size={128} className="mx-auto mt-2" />
+              <DialogHeader className="space-y-1.5 text-center sm:text-center">
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: TIER_COLORS[tierOf(open)][1] }}>
+                  {TIER_LABEL[tierOf(open)]} · {GROUP_LABELS[open.group]}
+                </p>
+                <DialogTitle className="font-display text-2xl font-medium">{open.title}</DialogTitle>
+                <DialogDescription className="text-base">{open.line}</DialogDescription>
+                {open.earnedAt && <p className="text-xs text-muted-foreground">Reached {format(parseISO(open.earnedAt), "d MMMM yyyy")}</p>}
+              </DialogHeader>
+              <Button className="h-11 w-full gap-2" onClick={() => void shareMilestone(open, first)} data-testid="button-share-medal">
+                <Share2 className="h-4 w-4" /> Share
+              </Button>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

@@ -6,7 +6,8 @@ import { useGetProfile, getGetProfileQueryKey } from "@workspace/api-client-reac
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { shareMilestone, useMarkSeen, useMilestones, type Milestone } from "@/lib/milestones";
+import { TIER_LABEL, shareMilestone, tierOf, useMarkSeen, useMilestones, type Milestone } from "@/lib/milestones";
+import { Medal } from "@/components/milestones/medal";
 
 /**
  * Celebrates newly reached milestones, one at a time, once each.
@@ -52,11 +53,9 @@ export function MilestonePopup() {
       <DialogContent className="max-w-sm text-center" data-testid="milestone-popup">
         {current && (
           <>
-            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-sage to-dusk/40 text-5xl" aria-hidden>
-              {current.icon}
-            </div>
+            <Medal m={current} size={112} shimmer className="mx-auto" />
             <DialogHeader className="space-y-2 text-center sm:text-center">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Milestone reached</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">{TIER_LABEL[tierOf(current)]} milestone reached</p>
               <DialogTitle className="font-display text-2xl font-medium">{current.title}</DialogTitle>
               <DialogDescription className="text-base">{current.line}</DialogDescription>
             </DialogHeader>

@@ -150,6 +150,13 @@ async function main() {
   check("push: public key available", ((await api<{ key: string }>("/push/public-key")).body.key ?? "").length > 40);
   check("cron: reminders need the key", (await api("/cron/reminders")).status === 403);
 
+  // Weekly review
+  type WR = { partial: boolean; canGoBack: boolean; canGoForward: boolean; current: { days: number; workouts: { done: number } }; focus: string; from: string };
+  const wr = await api<WR>("/weekly-review");
+  check("weekly review: a new account sees this week so far", wr.status === 200 && wr.body.partial && !wr.body.canGoForward && !wr.body.canGoBack && wr.body.from === today, JSON.stringify({ ...wr.body, current: undefined }));
+  check("weekly review: has a focus line", typeof wr.body.focus === "string" && wr.body.focus.length > 10);
+  check("weekly review: weeks before joining are refused", (await api("/weekly-review?week=2020-01-06")).status === 400);
+
   check("treat day can be set today", (await api("/treats", { method: "PUT", body: JSON.stringify({ date: today, on: true }) })).status === 200);
   const second = await api("/treats", { method: "PUT", body: JSON.stringify({ date: last7[3], on: true }) });
   check("a second treat day in the same week is refused", second.status === 409, String(second.status));

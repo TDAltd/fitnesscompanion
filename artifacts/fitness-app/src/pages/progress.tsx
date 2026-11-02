@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { WeightChart } from "@/components/progress/weight-chart";
 import { WeeklySummary } from "@/components/progress/weekly-summary";
+import { WeeklyReview } from "@/components/progress/weekly-review";
 import { HealthTrends } from "@/components/health/health-trends";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -59,6 +60,8 @@ export default function ProgressPage() {
   return (
     <div className="space-y-6 md:space-y-8">
       <PageHeader title="Progress" description="Judge the trend over weeks, not single days." />
+
+      <WeeklyReview />
 
       {/* STATS ROW */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">

@@ -18,6 +18,7 @@ import adminRouter from "./admin";
 import accountRouter from "./account";
 import weeklyEmailRouter from "./weeklyEmail";
 import remindersRouter, { remindersCronRouter } from "./reminders";
+import weeklyReviewRouter from "./weeklyReview";
 import { healthRouter as healthDataRouter, healthSyncPublicRouter } from "./healthSync";
 import { requireAuth } from "../lib/auth";
 
@@ -59,5 +60,6 @@ router.use(foodLogRouter);
 router.use(exerciseSetsRouter);
 router.use(milestonesRouter);
 router.use(remindersRouter);
+router.use(weeklyReviewRouter);
 
 export default router;

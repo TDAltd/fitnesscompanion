@@ -7,6 +7,7 @@ export type AdminOverview = {
   features: { key: string; label: string; users: number; percent: number }[];
   retention: { days: number; cohort: number; retained: number; percent: number | null }[];
   signupsOpen: boolean;
+  shortcutLink: string | null;
 };
 
 export type AdminUser = {

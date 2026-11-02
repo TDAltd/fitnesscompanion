@@ -14,6 +14,8 @@ export type SyncStatus = {
   createdAt: string | null;
   lastSyncAt: string | null;
   lastPayload: string | null;
+  /** Ready-made Shortcut shared by the app owner (iCloud link), if any */
+  shortcutLink?: string | null;
 };
 
 const HEALTH_KEY = ["health-days"] as const;

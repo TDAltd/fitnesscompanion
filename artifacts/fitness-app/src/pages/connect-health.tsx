@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Check, Copy, KeyRound, ListOrdered, Loader2, Smartphone, TriangleAlert, Unplug, Watch } from "lucide-react";
+import { Check, ChevronDown, Copy, KeyRound, ListOrdered, Loader2, Plus, Smartphone, TriangleAlert, Unplug, Watch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -251,7 +251,53 @@ export default function ConnectHealthPage() {
         </CardContent>
       </Card>
 
-      {/* Instructions */}
+      {/* Quick setup: the app owner shared a ready-made Shortcut */}
+      {status?.shortcutLink && (
+        <Card className="border-primary/30" data-testid="quick-shortcut">
+          <CardHeader>
+            <CardTitle className="text-base">3. Add the Shortcut (about 2 minutes)</CardTitle>
+            <CardDescription>Do this on your iPhone, after making your key in step 2.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <ol className="space-y-4">
+              <Step n={1} title="Add it">
+                <Button asChild className="mt-1 h-12 gap-2" data-testid="button-add-shortcut">
+                  <a href={status.shortcutLink} target="_blank" rel="noopener noreferrer">
+                    <Plus className="h-4 w-4" /> Add the Sync Fitness Shortcut
+                  </a>
+                </Button>
+                <p>It opens in the Shortcuts app. Tap <Q>Set Up Shortcut</Q>.</p>
+              </Step>
+              <Step n={2} title="Paste your key">
+                <p>
+                  When it asks for your <Q>Authorization value</Q>, paste the one from step 2 (it starts with "Bearer"), then tap{" "}
+                  <Q>Add Shortcut</Q>.
+                </p>
+              </Step>
+              <Step n={3} title="Test it">
+                <p>
+                  {device?.app ? <>Open <Q>{device.app}</Q> first so your device syncs. Then tap</> : <>Tap</>} the <Q>Sync Fitness</Q> tile and
+                  allow Health access. You'll see a notification with today's steps, and this page shows the sync time.
+                </p>
+              </Step>
+              <Step n={4} title="Run it every night">
+                <p>
+                  In Shortcuts tap <Q>Automation</Q> → <Q>+</Q> → <Q>Time of Day</Q> → <Q>10:00 PM</Q>, <Q>Daily</Q> →{" "}
+                  <Q>Run Immediately</Q> → <Q>Next</Q> → choose <Q>Sync Fitness</Q>. iPhone doesn't let apps set this part up for you.
+                </p>
+              </Step>
+            </ol>
+          </CardContent>
+        </Card>
+      )}
+
+      {status?.shortcutLink ? (
+        <details className="group rounded-2xl border bg-card">
+          <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between px-5 text-sm font-semibold">
+            Prefer to build the Shortcut yourself?
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="border-t">
       <Card>
         <CardHeader>
           <CardTitle className="text-base">3. Set up the Shortcut on your iPhone (about 10 minutes, once)</CardTitle>
@@ -329,6 +375,89 @@ export default function ConnectHealthPage() {
           </ol>
         </CardContent>
       </Card>
+
+          </div>
+        </details>
+      ) : (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">3. Set up the Shortcut on your iPhone (about 10 minutes, once)</CardTitle>
+          <CardDescription>
+            Open the <Q>Shortcuts</Q> app, tap <Q>+</Q> and name the new shortcut <Q>Sync Fitness</Q>. Add every action
+            below to this one shortcut, in order, using <Q>Search Actions</Q> at the bottom. Shortcuts saves as you go;
+            to come back later, tap <Q>⋯</Q> on the Sync Fitness tile (tapping the middle runs it instead).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-5 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+            Every health item uses the same three actions: <Q>Find Health Samples</Q> → <Q>Calculate Statistics</Q> →{" "}
+            <Q>Set Variable</Q>. On newer iPhones the result is called <Q>Sum</Q>; that's the one to pick. Don't add a
+            Source filter: setting <Q>Group By</Q> to <Q>Day</Q> gives Health's own daily total, with each step counted once.
+          </div>
+          <ol className="space-y-5">
+            <Step n={1} title="Steps">
+              <ul className="list-disc space-y-1 pl-5">
+                <li><Q>Find Health Samples</Q>: Type is <Q>Steps</Q>, Start Date is <Q>today</Q>. Set <Q>Group By</Q> to <Q>Day</Q>. Leave Unit, Sort by and Limit as they are.</li>
+                <li><Q>Calculate Statistics</Q>: <Q>Sum</Q></li>
+                <li><Q>Set Variable</Q>: name <Q>Steps</Q>, to <Q>Sum</Q></li>
+              </ul>
+            </Step>
+            <Step n={2} title="Active calories">
+              <ul className="list-disc space-y-1 pl-5">
+                <li><Q>Find Health Samples</Q>: Type is <Q>Active Energy</Q>, Start Date is <Q>today</Q>, <Q>Group By</Q> <Q>Day</Q>. Set <Q>Unit</Q> to <Q>kcal</Q> (not "cal").</li>
+                <li><Q>Calculate Statistics</Q>: <Q>Sum</Q></li>
+                <li><Q>Set Variable</Q>: name <Q>Energy</Q>, to the <Q>Sum</Q> directly above</li>
+              </ul>
+            </Step>
+            <Step n={3} title="Today's date">
+              <p>
+                <Q>Format Date</Q>: tap the date and choose <Q>Current Date</Q>. Tap the arrow for more options → Date
+                Format <Q>Custom</Q> → type <code className="rounded bg-muted px-1">yyyy-MM-dd</code> (capital MM).
+              </p>
+            </Step>
+            <Step n={4} title="Send it to the app">
+              <p>Add <Q>Get Contents of URL</Q> and paste the <Q>Web address</Q> from above. Tap the arrow for more options:</p>
+              <ul className="list-disc space-y-1 pl-5">
+                <li><Q>Method:</Q> POST</li>
+                <li>
+                  <Q>Headers:</Q> tap <Q>Add new header</Q>. Key <code className="rounded bg-muted px-1">Authorization</code>,
+                  value: paste the <Q>Authorization value</Q> from above (starts with "Bearer").
+                </li>
+                <li>
+                  <Q>Request Body:</Q> <Q>JSON</Q>. Tap <Q>Add new field</Q> → <Q>Text</Q> three times. Type the key
+                  exactly, then tap the value box and pick the variable:
+                  <div className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+                    <span>date</span><span>→ Formatted Date</span>
+                    <span>steps</span><span>→ Steps</span>
+                    <span>activeEnergy</span><span>→ Energy</span>
+                  </div>
+                </li>
+              </ul>
+              <p>Last, add <Q>Show Notification</Q> and set it to <Q>Contents of URL</Q>, so you see what was synced.</p>
+            </Step>
+            <Step n={5} title="Test it">
+              <p>
+                {device?.app ? <>Open <Q>{device.app}</Q> first so your device syncs. Then tap</> : <>Tap</>} <Q>▶</Q> in your shortcut and allow Health
+                access when asked. You should see a notification like <em>"Synced 2026-10-24: 8,432 steps, 412 kcal
+                active"</em>, and this page will show the sync time.
+              </p>
+              <p>
+                If steps look about double what your device shows, open <Q>Find Health Samples</Q> for Steps and add{" "}
+                <Q>Source is</Q> your watch or ring app.
+              </p>
+            </Step>
+            <Step n={6} title="Run it every night">
+              <p>
+                In Shortcuts tap <Q>Automation</Q> → <Q>+</Q> → <Q>Time of Day</Q> → <Q>10:00 PM</Q>, <Q>Daily</Q> →{" "}
+                <Q>Run Immediately</Q> → <Q>Next</Q> → choose <Q>Sync Fitness</Q>. You can still run it by hand any
+                time; it updates the same day instead of adding it twice.
+              </p>
+            </Step>
+          </ol>
+        </CardContent>
+      </Card>
+
+      )}
 
       {status?.lastPayload && (
         <Card>

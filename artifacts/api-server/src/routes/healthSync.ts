@@ -2,7 +2,7 @@ import { Router } from "express";
 import { randomBytes, createHash } from "node:crypto";
 import { and, desc, eq, gte } from "drizzle-orm";
 import { db, healthDailyTable, healthSyncTable, habitLogsTable, usersTable } from "@workspace/db";
-import { rateLimit, uid } from "../lib/auth";
+import { rateLimit, shortcutLink, uid } from "../lib/auth";
 import { targetsForUser } from "./planSettings";
 import { DEFAULT_TZ, addDays, dateInTz, todayFor } from "../lib/dates";
 
@@ -164,6 +164,8 @@ healthRouter.get("/health-sync/status", async (req, res) => {
     createdAt: link?.createdAt?.toISOString() ?? null,
     lastSyncAt: link?.lastSyncAt?.toISOString() ?? null,
     lastPayload: link?.lastPayload ?? null,
+    // Ready-made Shortcut to add in one tap, when the app owner has shared one
+    shortcutLink: await shortcutLink(),
   });
 });
 

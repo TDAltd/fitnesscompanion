@@ -2,7 +2,7 @@ import { Router } from "express";
 import { randomBytes } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { db, usersTable, sessionsTable, appSettingsTable } from "@workspace/db";
-import { envAdmins, hashPassword, requireAdmin, signupsOpen, uid } from "../lib/auth";
+import { envAdmins, hashPassword, requireAdmin, shortcutLink, signupsOpen, uid, validShortcutLink } from "../lib/auth";
 import { aiErrorDetail, aiSetup, completeWithFallback, geminiModels } from "../lib/ai";
 
 /**
@@ -107,6 +107,7 @@ router.get("/admin/overview", async (_req, res) => {
     ],
     retention: [await retention(7), await retention(28)],
     signupsOpen: await signupsOpen(),
+    shortcutLink: await shortcutLink(),
   });
 });
 
@@ -290,16 +291,25 @@ router.get("/admin/ai-check", async (_req, res) => {
 });
 
 router.put("/admin/settings", async (req, res) => {
-  if (typeof req.body?.signupsOpen !== "boolean") {
-    res.status(400).json({ error: "signupsOpen must be true or false." });
-    return;
+  const body = (req.body ?? {}) as { signupsOpen?: unknown; shortcutLink?: unknown };
+  const save = (key: string, value: string) =>
+    db.insert(appSettingsTable).values({ key, value }).onConflictDoUpdate({ target: appSettingsTable.key, set: { value, updatedAt: new Date() } });
+  if ("signupsOpen" in body) {
+    if (typeof body.signupsOpen !== "boolean") {
+      res.status(400).json({ error: "signupsOpen must be true or false." });
+      return;
+    }
+    await save("signups_open", String(body.signupsOpen));
   }
-  const value = String(req.body.signupsOpen);
-  await db
-    .insert(appSettingsTable)
-    .values({ key: "signups_open", value })
-    .onConflictDoUpdate({ target: appSettingsTable.key, set: { value, updatedAt: new Date() } });
-  res.json({ signupsOpen: req.body.signupsOpen });
+  if ("shortcutLink" in body) {
+    const v = typeof body.shortcutLink === "string" ? body.shortcutLink.trim() : "";
+    if (v && !validShortcutLink(v)) {
+      res.status(400).json({ error: "Paste the iCloud link from Share → Copy iCloud Link. It starts with https://www.icloud.com/shortcuts/" });
+      return;
+    }
+    await save("shortcut_link", v);
+  }
+  res.json({ signupsOpen: await signupsOpen(), shortcutLink: await shortcutLink() });
 });
 
 export default router;

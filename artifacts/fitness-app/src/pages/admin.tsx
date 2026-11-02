@@ -94,6 +94,7 @@ export default function AdminPage() {
       ) : (
         <>
           <AiCheck />
+          <ShortcutLinkCard current={overview.shortcutLink ?? null} />
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4" data-testid="admin-stats">
             <Stat label="People" value={overview.totals.users} sub={`${overview.totals.new7d} joined this week`} />
@@ -492,6 +493,54 @@ function AiCheck() {
         <Button variant="outline" className="shrink-0" onClick={() => void run()} disabled={busy} data-testid="button-ai-check">
           {busy ? "Testing…" : "Test AI connection"}
         </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** The shared iCloud link to a ready-made health Shortcut: users then add it in one tap on Connect. */
+function ShortcutLinkCard({ current }: { current: string | null }) {
+  const action = useAdminAction();
+  const { toast } = useToast();
+  const [value, setValue] = useState(current ?? "");
+  const save = async (link: string) => {
+    try {
+      await action.mutateAsync({ path: "/settings", method: "PUT", body: { shortcutLink: link } });
+      toast({ title: link ? "Shortcut link saved" : "Shortcut link removed", description: link ? "People now see an Add Shortcut button on Connect." : "Connect shows the step-by-step guide again." });
+    } catch (err) {
+      toast({ title: "Couldn't save", description: (err as Error).message, variant: "destructive" });
+    }
+  };
+  return (
+    <Card data-testid="shortcut-link-card">
+      <CardHeader>
+        <CardTitle className="text-lg">Health Shortcut for everyone</CardTitle>
+        <CardDescription>
+          {current ? "On: people add the Shortcut in one tap on Connect your devices." : "Off: people build the Shortcut themselves (about 10 minutes)."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input value={value} onChange={(e) => setValue(e.target.value)} placeholder="https://www.icloud.com/shortcuts/…" className="h-11" data-testid="input-shortcut-link" />
+          <Button className="h-11" onClick={() => void save(value.trim())} disabled={action.isPending || value.trim() === (current ?? "")}>Save</Button>
+          {current && <Button variant="ghost" className="h-11" onClick={() => { setValue(""); void save(""); }} disabled={action.isPending}>Remove</Button>}
+        </div>
+        <details className="rounded-xl bg-muted/40 p-4">
+          <summary className="cursor-pointer font-semibold">How to make the link (once, on your iPhone, about 15 minutes)</summary>
+          <ol className="mt-3 list-decimal space-y-2 pl-5 text-muted-foreground">
+            <li>Log in to a normal (non-admin) account, open <b>Me → Connect your devices</b> and build the Shortcut by following steps 1-5 there. Test that it syncs.</li>
+            <li>
+              In the <b>Get Contents of URL</b> step, replace your real key in the Authorization header with the word <b>PASTE-YOUR-KEY</b>. Never share a Shortcut that
+              still has your own key in it.
+            </li>
+            <li>
+              Tap the <b>ⓘ</b> (or the shortcut name at the top) → <b>Setup</b> / <b>Import Questions</b> → <b>Add</b> → pick the Authorization header value. Question:
+              <i> "Paste your Authorization value from the Connect page (starts with Bearer)"</i>.
+            </li>
+            <li>Tap <b>Share</b> → <b>Copy iCloud Link</b>, paste it above and tap Save.</li>
+            <li>Check it: on another account, tap Add Shortcut on Connect, paste a fresh key when asked, and run it once.</li>
+          </ol>
+        </details>
       </CardContent>
     </Card>
   );

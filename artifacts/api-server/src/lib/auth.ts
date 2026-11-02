@@ -97,6 +97,14 @@ export async function recordActivity(user: SessionUser, tzHeader?: string) {
 // ---------- app settings ----------
 
 /** Sign-ups are open unless an admin closed them (or ALLOW_SIGNUPS=false and no admin choice yet). */
+/** Shared iCloud link to the ready-made health Shortcut (set by an admin), or null. */
+export async function shortcutLink(): Promise<string | null> {
+  const [row] = await db.select().from(appSettingsTable).where(eq(appSettingsTable.key, "shortcut_link"));
+  return row?.value || null;
+}
+export const validShortcutLink = (v: unknown): v is string =>
+  typeof v === "string" && /^https:\/\/(www\.)?icloud\.com\/shortcuts\/[A-Za-z0-9]{10,64}\/?$/.test(v.trim());
+
 export async function signupsOpen(): Promise<boolean> {
   const [row] = await db.select().from(appSettingsTable).where(eq(appSettingsTable.key, "signups_open"));
   if (row) return row.value === "true";

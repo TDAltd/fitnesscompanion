@@ -238,14 +238,14 @@ export default function RemindersPage() {
             <CardDescription>Each one stays quiet if you've already done it.</CardDescription>
           </CardHeader>
           <CardContent className="divide-y p-0">
-            <div className="grid grid-cols-2 gap-3 px-5 py-4">
-              <div className="space-y-1.5">
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3 px-5 py-4">
+              <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="wake">I wake up</Label>
-                <Input id="wake" type="time" value={settings.wakeTime} onChange={(e) => e.target.value && update({ wakeTime: e.target.value })} className="h-11 text-base" />
+                <Input id="wake" type="time" value={settings.wakeTime} onChange={(e) => e.target.value && update({ wakeTime: e.target.value })} className="h-11 w-full min-w-0 max-w-full appearance-none px-3 text-center text-base [&::-webkit-date-and-time-value]:text-center" />
               </div>
-              <div className="space-y-1.5">
+              <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="bed">I go to bed</Label>
-                <Input id="bed" type="time" value={settings.bedTime} onChange={(e) => e.target.value && update({ bedTime: e.target.value })} className="h-11 text-base" />
+                <Input id="bed" type="time" value={settings.bedTime} onChange={(e) => e.target.value && update({ bedTime: e.target.value })} className="h-11 w-full min-w-0 max-w-full appearance-none px-3 text-center text-base [&::-webkit-date-and-time-value]:text-center" />
               </div>
               <p className="col-span-2 text-xs text-muted-foreground">No reminders before you wake up or after bedtime.</p>
             </div>
@@ -266,7 +266,7 @@ export default function RemindersPage() {
               checked={settings.workout}
               onChange={(v) => update({ workout: v })}
             >
-              <Input type="time" aria-label="Workout reminder time" value={settings.workoutTime} onChange={(e) => e.target.value && update({ workoutTime: e.target.value })} className="h-10 w-32 text-base" />
+              <Input type="time" aria-label="Workout reminder time" value={settings.workoutTime} onChange={(e) => e.target.value && update({ workoutTime: e.target.value })} className="h-10 w-36 min-w-0 appearance-none px-3 text-center text-base [&::-webkit-date-and-time-value]:text-center" />
             </Row>
             <Row
               id="r-meals"

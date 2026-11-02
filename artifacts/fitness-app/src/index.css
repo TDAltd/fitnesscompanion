@@ -262,3 +262,16 @@
 @media (prefers-reduced-motion: reduce) {
   .medal-shimmer::after, .medal-legend { animation: none; }
 }
+
+/* iPhone gives date/time boxes a built-in minimum width, so side-by-side boxes overlapped on small screens */
+input[type="date"],
+input[type="time"] {
+  min-width: 0;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  text-align: left;
+}

@@ -164,7 +164,7 @@ function EditSessionSheet({ id, onClose }: { id: number | null; onClose: () => v
                   </button>
                 ))}
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="s-min">Minutes</Label>
                   <Input id="s-min" type="number" inputMode="numeric" value={minutes} onChange={(e) => setMinutes(e.target.value)} className="h-11" />

@@ -430,11 +430,6 @@ export default function ConnectHealthPage() {
         </ul>
       </Fold>
 
-      {status?.lastPayload && (
-        <Fold title="Last data received (for troubleshooting)">
-          <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-md bg-muted/50 p-3 text-xs" data-testid="text-last-payload">{status.lastPayload}</pre>
-        </Fold>
-      )}
     </div>
   );
 }

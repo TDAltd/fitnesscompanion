@@ -1,10 +1,9 @@
 import { useState, type ReactNode } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Check, ChevronDown, Copy, KeyRound, ListOrdered, Loader2, Plus, Smartphone, TriangleAlert, Unplug, Watch } from "lucide-react";
+import { Check, ChevronDown, CircleCheck, Copy, KeyRound, Loader2, Plus, RotateCw, Smartphone, TriangleAlert, Unplug, Watch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { syncUrl, useCreateSyncKey, useRevokeSyncKey, useSyncStatus } from "@/lib/health";
 import { DEVICES, deviceById, saveDevice, savedDevice, type DeviceId } from "@/lib/devices";
@@ -56,6 +55,31 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   );
 }
 
+/** "date, steps, activeEnergy" from the last payload, for the status card. */
+function lastSync(payload: string | null | undefined): { date?: string; steps?: number; energy?: number } | null {
+  if (!payload) return null;
+  try {
+    const p = JSON.parse(payload) as Record<string, unknown>;
+    const n = (v: unknown) => (v == null || v === "" || Number.isNaN(Number(v)) ? undefined : Math.round(Number(v)));
+    return { date: typeof p.date === "string" ? p.date : undefined, steps: n(p.steps), energy: n(p.activeEnergy) };
+  } catch {
+    return null;
+  }
+}
+
+/** A tidy folding section. */
+function Fold({ title, children, testId, defaultOpen }: { title: ReactNode; children: ReactNode; testId?: string; defaultOpen?: boolean }) {
+  return (
+    <details className="group rounded-2xl border bg-card" data-testid={testId} open={defaultOpen}>
+      <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between gap-3 px-5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+        {title}
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="border-t px-5 py-4 text-sm">{children}</div>
+    </details>
+  );
+}
+
 const Q = ({ children }: { children: ReactNode }) => (
   <strong className="font-semibold text-foreground">{children}</strong>
 );
@@ -83,6 +107,13 @@ export default function ConnectHealthPage() {
     }
   };
 
+  // Once data has arrived, the setup steps fold away until you disconnect (or ask for them)
+  const synced = Boolean(status?.connected && status.lastSyncAt);
+  const [showSetup, setShowSetup] = useState(false);
+  const setupOpen = !synced || showSetup;
+  const quick = Boolean(status?.shortcutLink);
+  const last = lastSync(status?.lastPayload);
+
   const disconnect = async () => {
     if (!window.confirm("Disconnect Apple Health? Your Shortcut will stop syncing. Data already synced stays.")) return;
     await revokeKey.mutateAsync();
@@ -91,223 +122,158 @@ export default function ConnectHealthPage() {
   };
 
   return (
-    <div className="space-y-6 pb-20">
-      <PageHeader
-        title="Connect your devices"
-        description="Your phone, watch or ring saves to the iPhone Health app. A small Shortcut then sends each day's steps and active calories here every night."
-      />
+    <div className="space-y-5 pb-20">
+      <PageHeader title="Connect your devices" description="Your daily steps and active calories from your phone, watch or ring, sent here every night." />
 
-      {/* 1. Device */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Watch className="h-4 w-4 text-primary" /> 1. What do you track with?
-          </CardTitle>
-          <CardDescription>Pick your main device. The steps below change to match.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" role="radiogroup" aria-label="Your device">
-            {DEVICES.map((d) => (
-              <button
-                key={d.id}
-                type="button"
-                role="radio"
-                aria-checked={deviceId === d.id}
-                onClick={() => pick(d.id)}
-                className={cn(
-                  "min-h-[64px] rounded-xl border p-3 text-left transition-colors",
-                  deviceId === d.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "hover:bg-muted/60",
-                )}
-                data-testid={`device-${d.id}`}
-              >
-                <span className="block text-sm font-semibold">{d.name}</span>
-                <span className="block text-xs text-muted-foreground">{d.examples}</span>
-              </button>
-            ))}
-          </div>
-
-          {device && (
-            <div className="space-y-4 rounded-xl bg-muted/40 p-4" data-testid="device-guide">
-              <div className="flex flex-wrap gap-1.5 text-xs">
-                {[
-                  ["Steps", device.gives.steps],
-                  ["Active calories", device.gives.energy],
-                ].map(([label, v]) => (
-                  <span
-                    key={label as string}
-                    className={cn("rounded-full px-2.5 py-1 font-semibold", v ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground line-through")}
-                  >
-                    {label as string}
-                    {v === "estimate" ? " (estimate)" : ""}
-                  </span>
-                ))}
-              </div>
-              <div>
-                <p className="mb-1.5 text-sm font-semibold">
-                  {device.app ? `Turn on Apple Health in ${device.app}` : "Get it ready"}
-                </p>
-                <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
-                  {device.setup.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ol>
-              </div>
-              {device.tip && <p className="text-sm">{device.tip}</p>}
-              {device.app && (
-                <div className="border-t pt-3 text-sm">
-                  <p className="font-semibold">Check it worked</p>
-                  <p className="text-muted-foreground">
-                    Open the iPhone <Q>Health</Q> app → tap your photo (top right) → <Q>Apps</Q> → <Q>{device.app}</Q>{" "}
-                    → <Q>Turn On All</Q>. Then check <Q>Browse → Activity → Steps</Q> shows today's steps.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex gap-3 rounded-xl border p-4 text-sm">
-            <ListOrdered className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-            <div className="space-y-1">
-              <p className="font-semibold">Phone and watch both counting steps?</p>
-              <p className="text-muted-foreground">
-                That's fine: Apple Health counts each step once, using whichever device is higher in its list. To choose
-                which one wins, open Health → <Q>Browse</Q> → <Q>Activity</Q> → <Q>Steps</Q> → <Q>Data Sources &amp; Access</Q> →{" "}
-                <Q>Edit</Q>, and drag your watch or ring to the top.
-              </p>
-            </div>
-          </div>
-
-          <p className="rounded-xl bg-muted/40 p-4 text-sm text-muted-foreground" data-testid="android-note">
-            <Q>Android phone?</Q> Not yet, sorry. A web app can't read Google's Health Connect. For now, type your steps
-            into the daily checklist on Today.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Status */}
-      <Card>
-        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <Smartphone className="h-8 w-8 text-primary" />
-            <div>
+      {/* Status: the only thing you see once it's working */}
+      <Card className={cn(synced && "border-primary/30 bg-primary/5")} data-testid="sync-status">
+        <CardContent className="space-y-4 p-5">
+          <div className="flex items-start gap-3">
+            {synced ? <CircleCheck className="mt-0.5 h-7 w-7 shrink-0 text-primary" /> : <Smartphone className="mt-0.5 h-7 w-7 shrink-0 text-primary" />}
+            <div className="min-w-0 flex-1">
               {isLoading ? (
                 <p className="text-sm text-muted-foreground">Checking…</p>
+              ) : synced ? (
+                <>
+                  <p className="font-semibold">Connected{device ? ` · ${device.name}` : ""}</p>
+                  <p className="text-sm text-muted-foreground" data-testid="text-last-sync">
+                    Last sync {formatDistanceToNow(new Date(status!.lastSyncAt!), { addSuffix: true })}
+                    {last?.steps != null ? ` · ${last.steps.toLocaleString()} steps` : ""}
+                    {last?.energy != null ? `, ${last.energy.toLocaleString()} kcal active` : ""}
+                  </p>
+                </>
               ) : status?.connected ? (
                 <>
-                  <p className="font-bold">
-                    Connected <Badge className="ml-1 bg-primary hover:bg-primary">On</Badge>
-                  </p>
-                  <p className="text-sm text-muted-foreground" data-testid="text-last-sync">
-                    {status.lastSyncAt
-                      ? `Last sync ${formatDistanceToNow(new Date(status.lastSyncAt), { addSuffix: true })}`
-                      : "Waiting for the first sync from your iPhone"}
-                  </p>
+                  <p className="font-semibold">Almost there</p>
+                  <p className="text-sm text-muted-foreground">Waiting for the first sync. Finish step 3, then run the Shortcut once.</p>
                 </>
               ) : (
                 <>
-                  <p className="font-bold">Not connected</p>
-                  <p className="text-sm text-muted-foreground">Start with step 1 below.</p>
+                  <p className="font-semibold">Not connected yet</p>
+                  <p className="text-sm text-muted-foreground">Three steps{quick ? ", about 3 minutes" : ""}. Do them on your iPhone.</p>
                 </>
               )}
             </div>
           </div>
           {status?.connected && (
-            <Button variant="ghost" className="gap-2 text-destructive" onClick={disconnect} disabled={revokeKey.isPending}>
-              <Unplug className="h-4 w-4" /> Disconnect
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Key */}
-      <Card className="border-primary/20 bg-primary/5">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <KeyRound className="h-4 w-4 text-primary" /> 2. Your sync details
-          </CardTitle>
-          <CardDescription>
-            Do this part on your iPhone if you can, so you can copy and paste straight into the Shortcuts app.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <CopyField label="Web address (URL)" value={syncUrl()} testId="text-sync-url" />
-          {key ? (
-            <>
-              <CopyField label="Authorization value (includes your key)" value={`Bearer ${key}`} testId="text-sync-key" />
-              <div className="flex gap-2 rounded-lg border border-dusk/30 bg-dusk/10 p-3 text-sm">
-                <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-dusk" />
-                <p>
-                  Copy it into your Shortcut now: it's only shown once. Keep it private; anyone with it can add
-                  health data to your account (but can't read anything).
-                </p>
-              </div>
-            </>
-          ) : (
-            <Button onClick={makeKey} disabled={createKey.isPending} className="gap-2" data-testid="button-create-key">
-              {createKey.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              {status?.connected ? "Make a new key" : "Create my sync key"}
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Quick setup: the app owner shared a ready-made Shortcut */}
-      {status?.shortcutLink && (
-        <Card className="border-primary/30" data-testid="quick-shortcut">
-          <CardHeader>
-            <CardTitle className="text-base">3. Add the Shortcut (about 2 minutes)</CardTitle>
-            <CardDescription>Do this on your iPhone, after making your key in step 2.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ol className="space-y-4">
-              <Step n={1} title="Add it">
-                <Button asChild className="mt-1 h-12 gap-2" data-testid="button-add-shortcut">
-                  <a href={status.shortcutLink} target="_blank" rel="noopener noreferrer">
-                    <Plus className="h-4 w-4" /> Add the Sync Fitness Shortcut
-                  </a>
+            <div className="flex flex-wrap gap-2">
+              {synced && (
+                <Button variant="outline" className="h-10 gap-2" onClick={() => setShowSetup((v) => !v)} data-testid="button-toggle-setup-steps">
+                  <RotateCw className="h-4 w-4" /> {showSetup ? "Hide setup steps" : "Change device or set up again"}
                 </Button>
-                <p>It opens in the Shortcuts app. Tap <Q>Set Up Shortcut</Q>.</p>
-              </Step>
-              <Step n={2} title="Paste your key">
-                <p>
-                  When it asks for your <Q>Authorization value</Q>, paste the one from step 2 (it starts with "Bearer"), then tap{" "}
-                  <Q>Add Shortcut</Q>.
-                </p>
-              </Step>
-              <Step n={3} title="Test it">
-                <p>
-                  {device?.app ? <>Open <Q>{device.app}</Q> first so your device syncs. Then tap</> : <>Tap</>} the <Q>Sync Fitness</Q> tile and
-                  allow Health access. You'll see a notification with today's steps, and this page shows the sync time.
-                </p>
-              </Step>
-              <Step n={4} title="Run it every night">
-                <p>
-                  In Shortcuts tap <Q>Automation</Q> → <Q>+</Q> → <Q>Time of Day</Q> → <Q>10:00 PM</Q>, <Q>Daily</Q> →{" "}
-                  <Q>Run Immediately</Q> → <Q>Next</Q> → choose <Q>Sync Fitness</Q>. iPhone doesn't let apps set this part up for you.
-                </p>
-              </Step>
-            </ol>
-          </CardContent>
-        </Card>
-      )}
+              )}
+              <Button variant="ghost" className="h-10 gap-2 text-destructive" onClick={disconnect} disabled={revokeKey.isPending}>
+                <Unplug className="h-4 w-4" /> Disconnect
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {status?.shortcutLink ? (
-        <details className="group rounded-2xl border bg-card">
-          <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between px-5 text-sm font-semibold">
-            Prefer to build the Shortcut yourself?
-            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
-          </summary>
-          <div className="border-t">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">3. Set up the Shortcut on your iPhone (about 10 minutes, once)</CardTitle>
-          <CardDescription>
-            Open the <Q>Shortcuts</Q> app, tap <Q>+</Q> and name the new shortcut <Q>Sync Fitness</Q>. Add every action
-            below to this one shortcut, in order, using <Q>Search Actions</Q> at the bottom. Shortcuts saves as you go;
-            to come back later, tap <Q>⋯</Q> on the Sync Fitness tile (tapping the middle runs it instead).
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      {setupOpen && (
+        <>
+          {/* 1. Device */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base"><Watch className="h-4 w-4 text-primary" /> 1. What do you track with?</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Your device">
+                {DEVICES.map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={deviceId === d.id}
+                    onClick={() => pick(d.id)}
+                    className={cn(
+                      "min-h-[48px] rounded-xl border px-3 py-2 text-left text-sm font-semibold transition-colors",
+                      deviceId === d.id ? "border-primary bg-primary/10 ring-1 ring-primary" : "hover:bg-muted/60",
+                    )}
+                    data-testid={`device-${d.id}`}
+                  >
+                    {d.name}
+                  </button>
+                ))}
+              </div>
+
+              {device && (
+                <div className="space-y-3 rounded-xl bg-muted/40 p-4 text-sm" data-testid="device-guide">
+                  <p className="font-semibold">{device.app ? `In ${device.app}, turn on Apple Health` : "Nothing to install"}</p>
+                  <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
+                    {device.setup.map((line) => <li key={line}>{line}</li>)}
+                  </ol>
+                  {device.tip && <p className="text-muted-foreground">{device.tip}</p>}
+                  <p className="text-xs text-muted-foreground">
+                    Sends steps{device.gives.energy ? ` and active calories${device.gives.energy === "estimate" ? " (estimated)" : ""}` : ""}.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 2. Key */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base"><KeyRound className="h-4 w-4 text-primary" /> 2. Your sync key</CardTitle>
+              <CardDescription>It links the Shortcut to your account. Shown once, so copy it before you leave this page.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {key ? (
+                <>
+                  <CopyField label="Your key" value={`Bearer ${key}`} testId="text-sync-key" />
+                  {!quick && <CopyField label="Web address (URL)" value={syncUrl()} testId="text-sync-url" />}
+                  <p className="flex gap-2 text-xs text-muted-foreground">
+                    <TriangleAlert className="h-4 w-4 shrink-0 text-dusk" />
+                    Keep it private: anyone with it can add steps to your account (but can't read anything).
+                  </p>
+                </>
+              ) : (
+                <Button onClick={makeKey} disabled={createKey.isPending} className="h-11 gap-2" variant={status?.connected ? "outline" : "default"} data-testid="button-create-key">
+                  {createKey.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {status?.connected ? "Make a new key" : "Create my key"}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 3. Shortcut */}
+          {quick ? (
+            <Card data-testid="quick-shortcut">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">3. Add the Shortcut</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ol className="space-y-4">
+                  <Step n={1} title="Add it">
+                    <Button asChild className="h-12 gap-2" data-testid="button-add-shortcut">
+                      <a href={status!.shortcutLink!} target="_blank" rel="noopener noreferrer"><Plus className="h-4 w-4" /> Add the Sync Fitness Shortcut</a>
+                    </Button>
+                    <p>In the Shortcuts app, tap <Q>Set Up Shortcut</Q>, paste <Q>your key</Q> when asked, then <Q>Add Shortcut</Q>.</p>
+                  </Step>
+                  <Step n={2} title="Test it">
+                    <p>
+                      {device?.app ? <>Open <Q>{device.app}</Q> so your device syncs, then tap</> : <>Tap</>} the <Q>Sync Fitness</Q> tile and allow Health access.
+                      This page will show "Connected".
+                    </p>
+                  </Step>
+                  <Step n={3} title="Run it every night">
+                    <p>
+                      Shortcuts → <Q>Automation</Q> → <Q>+</Q> → <Q>Time of Day</Q> → <Q>10:00 PM</Q>, <Q>Daily</Q> → <Q>Run Immediately</Q> → choose <Q>Sync Fitness</Q>.
+                    </p>
+                  </Step>
+                </ol>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">3. Build the Shortcut (about 10 minutes, once)</CardTitle>
+                <CardDescription>
+                  In <Q>Shortcuts</Q>, tap <Q>+</Q> and name it <Q>Sync Fitness</Q>. Add each action below in order using <Q>Search Actions</Q>.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
           <div className="mb-5 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
             Every health item uses the same three actions: <Q>Find Health Samples</Q> → <Q>Calculate Statistics</Q> →{" "}
             <Q>Set Variable</Q>. On newer iPhones the result is called <Q>Sum</Q>; that's the one to pick. Don't add a
@@ -340,7 +306,7 @@ export default function ConnectHealthPage() {
                 <li><Q>Method:</Q> POST</li>
                 <li>
                   <Q>Headers:</Q> tap <Q>Add new header</Q>. Key <code className="rounded bg-muted px-1">Authorization</code>,
-                  value: paste the <Q>Authorization value</Q> from above (starts with "Bearer").
+                  value: paste <Q>your key</Q> from step 2 (starts with "Bearer").
                 </li>
                 <li>
                   <Q>Request Body:</Q> <Q>JSON</Q>. Tap <Q>Add new field</Q> → <Q>Text</Q> three times. Type the key
@@ -373,22 +339,14 @@ export default function ConnectHealthPage() {
               </p>
             </Step>
           </ol>
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
+          )}
 
-          </div>
-        </details>
-      ) : (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">3. Set up the Shortcut on your iPhone (about 10 minutes, once)</CardTitle>
-          <CardDescription>
-            Open the <Q>Shortcuts</Q> app, tap <Q>+</Q> and name the new shortcut <Q>Sync Fitness</Q>. Add every action
-            below to this one shortcut, in order, using <Q>Search Actions</Q> at the bottom. Shortcuts saves as you go;
-            to come back later, tap <Q>⋯</Q> on the Sync Fitness tile (tapping the middle runs it instead).
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          {quick && (
+            <Fold title="Prefer to build the Shortcut yourself?" testId="manual-guide">
+              <div className="space-y-4">
+                <CopyField label="Web address (URL)" value={syncUrl()} testId="text-sync-url" />
           <div className="mb-5 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
             Every health item uses the same three actions: <Q>Find Health Samples</Q> → <Q>Calculate Statistics</Q> →{" "}
             <Q>Set Variable</Q>. On newer iPhones the result is called <Q>Sum</Q>; that's the one to pick. Don't add a
@@ -421,7 +379,7 @@ export default function ConnectHealthPage() {
                 <li><Q>Method:</Q> POST</li>
                 <li>
                   <Q>Headers:</Q> tap <Q>Add new header</Q>. Key <code className="rounded bg-muted px-1">Authorization</code>,
-                  value: paste the <Q>Authorization value</Q> from above (starts with "Bearer").
+                  value: paste <Q>your key</Q> from step 2 (starts with "Bearer").
                 </li>
                 <li>
                   <Q>Request Body:</Q> <Q>JSON</Q>. Tap <Q>Add new field</Q> → <Q>Text</Q> three times. Type the key
@@ -454,28 +412,29 @@ export default function ConnectHealthPage() {
               </p>
             </Step>
           </ol>
-        </CardContent>
-      </Card>
-
+              </div>
+            </Fold>
+          )}
+        </>
       )}
+
+      <Fold title="Good to know">
+        <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+          <li>
+            <Q>Phone and watch both counting?</Q> Apple Health counts each step once. To pick which device wins: Health → <Q>Browse</Q> →{" "}
+            <Q>Activity</Q> → <Q>Steps</Q> → <Q>Data Sources &amp; Access</Q> → <Q>Edit</Q>, and drag your watch or ring to the top.
+          </li>
+          <li>Synced steps fill in your daily checklist on Today. Workouts aren't synced, so keep logging them in Train.</li>
+          <li data-testid="android-note"><Q>Android phone?</Q> Not yet: a web app can't read Health Connect. Type your steps on Today for now.</li>
+          <li>An older Shortcut with a Sleep step still works; the app ignores sleep, so you can delete that step.</li>
+        </ul>
+      </Fold>
 
       {status?.lastPayload && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Last data received (for troubleshooting)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-md bg-muted/50 p-3 text-xs" data-testid="text-last-payload">
-              {status.lastPayload}
-            </pre>
-          </CardContent>
-        </Card>
+        <Fold title="Last data received (for troubleshooting)">
+          <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-md bg-muted/50 p-3 text-xs" data-testid="text-last-payload">{status.lastPayload}</pre>
+        </Fold>
       )}
-
-      <p className="text-xs text-muted-foreground">
-        Set up before? If your Shortcut still has a Sleep step, it keeps working: the app now ignores sleep, so you
-        can delete that step whenever you like. Synced steps fill in your daily checklist automatically. Workouts aren't synced yet, so keep logging them in Train.
-      </p>
     </div>
   );
 }

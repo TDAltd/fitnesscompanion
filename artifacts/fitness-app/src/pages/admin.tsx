@@ -535,7 +535,7 @@ function ShortcutLinkCard({ current }: { current: string | null }) {
             </li>
             <li>
               Tap the <b>ⓘ</b> (or the shortcut name at the top) → <b>Setup</b> / <b>Import Questions</b> → <b>Add</b> → pick the Authorization header value. Question:
-              <i> "Paste your Authorization value from the Connect page (starts with Bearer)"</i>.
+              <i> "Paste your key from the Connect page (starts with Bearer)"</i>.
             </li>
             <li>Tap <b>Share</b> → <b>Copy iCloud Link</b>, paste it above and tap Save.</li>
             <li>Check it: on another account, tap Add Shortcut on Connect, paste a fresh key when asked, and run it once.</li>

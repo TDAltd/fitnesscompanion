@@ -117,7 +117,6 @@ export default function ProgressPage() {
 
       <WeeklyReview />
 
-      <MilestonesCard />
 
       <CalorieChart />
 
@@ -193,6 +192,8 @@ export default function ProgressPage() {
           )}
         </CardContent>
       </Card>
+
+      <MilestonesCard />
     </div>
   );
 }

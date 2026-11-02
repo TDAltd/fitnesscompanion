@@ -2,7 +2,7 @@ import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarDays, Check, X, Minus, Moon } from "lucide-react";
+import { CalendarDays, Check, ChevronDown, X, Minus, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePlan } from "@/lib/plan";
 import { HABIT_KEYS, useWeekScores, type DayScore, type Status } from "@/lib/day-score";
@@ -61,6 +61,8 @@ export function WeeklySummary() {
   const avoidLabel = plan?.avoidHabit.short ?? "No sweets";
   const { scores, strongDays, averagePercent, isLoading } = useWeekScores(7);
   const [selected, setSelected] = useState<string | null>(null);
+  // Just the rings at first; the done/missed list opens on request
+  const [showDetail, setShowDetail] = useState(false);
   const day: DayScore | undefined = scores.find((s) => s.date === selected) ?? scores.at(-1);
   const label = (k: (typeof HABIT_KEYS)[number]) => (k === "biscuits" ? avoidLabel : LABELS[k]);
 
@@ -72,7 +74,7 @@ export function WeeklySummary() {
             <CardTitle className="flex items-center gap-2 text-lg">
               <CalendarDays className="h-5 w-5 text-primary" /> Your week
             </CardTitle>
-            <CardDescription className="mt-1">Tap a day to see what you hit.</CardDescription>
+            <CardDescription className="mt-1">One ring per day: the fuller, the more you hit.</CardDescription>
           </div>
           {!isLoading && (
             <div className="flex gap-5 text-right">
@@ -106,11 +108,14 @@ export function WeeklySummary() {
                     key={s.date}
                     type="button"
                     role="tab"
-                    aria-selected={active}
-                    onClick={() => setSelected(s.date)}
+                    aria-selected={showDetail && active}
+                    onClick={() => {
+                      setSelected(s.date);
+                      setShowDetail(true);
+                    }}
                     className={cn(
                       "flex min-h-[88px] flex-col items-center gap-1 rounded-xl py-2 transition-colors",
-                      active ? "bg-primary/10" : "hover:bg-muted/60",
+                      showDetail && active ? "bg-primary/10" : "hover:bg-muted/60",
                     )}
                     data-testid={`day-${s.date}`}
                   >
@@ -137,6 +142,19 @@ export function WeeklySummary() {
               })}
             </div>
 
+            <button
+              type="button"
+              onClick={() => setShowDetail((v) => !v)}
+              aria-expanded={showDetail}
+              className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-sm font-semibold text-primary hover:bg-primary/5"
+              data-testid="button-week-details"
+            >
+              {showDetail ? "Hide details" : "Show what was done"}
+              <ChevronDown className={cn("h-4 w-4 transition-transform", showDetail && "rotate-180")} />
+            </button>
+
+            {showDetail && (
+              <>
             {/* The chosen day, as a simple checklist */}
             {day && (
               <div className="rounded-xl border p-4" role="tabpanel" data-testid="day-detail">
@@ -161,8 +179,10 @@ export function WeeklySummary() {
             )}
 
             <p className="text-xs text-muted-foreground">
-              A strong day is 80% or more of the habits that applied. Rest days don't count against you.
+              A strong day is 80% or more of the habits that applied. Rest days don't count against you. Tap a ring to see that day.
             </p>
+              </>
+            )}
           </>
         )}
       </CardContent>

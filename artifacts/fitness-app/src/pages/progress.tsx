@@ -61,8 +61,6 @@ export default function ProgressPage() {
     <div className="space-y-6 md:space-y-8">
       <PageHeader title="Progress" description="Judge the trend over weeks, not single days." />
 
-      <WeeklyReview />
-
       {/* STATS ROW */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card className="bg-card">
@@ -116,6 +114,8 @@ export default function ProgressPage() {
 
       {/* WEEKLY SUMMARY */}
       <WeeklySummary />
+
+      <WeeklyReview />
 
       <MilestonesCard />
 

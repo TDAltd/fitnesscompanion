@@ -93,13 +93,14 @@ export function usePushDevice() {
     void refresh();
   }, [refresh]);
 
-  const turnOn = async () => {
+  /** true once subscribed; false if the person declined in the phone's own prompt. */
+  const turnOn = async (): Promise<boolean> => {
     setBusy(true);
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         setState(permission === "denied" ? "denied" : "off");
-        return;
+        return false;
       }
       const reg = await registration();
       await navigator.serviceWorker.ready;
@@ -108,6 +109,7 @@ export function usePushDevice() {
       await api("/api/push/subscribe", { method: "POST", body: JSON.stringify({ ...sub.toJSON(), device: deviceLabel() }) });
       setState("on");
       void qc.invalidateQueries({ queryKey: ["reminder-settings"] });
+      return true;
     } finally {
       setBusy(false);
     }

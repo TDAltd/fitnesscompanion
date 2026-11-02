@@ -89,6 +89,11 @@ export function createApp(staticDir?: string): Express {
       res.status(400).json({ error: "Some fields are missing or invalid.", issues: err.issues });
       return;
     }
+    if (err?.type === "entity.parse.failed") {
+      // e.g. a Shortcut sending a body that isn't valid JSON: reply in JSON so it can show the message
+      res.status(400).json({ ok: false, message: "The app couldn't read what was sent. In the Shortcut, set Request Body to JSON.", error: "Invalid JSON" });
+      return;
+    }
     if (err?.type === "entity.too.large") {
       res.status(413).json({ error: "Upload is too large." });
       return;

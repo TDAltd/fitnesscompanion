@@ -53,11 +53,25 @@ function parseDate(value: unknown): string | null {
 
 export const healthSyncPublicRouter = Router();
 
+/** Finds an fh_ key anywhere in what was pasted; falls back to whatever follows "Bearer". */
+export function extractKey(raw: string): string {
+  const cleaned = raw.replace(/["'“”‘’]/g, " ").trim();
+  const fh = cleaned.match(/fh_[A-Za-z0-9_-]{16,}/);
+  if (fh) return fh[0];
+  return (cleaned.match(/^Bearer\s+(\S+)/i)?.[1] ?? "").trim();
+}
+
 healthSyncPublicRouter.post("/health-sync", async (req, res) => {
+  // Forgiving about how the key was pasted: with or without "Bearer", quotes, spaces or line breaks,
+  // in the header, the body ("key") or the address (?key=)
   const header = req.get("authorization") ?? "";
-  const token = (header.match(/^Bearer\s+(.+)$/i)?.[1] ?? String(req.body?.key ?? "")).trim();
+  const token = extractKey(header) || extractKey(String(req.body?.key ?? "")) || extractKey(String(req.query.key ?? ""));
+  if (/PASTE|YOUR[-\s]?KEY/i.test(header)) {
+    res.status(401).json({ ok: false, message: "This Shortcut doesn't have your key yet. Delete it, add it again from the Connect page and paste your key when asked." });
+    return;
+  }
   if (!token) {
-    res.status(401).json({ ok: false, message: "Missing sync key. Add the Authorization header from the Connect page." });
+    res.status(401).json({ ok: false, message: "Missing sync key. Open the Connect page in the app, make a new key and paste it into the Shortcut." });
     return;
   }
   if (!rateLimit(`health-sync:${hashToken(token).slice(0, 16)}`, 60, 60 * 60 * 1000)) {

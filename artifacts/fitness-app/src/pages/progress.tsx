@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { 
   useGetProgressSummary, 
   getGetProgressSummaryQueryKey,
@@ -25,6 +26,7 @@ import { useMilestones } from "@/lib/milestones";
 
 export default function ProgressPage() {
   const week = useWeekScores(7);
+  const [showAllWorkouts, setShowAllWorkouts] = useState(false);
   // A running total that never resets (same count the milestones use)
   const { data: milestones } = useMilestones();
   const daysLogged = Math.max(0, ...(milestones?.milestones ?? []).filter((m) => m.key.startsWith("days-logged-")).map((m) => m.progress.current));
@@ -142,52 +144,58 @@ export default function ProgressPage() {
 
       {/* RECENT WORKOUTS */}
       <Card>
-        <CardHeader className="bg-muted/30 pb-4 border-b">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Zap className="h-5 w-5 text-primary" /> Training history
+        <CardHeader className="flex-row items-center justify-between space-y-0 border-b px-5 py-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Zap className="h-4 w-4 text-primary" /> Training history
           </CardTitle>
+          {workouts && workouts.length > 0 && <span className="text-xs text-muted-foreground">Edit sessions in Train</span>}
         </CardHeader>
         <CardContent className="p-0">
           {isLoadingWorkouts ? (
-            <div className="p-6 space-y-4">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
+            <div className="space-y-2 p-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
             </div>
           ) : workouts && workouts.length > 0 ? (
-            <div className="divide-y divide-border">
-              {workouts.slice(0, 10).map((workout) => (
-                <div key={workout.id} className="p-4 md:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/10 transition-colors group">
-                  <div className="space-y-1">
-                    <p className="font-bold text-lg leading-tight">{workout.name}</p>
-                    <div className="flex gap-3 text-xs text-muted-foreground font-bold">
-                      <span>{format(new Date(workout.loggedAt), "MMM do, HH:mm")}</span>
-                      <span>•</span>
-                      <span className="text-primary">{workout.type}</span>
-                      {workout.durationMins && (
-                        <>
-                          <span>•</span>
-                          <span>{workout.durationMins} min</span>
-                        </>
-                      )}
+            <>
+              <ul className="divide-y" data-testid="training-history">
+                {workouts.slice(0, showAllWorkouts ? 15 : 5).map((workout) => (
+                  <li key={workout.id} className="flex items-center gap-3 px-5 py-2.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">{workout.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {format(new Date(workout.loggedAt), "EEE d MMM")} · {workout.type}
+                        {workout.notes ? ` · ${workout.notes}` : ""}
+                      </p>
                     </div>
-                    {workout.notes && <p className="text-sm mt-2">{workout.notes}</p>}
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
-                    onClick={() => handleDeleteWorkout(workout.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
+                    {workout.durationMins ? <span className="shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">{workout.durationMins} min</span> : null}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => handleDeleteWorkout(workout.id)}
+                      aria-label={`Delete ${workout.name}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+              {workouts.length > 5 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllWorkouts((v) => !v)}
+                  className="h-10 w-full border-t text-sm font-semibold text-primary hover:bg-primary/5"
+                  data-testid="button-more-workouts"
+                >
+                  {showAllWorkouts ? "Show less" : `Show more (${Math.min(workouts.length, 15) - 5})`}
+                </button>
+              )}
+            </>
           ) : (
-            <div className="p-12 text-center text-muted-foreground">
-              <Dumbbell className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p className="font-bold text-lg text-foreground">No workouts logged yet</p>
-              <p className="text-sm mt-1">Get to work and log your first session.</p>
+            <div className="px-5 py-6 text-center text-sm text-muted-foreground">
+              <Dumbbell className="mx-auto mb-2 h-6 w-6 opacity-30" />
+              No workouts logged yet. Start one from Train.
             </div>
           )}
         </CardContent>

@@ -148,7 +148,6 @@ const HEALTH: (Opt & { women?: boolean })[] = [
   { value: "pregnant", label: "I'm pregnant", emoji: "🤰🏾", women: true },
   { value: "breastfeeding", label: "I'm breastfeeding", emoji: "🍼", women: true },
   { value: "diabetes", label: "I have diabetes or take blood-sugar medicine", emoji: "🩸" },
-  { value: "eating-disorder", label: "I have had an eating disorder", emoji: "💛" },
 ];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -171,7 +170,7 @@ const cmToFtIn = (cm: number) => {
 };
 const ftInToCm = (ft: number, inch: number) => Math.round((ft * 12 + inch) * 2.54);
 const flagged = (a: Answers, ...f: string[]) => f.some((x) => a.healthFlags.includes(x));
-const noWeightGoal = (a: Answers) => flagged(a, "eating-disorder", "pregnant", "breastfeeding");
+const noWeightGoal = (a: Answers) => flagged(a, "pregnant", "breastfeeding");
 // Unanswered goal counts as "asks", so the "4 / 18" total doesn't jump after the first answer
 const asksGoalWeight = (a: Answers) => !noWeightGoal(a) && (!a.fitnessGoal || a.fitnessGoal === "Weight loss" || a.fitnessGoal === "General fitness");
 
@@ -920,19 +919,12 @@ function Step({ step, a, set, next, member, onLogin, hasSaved }: { step: StepId;
 
 function GoalDateScreen({ a, set, next }: { a: Answers; set: (p: Partial<Answers>) => void; next: () => void }) {
   if (noWeightGoal(a)) {
-    const ed = flagged(a, "eating-disorder");
     return (
       <div className="flex flex-1 flex-col">
         <div className="my-auto text-center">
-          <p className="mb-4 text-5xl" aria-hidden>{ed ? "💛" : "🤰🏾"}</p>
-          <Title
-            sub={
-              ed
-                ? "Regular, balanced meals and daily movement. No calorie cutting, no weight targets. A doctor or dietitian can help you set goals that feel safe."
-                : "No calorie cut while pregnant or breastfeeding. Your plan keeps you eating enough and moving gently. Follow your midwife's or doctor's advice."
-            }
-          >
-            {ed ? "Your plan focuses on habits, not the scale" : "Your plan looks after you both"}
+          <p className="mb-4 text-5xl" aria-hidden>🤰🏾</p>
+          <Title sub="No calorie cut while pregnant or breastfeeding. Your plan keeps you eating enough and moving gently. Follow your midwife's or doctor's advice.">
+            Your plan looks after you both
           </Title>
         </div>
         <Footer>
@@ -1053,7 +1045,7 @@ function Preview({ a, member, next }: { a: Answers; member: boolean; next: () =>
   const days = order.filter((d) => training.some((x) => x.day === d)).map((d) => DAY_NAMES[d].slice(0, 3));
   const save = useSaveMember(a);
   const rows: [string, string, string][] = [
-    t.habitFocus ? ["🍽️", "Regular, balanced meals", "3 meals a day, no counting"] : ["🔥", `${t.calories.toLocaleString()} kcal a day`, t.pace ? `${PACES[t.pace].label} pace, ${PACES[t.pace].perWeek}` : "Enough to fuel your goal"],
+    ["🔥", `${t.calories.toLocaleString()} kcal a day`, t.pace ? `${PACES[t.pace].label} pace, ${PACES[t.pace].perWeek}` : "Enough to fuel your goal"],
     ["🍗", `${t.protein} g protein`, "Keeps you full and protects muscle"],
     ["🏋🏾", `${training.length} workouts a week`, `${days.join(", ")} · ${a.workoutDurationMinutes} min`],
     ["👟", `${t.steps.toLocaleString()} steps a day`, "Walking counts more than you think"],

@@ -73,8 +73,7 @@ export function computeTargets(p: PlanProfile, overrides: TargetOverrides = {}):
   const underweight = bodyMassIndex != null && bodyMassIndex < 18.5;
   const flags = new Set(p.healthFlags ?? []);
   const pregnantOrFeeding = flags.has("pregnant") || flags.has("breastfeeding");
-  const habitFocus = flags.has("eating-disorder");
-  const noDeficit = pregnantOrFeeding || habitFocus;
+  const noDeficit = pregnantOrFeeding;
   const allowedPaces: Pace[] = flags.has("diabetes") ? ["gentle"] : ["gentle", "steady", "faster"];
   const paceAvailable = wantsToLose && !isMinor && !underweight && !noDeficit && goal !== "Build strength";
   if (flags.has("breastfeeding") && !flags.has("pregnant")) {
@@ -83,8 +82,6 @@ export function computeTargets(p: PlanProfile, overrides: TargetOverrides = {}):
     notes.push("Breastfeeding: about 330 kcal a day is added on top of maintenance, with no calorie cut. Follow your doctor's or midwife's advice.");
   } else if (pregnantOrFeeding) {
     notes.push("Pregnant: the plan aims for maintenance, not weight loss. Your midwife may suggest eating a little more later in pregnancy.");
-  } else if (habitFocus) {
-    notes.push("Your plan focuses on regular, balanced meals rather than cutting calories. A doctor or dietitian can help you set safe goals.");
   } else if (isMinor) {
     notes.push("Under 18: the plan aims for maintenance, not a calorie deficit.");
   } else if (bodyMassIndex != null && bodyMassIndex < 18.5 && wantsToLose) {
@@ -152,7 +149,6 @@ export function computeTargets(p: PlanProfile, overrides: TargetOverrides = {}):
     pace,
     paceIsDefault,
     paceAvailable,
-    habitFocus,
     allowedPaces,
   };
 }

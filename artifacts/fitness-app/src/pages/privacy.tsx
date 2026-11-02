@@ -31,7 +31,7 @@ export default function PrivacyPage({ standalone = false }: { standalone?: boole
         <Section title="What we collect">
           <ul className="list-disc space-y-1 pl-5">
             <li><b>Account:</b> your email address and a scrambled (hashed) version of your password. We can't see your password.</li>
-            <li><b>Your answers:</b> age, sex, height, weight, goal weight, activity level, fitness goal, food preference, training setup, sleep and schedule. Optionally, whether you're pregnant or breastfeeding, have diabetes, or have had an eating disorder, and your own reason for joining.</li>
+            <li><b>Your answers:</b> age, sex, height, weight, goal weight, activity level, fitness goal, food preference, training setup, sleep and schedule. Optionally, whether you're pregnant or breastfeeding, or have diabetes, and your own reason for joining.</li>
             <li><b>What you log:</b> food, workouts and sets, weight, body measurements, steps, water and habits.</li>
             <li><b>Apple Health (only if you connect it):</b> daily steps and active calories sent by your iPhone Shortcut. We don't collect sleep data from your devices.</li>
             <li><b>Usage:</b> the days you open the app, which features you use, and your device's timezone, so days start at your midnight.</li>

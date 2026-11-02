@@ -96,13 +96,11 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
   const { data: treats } = useTreats(iso(addDays(d, -7)), iso(addDays(d, 7)));
   const setTreat = useSetTreat();
   const { toast } = useToast();
-  const habitFocus = Boolean(plan?.targets.habitFocus);
   const isTreat = Boolean(treats?.dates.includes(date));
   const target = plan ? targetFor(date, plan.targets.calories, treats) : 0;
   const proteinTarget = plan?.targets.protein ?? 0;
   const left = target - totals.calories;
-  const slotsLogged = new Set((entries ?? []).map((e) => e.slot)).size;
-  const lowNote = isLoading ? null : lowIntakeMessage({ calories: totals.calories, target, floor: calorieFloor(profile?.sex), isToday: atToday, habitFocus });
+  const lowNote = isLoading ? null : lowIntakeMessage({ calories: totals.calories, target, floor: calorieFloor(profile?.sex), isToday: atToday });
   const toggleTreat = () =>
     setTreat.mutate(
       { date, on: !isTreat },
@@ -130,20 +128,8 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
       {/* The one number that matters */}
       <Card>
         <CardContent className="flex items-center gap-5 p-5">
-          {habitFocus ? (
-            <MealsDots logged={slotsLogged} />
-          ) : (
-            <CalorieRing eaten={totals.calories} target={target} />
-          )}
+          <CalorieRing eaten={totals.calories} target={target} />
           <div className="min-w-0 flex-1 space-y-3">
-            {habitFocus ? (
-              <div>
-                <p className="font-display text-3xl font-medium tabular-nums" data-testid="text-meals-logged">
-                  {slotsLogged}<span className="ml-1 text-base font-normal text-muted-foreground">of 4 meals logged</span>
-                </p>
-                <p className="text-sm text-muted-foreground">Aim for regular meals and a snack. Your plan isn't about cutting calories.</p>
-              </div>
-            ) : (
             <div>
               <p className="font-display text-3xl font-medium tabular-nums" data-testid="text-calories-left">
                 {target ? Math.abs(left).toLocaleString() : totals.calories.toLocaleString()}
@@ -158,7 +144,6 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
                 </p>
               )}
             </div>
-            )}
             {proteinTarget > 0 && (
               <div>
                 <div className="mb-1 flex justify-between text-sm">
@@ -182,7 +167,7 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
             )}
           </div>
         </CardContent>
-        {!habitFocus && plan && (atToday || isTreat) && (
+        {plan && (atToday || isTreat) && (
           <div className="flex items-center justify-between gap-3 border-t px-5 py-3 text-sm">
             <span className="flex items-center gap-2 text-muted-foreground">
               <Cake className="h-4 w-4 text-dusk" />
@@ -204,7 +189,7 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
 
       <HealthFoodNote flags={profile?.healthFlags} />
 
-      {atToday && !habitFocus && !isLoading && <MealIdeas left={left} date={date} slot={defaultSlot()} />}
+      {atToday && !isLoading && <MealIdeas left={left} date={date} slot={defaultSlot()} />}
 
       {/* Meal slots */}
       {isLoading ? (
@@ -270,16 +255,6 @@ function EntryRow({ entry, onEdit, onRemove }: { entry: FoodEntry; onEdit: () =>
         <Trash2 className="h-4 w-4" />
       </Button>
     </li>
-  );
-}
-
-function MealsDots({ logged }: { logged: number }) {
-  return (
-    <div className="grid h-24 w-24 shrink-0 grid-cols-2 place-items-center gap-2 p-3" aria-hidden>
-      {[0, 1, 2, 3].map((i) => (
-        <span key={i} className={cn("h-7 w-7 rounded-full", i < logged ? "bg-primary" : "bg-muted")} />
-      ))}
-    </div>
   );
 }
 

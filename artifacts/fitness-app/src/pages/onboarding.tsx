@@ -79,7 +79,7 @@ const profileSchema = z.object({
   why: z.string().trim().max(200, "Keep this under 200 characters.").optional(),
   dateOfBirth: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/, "Use the date picker.").optional(),
   equipment: z.array(z.enum(["dumbbells", "resistance-bands", "kettlebell", "pull-up-bar", "skipping-rope", "cardio-machine", "yoga-mat"])).optional(),
-  healthFlags: z.array(z.enum(["pregnant", "breastfeeding", "diabetes", "eating-disorder"])).optional(),
+  healthFlags: z.array(z.enum(["pregnant", "breastfeeding", "diabetes"])).optional(),
   sleepHoursPerNight: optionalNumericInput("Sleep hours", 0, 16),
   mealSchedule: optionalTextInput("Meal timing", 160),
   waterIntakeLiters: optionalNumericInput("Daily water intake", 0, 15),
@@ -138,7 +138,6 @@ const HEALTH_FLAGS = [
   { id: "pregnant", label: "I'm pregnant" },
   { id: "breastfeeding", label: "I'm breastfeeding" },
   { id: "diabetes", label: "I have diabetes or take blood-sugar medicine" },
-  { id: "eating-disorder", label: "I have had an eating disorder" },
 ] as const;
 
 const SELECT_TEST_IDS = {
@@ -182,7 +181,7 @@ export default function OnboardingPage() {
       why: profile.why ?? "",
       dateOfBirth: profile.dateOfBirth ?? "",
       equipment: (profile.equipment ?? []) as ProfileFormInput["equipment"],
-      healthFlags: (profile.healthFlags ?? []) as ProfileFormInput["healthFlags"],
+      healthFlags: (profile.healthFlags ?? []).filter((f) => f !== "eating-disorder") as ProfileFormInput["healthFlags"],
       sleepHoursPerNight: profile.sleepHoursPerNight == null ? "" : String(profile.sleepHoursPerNight),
       mealSchedule: profile.mealSchedule ?? "",
       waterIntakeLiters: profile.waterIntakeLiters == null ? "" : String(profile.waterIntakeLiters),
@@ -511,7 +510,7 @@ export default function OnboardingPage() {
                             ))}
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            These keep your plan safe: no calorie cut while pregnant, breastfeeding or recovering from an eating disorder, and a gentle pace with diabetes. Only used to build your plan; admins can't see them.
+                            These keep your plan safe: no calorie cut while pregnant or breastfeeding, and a gentle pace with diabetes. Only used to build your plan; admins can't see them.
                           </p>
                         </FormItem>
                       );

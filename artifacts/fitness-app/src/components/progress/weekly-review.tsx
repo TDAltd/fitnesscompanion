@@ -25,7 +25,6 @@ type Review = {
   from: string;
   to: string;
   partial: boolean;
-  habitFocus: boolean;
   canGoBack: boolean;
   canGoForward: boolean;
   current: Period;

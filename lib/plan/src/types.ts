@@ -16,7 +16,7 @@ export interface PlanProfile {
   sleepHoursPerNight?: number | null;
   workoutTimePreference?: string | null;
   workoutDurationMinutes?: number | null;
-  /** Screening answers: pregnant, breastfeeding, diabetes, eating-disorder */
+  /** Screening answers: pregnant, breastfeeding, diabetes */
   healthFlags?: string[] | null;
   /** Home workout kit: dumbbells, resistance-bands, kettlebell, pull-up-bar, skipping-rope, cardio-machine, yoga-mat */
   equipment?: string[] | null;
@@ -55,8 +55,6 @@ export interface Targets {
   paceAvailable: boolean;
   /** True when the app picked the pace because the person hasn't chosen one */
   paceIsDefault: boolean;
-  /** Eating-disorder history: no deficit, and screens focus on regular meals instead of calories left */
-  habitFocus: boolean;
   /** Paces the person may choose (diabetes limits this to gentle) */
   allowedPaces: Pace[];
 }

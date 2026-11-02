@@ -165,7 +165,6 @@ async function main() {
   const t = (extra: Record<string, unknown>, overrides: Record<string, unknown> = {}) => computeTargets({ ...profile, ...extra }, overrides);
   const maintenance = t({}).maintenance ?? 0;
   check("pregnant: no calorie deficit", t({ healthFlags: ["pregnant"] }).calories >= maintenance - 25 && !t({ healthFlags: ["pregnant"] }).paceAvailable);
-  check("eating-disorder history: no deficit, habit focus", t({ healthFlags: ["eating-disorder"] }).habitFocus && t({ healthFlags: ["eating-disorder"] }).calories >= maintenance - 25);
   check("diabetes: gentle pace only", JSON.stringify(t({ healthFlags: ["diabetes"] }).allowedPaces) === '["gentle"]' && t({ healthFlags: ["diabetes"] }, { pace: "faster" }).pace === "gentle");
   check("typed target can't go under the safe minimum", t({}, { calorieTarget: 900 }).calories === 1200, String(t({}, { calorieTarget: 900 }).calories));
 

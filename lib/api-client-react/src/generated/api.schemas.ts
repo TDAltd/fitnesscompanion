@@ -127,7 +127,7 @@ export interface UserProfile {
   workoutTimePreference?: string | null;
   /** @nullable */
   workoutDurationMinutes?: number | null;
-  /** Screening answers that change the plan (pregnant, breastfeeding, diabetes, eating-disorder) */
+  /** Screening answers that change the plan (pregnant, breastfeeding, diabetes) */
   healthFlags?: string[];
   /** @nullable */
   why?: string | null;
@@ -224,7 +224,6 @@ export const UserProfileInputHealthFlagsItem = {
   pregnant: 'pregnant',
   breastfeeding: 'breastfeeding',
   diabetes: 'diabetes',
-  'eating-disorder': 'eating-disorder',
 } as const;
 
 export type UserProfileInputEquipmentItem = typeof UserProfileInputEquipmentItem[keyof typeof UserProfileInputEquipmentItem];

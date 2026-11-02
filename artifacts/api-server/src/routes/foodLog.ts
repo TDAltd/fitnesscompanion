@@ -188,7 +188,6 @@ router.put("/treats", async (req, res) => {
   const on = req.body?.on === true;
   if (on) {
     const targets = await targetsForUser(userId);
-    if (targets.habitFocus) return void res.status(400).json({ error: "Treat days aren't part of your plan." });
     const [clash] = await db
       .select({ date: habitLogsTable.date })
       .from(habitLogsTable)

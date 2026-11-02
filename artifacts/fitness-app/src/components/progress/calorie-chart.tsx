@@ -27,7 +27,7 @@ export function CalorieChart() {
       const date = format(subDays(new Date(), DAYS - 1 - i), "yyyy-MM-dd");
       const kcal = byDate.get(date) ?? null;
       const target = targetFor(date, base, treats);
-      const status = kcal == null ? "none" : kcal < floor ? "low" : caloriesMet(kcal, target, plan?.targets.habitFocus) ? "met" : kcal > target ? "over" : "under";
+      const status = kcal == null ? "none" : kcal < floor ? "low" : caloriesMet(kcal, target) ? "met" : kcal > target ? "over" : "under";
       return { date, label: format(parseISO(date), "d MMM"), kcal, target, status };
     });
     const logged = rows.filter((r) => r.kcal != null);

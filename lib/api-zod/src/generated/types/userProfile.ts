@@ -46,7 +46,7 @@ export interface UserProfile {
   workoutTimePreference?: string | null;
   /** @nullable */
   workoutDurationMinutes?: number | null;
-  /** Screening answers that change the plan (pregnant, breastfeeding, diabetes, eating-disorder) */
+  /** Screening answers that change the plan (pregnant, breastfeeding, diabetes) */
   healthFlags?: string[];
   /** @nullable */
   why?: string | null;

@@ -540,7 +540,7 @@ components:
           type: array
           items:
             type: string
-          description: Screening answers that change the plan (pregnant, breastfeeding, diabetes, eating-disorder)
+          description: Screening answers that change the plan (pregnant, breastfeeding, diabetes)
         why:
           type: ["string", "null"]
         equipment:
@@ -606,7 +606,7 @@ components:
           maxItems: 4
           items:
             type: string
-            enum: [pregnant, breastfeeding, diabetes, eating-disorder]
+            enum: [pregnant, breastfeeding, diabetes]
         why:
           type: ["string", "null"]
           maxLength: 200

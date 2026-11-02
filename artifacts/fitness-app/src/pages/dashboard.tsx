@@ -49,7 +49,6 @@ export default function DashboardPage() {
   const { plan } = usePlan();
   const scheduled = plan?.schedule.find((d) => d.day === today.getDay());
   const { data: treats } = useTreats(todayStr, todayStr);
-  const habitFocus = Boolean(plan?.targets.habitFocus);
   const calTarget = targetFor(todayStr, plan?.targets.calories ?? 2000, treats);
   const proteinTarget = plan?.targets.protein ?? 100;
 
@@ -98,12 +97,10 @@ export default function DashboardPage() {
     {
       key: "food",
       icon: Salad,
-      label: habitFocus ? "Regular meals" : "Calories",
+      label: "Calories",
       // "Done" once you've eaten most of your target without going over
-      done: caloriesMet(calories, calTarget, habitFocus),
-      detail: habitFocus
-        ? `${new Set((meals ?? []).map((m) => m.category)).size} meals logged`
-        : calories > 0 ? `${calories.toLocaleString()} of ${calTarget.toLocaleString()} kcal` : "Nothing logged yet",
+      done: caloriesMet(calories, calTarget),
+      detail: calories > 0 ? `${calories.toLocaleString()} of ${calTarget.toLocaleString()} kcal` : "Nothing logged yet",
     },
     {
       key: "protein",
@@ -212,7 +209,7 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-4">
                 {[
-                  ...(habitFocus ? [] : [{ label: "Calories", value: calories, target: calTarget, unit: " kcal", over: calories > calTarget + 50 }]),
+                  { label: "Calories", value: calories, target: calTarget, unit: " kcal", over: calories > calTarget + 50 },
                   { label: "Protein", value: protein, target: proteinTarget, unit: "g", over: false },
                 ].map((m) => (
                   <div key={m.label} className="space-y-1.5">
@@ -239,7 +236,7 @@ export default function DashboardPage() {
       </div>
 
       <LowIntakeNote
-        message={loadingMeals ? null : lowIntakeMessage({ calories, target: calTarget, floor: calorieFloor(profile?.sex), isToday: true, habitFocus })}
+        message={loadingMeals ? null : lowIntakeMessage({ calories, target: calTarget, floor: calorieFloor(profile?.sex), isToday: true })}
       />
 
       <WeeklyCheckIn />

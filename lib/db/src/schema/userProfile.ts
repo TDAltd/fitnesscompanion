@@ -32,7 +32,7 @@ export const userProfileTable = pgTable("user_profile", {
   waterGoalLitres: real("water_goal_litres"),
   /** Weight-loss pace: "gentle" | "steady" | "faster" (null = the app's default) */
   pace: text("pace"),
-  /** Screening answers that change the plan: pregnant, breastfeeding, diabetes, eating-disorder */
+  /** Screening answers that change the plan: pregnant, breastfeeding, diabetes */
   healthFlags: text("health_flags").array().notNull().default([]),
   /** The person's own reason, shown back on hard days */
   why: text("why"),

@@ -13,5 +13,4 @@ export const UserProfileInputHealthFlagsItem = {
   pregnant: 'pregnant',
   breastfeeding: 'breastfeeding',
   diabetes: 'diabetes',
-  'eating-disorder': 'eating-disorder',
 } as const;

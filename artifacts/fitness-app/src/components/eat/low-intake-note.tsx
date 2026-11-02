@@ -11,27 +11,22 @@ export function lowIntakeMessage({
   floor,
   isToday,
   hour = new Date().getHours(),
-  habitFocus = false,
 }: {
   calories: number;
   target: number;
   floor: number;
   isToday: boolean;
   hour?: number;
-  habitFocus?: boolean;
 }): string | null {
   if (!target) return null;
   if (isToday) {
     if (hour < 19 || calories >= target * 0.5) return null;
-    if (habitFocus) return calories ? "Have you had enough to eat today? If you've eaten more, add it so your day is complete." : "Nothing logged yet today. Have you eaten? Add your meals when you can.";
     return calories
       ? `Only ${calories.toLocaleString()} kcal logged today. Forgot to add something? Eating too little makes weight loss harder, not easier.`
       : "Nothing logged today yet. Forgot to add your meals?";
   }
   if (calories > 0 && calories < floor) {
-    return habitFocus
-      ? "This day looks light. If you ate more, add it."
-      : `This day looks very low (${calories.toLocaleString()} kcal). If you missed meals, add them. If not, it's below the safe minimum of ${floor.toLocaleString()} kcal.`;
+    return `This day looks very low (${calories.toLocaleString()} kcal). If you missed meals, add them. If not, it's below the safe minimum of ${floor.toLocaleString()} kcal.`;
   }
   return null;
 }

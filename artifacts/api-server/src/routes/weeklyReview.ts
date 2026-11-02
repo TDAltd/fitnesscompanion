@@ -32,7 +32,7 @@ type Period = {
   to: string;
   days: number;
   workouts: { done: number; planned: number };
-  food: { days: number; onTarget: number | null; low: number };
+  food: { days: number; onTarget: number; low: number };
   steps: { avg: number | null; goal: number; daysMet: number };
   water: { daysMet: number };
   habit: { label: string; days: number };
@@ -90,7 +90,7 @@ async function period(userId: number, from: string, to: string, tz: string): Pro
     to,
     days,
     workouts: { done, planned },
-    food: { days: kcalByDay.size, onTarget: targets.habitFocus ? null : onTarget, low },
+    food: { days: kcalByDay.size, onTarget, low },
     steps: {
       avg: stepValues.length ? Math.round(stepValues.reduce((a, b) => a + b, 0) / stepValues.length) : null,
       goal: targets.steps,
@@ -164,10 +164,8 @@ router.get("/weekly-review", async (req, res) => {
       : null;
 
   // Weight: last weigh-in up to the end of the week vs the last one before it started
-  const [profile] = await db.select({ healthFlags: userProfileTable.healthFlags }).from(userProfileTable).where(eq(userProfileTable.userId, userId));
-  const habitFocus = (profile?.healthFlags ?? []).includes("eating-disorder");
   let weight: { start: number; end: number; change: number } | null = null;
-  if (!habitFocus) {
+  {
     // By local day: the last weigh-in on or before the week's last day, vs the last one before it began
     const logs = await db
       .select()
@@ -195,7 +193,6 @@ router.get("/weekly-review", async (req, res) => {
     from,
     to,
     partial,
-    habitFocus,
     canGoBack: addDays(start, -7) >= firstMonday,
     canGoForward: start < thisMonday,
     current,

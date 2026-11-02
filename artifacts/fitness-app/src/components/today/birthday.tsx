@@ -29,7 +29,7 @@ export function BirthdayCard() {
           </p>
         </div>
       </div>
-      {plan && !plan.targets.habitFocus && !treatOn && (
+      {plan && !treatOn && (
         <Button
           variant="secondary"
           className="shrink-0"

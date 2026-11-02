@@ -13,9 +13,8 @@ import { targetFor, useFoodTotals, useTreats } from "./food-log";
  */
 export type Status = "met" | "missed" | "rest" | "none";
 
-/** On target = 80–100% of the day's target (+50 kcal). With habitFocus, eating enough is all that counts. */
-export const caloriesMet = (kcal: number, target: number, habitFocus = false) =>
-  kcal >= target * 0.8 && (habitFocus || kcal <= target + 50);
+/** On target = 80–100% of the day's target (+50 kcal). */
+export const caloriesMet = (kcal: number, target: number) => kcal >= target * 0.8 && kcal <= target + 50;
 export const proteinMet = (grams: number, target: number) => grams >= target - 10;
 
 export interface DayScore {
@@ -69,7 +68,7 @@ export function useWeekScores(days = 7) {
       const biscuits = yesNo(Boolean(habit?.biscuitsAvoided));
       const kcal = food?.calories ?? habit?.caloriesConsumed ?? 0;
       const prot = food?.protein ?? habit?.proteinGrams ?? 0;
-      const calories: Status = kcal ? yesNo(caloriesMet(kcal, targetFor(date, t.calories, treatsQ.data), t.habitFocus)) : "none";
+      const calories: Status = kcal ? yesNo(caloriesMet(kcal, targetFor(date, t.calories, treatsQ.data))) : "none";
       const protein: Status = prot ? yesNo(proteinMet(prot, t.protein)) : "none";
 
       const all = [workout, steps, water, biscuits, calories, protein];

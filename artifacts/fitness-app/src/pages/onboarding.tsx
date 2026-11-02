@@ -32,6 +32,7 @@ import { Logo } from "@/components/brand/logo";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { HabitChips } from "@/components/habit-chips";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const numericInput = (label: string, min: number, max: number, integer = false) =>
@@ -476,18 +477,10 @@ export default function OnboardingPage() {
                     )} />
                     <FormField control={form.control} name="guiltyPleasure" render={({ field }) => (
                       <FormItem className="sm:col-span-2">
-                        <FormLabel>What’s your guilty pleasure?</FormLabel>
-                        <FormControl>
-                          <Input
-                            maxLength={80}
-                            placeholder="e.g., biscuits"
-                            autoComplete="off"
-                            {...field}
-                            data-testid="input-guilty-pleasure"
-                          />
-                        </FormControl>
+                        <FormLabel>What’s hardest to resist? <span className="font-normal text-muted-foreground">(pick any)</span></FormLabel>
+                        <HabitChips value={field.value} onChange={field.onChange} />
                         <p className="text-xs text-muted-foreground">
-                          No judgment—this helps us understand the snacks you enjoy.
+                          No judgment. These become one daily tick-box. Pick none if nothing applies.
                         </p>
                         <FormMessage />
                       </FormItem>

@@ -13,6 +13,7 @@ import { Illustration } from "@/components/start/illustrations";
 import { AUTH_QUERY_KEY, type AuthUser } from "@/lib/auth";
 import { withBase } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
+import { composeHabits } from "@/lib/habits";
 import AuthPage from "@/pages/auth";
 
 /* ------------------------------------------------------------------ answers */
@@ -176,10 +177,7 @@ const asksGoalWeight = (a: Answers) => !noWeightGoal(a) && (!a.fitnessGoal || a.
 
 /** "sugary drinks and fried snacks": one daily tick-box covering every habit picked. */
 function habitText(a: Answers): string | null {
-  const list = (a.habits ?? []).map((h) => (h === "other" ? a.habitOther.trim() : h)).filter(Boolean);
-  if (!list.length) return null;
-  const text = list.length === 1 ? list[0] : `${list.slice(0, -1).join(", ")} and ${list.at(-1)}`;
-  return text.slice(0, 80);
+  return composeHabits((a.habits ?? []).map((h) => (h === "other" ? a.habitOther.trim() : h)));
 }
 
 function toPlanProfile(a: Answers): PlanProfile {

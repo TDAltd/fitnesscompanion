@@ -190,12 +190,93 @@ function cardioExercises(type: "CARDIO" | "INTERVALS" | "LONG", ctx: Context, mi
   ];
 }
 
+
+/* ---------- pregnancy and after birth ---------- */
+
+const isPregnant = (p: PlanProfile) => (p.healthFlags ?? []).includes("pregnant");
+const isBreastfeeding = (p: PlanProfile) => (p.healthFlags ?? []).includes("breastfeeding");
+
+/** Moves usually advised against in pregnancy (lying flat on the back later on, jumping, heavy core loading, head-down). */
+const PREGNANCY_SWAPS: Record<string, [string, string]> = {
+  "Glute Bridge": ["Side-Lying Clamshell", "12 each"],
+  "Dumbbell Glute Bridge": ["Side-Lying Clamshell", "12 each"],
+  "Banded Glute Bridge": ["Banded Side-Lying Clamshell", "12 each"],
+  "Single-Leg Glute Bridge": ["Side-Lying Clamshell", "12 each"],
+  "Banded Lateral Walk": ["Banded Lateral Walk", "12 each"],
+  "Hip Thrust": ["Cable Glute Kickback", "12 each"],
+  "Dumbbell Bench Press": ["Incline Dumbbell Press", "10"],
+  "Plank Hold": ["Incline Plank (hands on a bench)", "20-30s"],
+  "Jump Squats (or Squats)": ["Bodyweight Squat", "12"],
+  "Mountain Climbers": ["Standing March", "30s"],
+  "Kettlebell Swing": ["Kettlebell Sumo Squat", "12"],
+  "Pike Push-Ups": ["Seated Shoulder Press (water bottles OK)", "10"],
+  "Bear Crawl": ["Wall Push-Ups", "12"],
+  "Plank Shoulder Taps": ["Wall Push-Ups", "12"],
+  "Leg Curl Machine": ["Seated Leg Curl", "12"],
+  "Hanging Knee Raises": ["Bird Dog", "8 each"],
+};
+
+/** Gentle core for pregnancy and after birth: no crunches, sit-ups or lying flat. */
+const SAFE_CORE: [string, string][] = [
+  ["Bird Dog", "8 each"],
+  ["Pelvic Floor Squeezes (Kegels)", "10 x 5s hold"],
+  ["Side-Lying Leg Lifts", "12 each"],
+  ["Modified Side Plank (on knees)", "15-20s each"],
+  ["Cat-Cow", "60s"],
+  ["Seated Hip & Back Stretch", "45s each"],
+];
+
+const PREGNANCY_NOTE =
+  "Pregnancy: get your midwife's or doctor's OK first. Keep to a pace where you can still talk, don't lie flat on your back after the first 3 months, and stop if you feel dizzy, breathless, have pain or bleeding.";
+const AFTER_BIRTH_NOTE =
+  "After birth: start once your doctor says it's fine (usually around 6 weeks). Feed or express first, wear a supportive bra and drink extra water.";
+
+/* ---------- training style by goal ---------- */
+
+type Style = { range: [number, number]; homeRange?: [number, number]; extraSet: number; note: string; homeNote?: string };
+const STYLE: Record<string, Style> = {
+  "Build strength": {
+    range: [6, 10],
+    homeRange: [8, 12],
+    extraSet: 1,
+    note: "Heavier and fewer reps: pick a weight where the last 2 reps are hard. Rest 90s-2 min between sets.",
+    homeNote: "Go slowly: 3 seconds down, 1 up. When the top of the range feels easy, move to the harder version or add weight.",
+  },
+  "Weight loss": {
+    range: [12, 15],
+    extraSet: 0,
+    note: "Circuit style: do one set of each exercise back to back, rest 30-45s, then go round again. Keeps your heart rate up.",
+  },
+  "Improve endurance": {
+    range: [15, 20],
+    extraSet: 0,
+    note: "Lighter and longer: short rests of about 30s between sets.",
+  },
+  "General fitness": {
+    range: [10, 12],
+    extraSet: 0,
+    note: "Rest about 60s between sets. Add a little weight or a few reps when it feels easy.",
+  },
+};
+
+/** Change a rep target ("10", "8-12", "10 each") to the goal's range. Timed or distance targets stay. */
+function goalReps(reps: string, style: Style, home: boolean): string {
+  const m = reps.match(/^(\d+)(?:-(\d+))?( each)?$/);
+  if (!m) return reps;
+  const baseMax = Number(m[2] ?? m[1]);
+  // Hard moves (pull-ups, pike push-ups: 8 or fewer) keep their own numbers
+  if (baseMax <= 8) return reps;
+  const [lo, hi] = home && style.homeRange ? style.homeRange : style.range;
+  return `${lo}-${hi}${m[3] ?? ""}`;
+}
+
 function rotationFor(p: PlanProfile): SessionType[] {
   const days = clampDays(p.workoutDaysPerWeek);
   const goal = ROTATIONS[p.fitnessGoal ?? ""] ? (p.fitnessGoal as string) : "General fitness";
   let rotation = [...ROTATIONS[goal][days]];
   // Beginners start with steady cardio instead of hard intervals
-  if (p.trainingExperience === "Beginner") {
+  // Beginners and pregnancy: steady cardio instead of hard intervals
+  if (p.trainingExperience === "Beginner" || isPregnant(p)) {
     rotation = rotation.map((t) => (t === "INTERVALS" ? "CARDIO" : t));
   }
   return rotation;
@@ -244,22 +325,23 @@ export function buildSessions(p: PlanProfile): Session[] {
     const exercises: Exercise[] =
       type === "CARDIO" || type === "INTERVALS" || type === "LONG"
         ? cardioExercises(type, ctx, minutes, experience, kit)
-        : STRENGTH[type][ctx].slice(0, exerciseCount(minutes)).map(([baseName, baseReps]) => {
-            const [name, reps] = ctx === "home" ? homeVersion(baseName, baseReps, kit) : [baseName, baseReps];
-            return { name, sets: type === "CORE" ? Math.max(2, sets - 1) : sets, reps, url: yt(name) };
-          });
+        : strengthExercises(type, ctx, minutes, sets, kit, p);
 
     let note: string | undefined;
     if (type === "FULL" || type === "LOWER" || type === "UPPER") {
-      note =
-        experience === "Beginner"
-          ? "Pick a weight you could lift 2-3 more times. Rest 60-90s between sets. Form first."
-          : "Add a little weight or a few reps each week while form stays clean.";
+      const style = styleFor(p);
+      note = [
+        experience === "Beginner" ? "Form first: start light and learn each move." : null,
+        ctx === "home" && style.homeNote ? style.homeNote : style.note,
+      ].filter(Boolean).join(" ");
     } else if (type === "INTERVALS") {
       note = "Hard means you can only say a few words. Skip intervals if you feel unwell or very sore.";
     } else if (type === "CORE") {
       note = "Move slowly and breathe out on the effort. Stop if your lower back hurts.";
     }
+
+    if (isPregnant(p)) note = [note, PREGNANCY_NOTE].filter(Boolean).join(" ");
+    else if (isBreastfeeding(p)) note = [note, AFTER_BIRTH_NOTE].filter(Boolean).join(" ");
 
     return {
       id: type,
@@ -272,4 +354,29 @@ export function buildSessions(p: PlanProfile): Session[] {
       note,
     };
   });
+}
+
+/** Pregnancy and after birth use the general style: moderate reps, no extra sets. */
+function styleFor(p: PlanProfile): Style {
+  if (isPregnant(p) || isBreastfeeding(p)) return STYLE["General fitness"];
+  return STYLE[p.fitnessGoal ?? ""] ?? STYLE["General fitness"];
+}
+
+function strengthExercises(type: "FULL" | "LOWER" | "UPPER" | "CORE", ctx: Context, minutes: number, sets: number, kit: Set<string>, p: PlanProfile): Exercise[] {
+  const careful = isPregnant(p) || isBreastfeeding(p);
+  const source = type === "CORE" && careful ? SAFE_CORE : STRENGTH[type][ctx];
+  const style = styleFor(p);
+  const seen = new Set<string>();
+  const out: Exercise[] = [];
+  for (const [baseName, baseReps] of source) {
+    let [name, reps] = ctx === "home" ? homeVersion(baseName, baseReps, kit) : [baseName, baseReps];
+    if (isPregnant(p) && PREGNANCY_SWAPS[name]) [name, reps] = PREGNANCY_SWAPS[name];
+    if (seen.has(name)) continue;
+    seen.add(name);
+    if (type !== "CORE") reps = goalReps(reps, style, ctx === "home");
+    const setCount = type === "CORE" ? Math.max(2, sets - 1) : Math.min(5, sets + style.extraSet);
+    out.push({ name, sets: setCount, reps, url: yt(name) });
+    if (out.length >= exerciseCount(minutes)) break;
+  }
+  return out;
 }

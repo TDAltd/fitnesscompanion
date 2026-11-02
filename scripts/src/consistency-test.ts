@@ -163,6 +163,19 @@ async function main() {
   check("typed target can't go under the safe minimum", t({}, { calorieTarget: 900 }).calories === 1200, String(t({}, { calorieTarget: 900 }).calories));
 
   // --- Equipment changes home exercises (and their videos)
+  // Plans differ by goal and health answers
+  const planFor = (extra: Record<string, unknown>) => buildPlan({ ...profile, workoutDaysPerWeek: 4, ...extra });
+  const allEx = (extra: Record<string, unknown>) => planFor(extra).sessions.flatMap((s) => s.exercises);
+  const strengthReps = (goal: string) => allEx({ fitnessGoal: goal, workoutLocation: "Gym" }).find((e) => e.name === "Lat Pulldown")?.reps;
+  check("strength goal: heavier, 6-10 reps", strengthReps("Build strength") === "6-10", String(strengthReps("Build strength")));
+  check("weight-loss goal: 12-15 reps", strengthReps("Weight loss") === "12-15", String(strengthReps("Weight loss")));
+  const preg = planFor({ fitnessGoal: "Weight loss", healthFlags: ["pregnant"], trainingExperience: "Advanced" });
+  check("pregnant: no hard intervals", !preg.sessions.some((x) => x.id === "INTERVALS"));
+  check("pregnant: no lying-on-back or jumping moves", !preg.sessions.flatMap((x) => x.exercises.map((e) => e.name)).some((n) => /glute bridge|bench press|plank hold|jump|mountain/i.test(n)));
+  check("pregnant: safety note on sessions", preg.sessions.every((x) => /midwife/.test(x.note ?? "")));
+  const bf = t({ healthFlags: ["breastfeeding"] });
+  check("breastfeeding: about 330 kcal above maintenance", bf.maintenance != null && bf.calories - bf.maintenance >= 300 && !bf.paceAvailable, `${bf.calories} vs ${bf.maintenance}`);
+
   const names = (equipment: string[]) => buildPlan({ ...profile, equipment }).sessions.flatMap((s) => s.exercises.map((e) => e.name));
   check("dumbbells swap in dumbbell moves at home", names(["dumbbells"]).includes("Dumbbell Goblet Squat") && !names([]).includes("Dumbbell Goblet Squat"));
   check("no kit: clear bodyweight names", names([]).includes("Bodyweight Squat"));

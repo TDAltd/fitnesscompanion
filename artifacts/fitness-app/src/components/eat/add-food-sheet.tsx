@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { FOODS } from "@/lib/foods";
 import { RECIPES, matchesDietaryPreference } from "@/lib/recipes";
+import { foodCaution } from "@/lib/food-safety";
 import { SLOTS, formatServings, useAddFood, useRecentFoods, type Slot } from "@/lib/food-log";
 import { compressMealPhoto } from "@/lib/photo";
 import { dailyShuffle } from "@/lib/daily";
@@ -62,15 +63,22 @@ export function AddFoodSheet({
   }, [open, initialSlot]);
 
   const diet = profile?.dietaryPreference;
+  const flags = profile?.healthFlags ?? [];
+  // Pregnancy/diabetes: skip unsuitable foods in suggestions, label them in search
+  const caution = (name: string, ingredients?: string[]) => foodCaution(name, flags, ingredients);
+  const withNote = (p: Pick, ingredients?: string[]): Pick => {
+    const c = caution(p.name, ingredients);
+    return c.note ? { ...p, portion: `${p.portion} · ${c.note}`, note: c.note } : p;
+  };
   const q = query.trim().toLowerCase();
 
   const results = useMemo(() => {
     const foods = FOODS.filter((f) => matchesDietaryPreference({ name: f.name, ingredients: f.ingredients, protein: f.protein }, diet))
       .filter((f) => !q || f.name.toLowerCase().includes(q))
-      .map<Pick>((f) => ({ name: f.name, portion: f.portion, calories: f.calories, protein: f.protein, carbs: f.carbs, fat: f.fat, source: "food" }));
+      .map<Pick>((f) => withNote({ name: f.name, portion: f.portion, calories: f.calories, protein: f.protein, carbs: f.carbs, fat: f.fat, source: "food" }, f.ingredients));
     const recipes = RECIPES.filter((r) => matchesDietaryPreference(r, diet))
       .filter((r) => !q || r.name.toLowerCase().includes(q))
-      .map<Pick>((r) => ({ name: r.name, portion: "1 serving (recipe)", calories: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat, source: "recipe" }));
+      .map<Pick>((r) => withNote({ name: r.name, portion: "1 serving (recipe)", calories: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat, source: "recipe" }, r.ingredients));
     const mine = (recent ?? [])
       .filter((r) => !q || r.name.toLowerCase().includes(q))
       .map<Pick>((r) => ({ name: r.name, portion: "1 portion, same as last time", calories: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat, source: "recent" }));
@@ -78,14 +86,16 @@ export function AddFoodSheet({
       // No search yet: your recent foods, then popular picks for this meal
       // A fresh set of popular foods each day (stable within the day)
       const pool = FOODS.filter((f) => f.slot === slot && !/teaspoon|tablespoon/.test(f.portion) && !/beer|soft drink|malt/i.test(f.name))
-        .filter((f) => matchesDietaryPreference({ name: f.name, ingredients: f.ingredients, protein: f.protein }, diet));
+        .filter((f) => matchesDietaryPreference({ name: f.name, ingredients: f.ingredients, protein: f.protein }, diet))
+        .filter((f) => !caution(f.name, f.ingredients).hide);
       const popular = dailyShuffle(pool, `popular-${slot}`)
         .slice(0, 8)
-        .map<Pick>((f) => ({ name: f.name, portion: f.portion, calories: f.calories, protein: f.protein, carbs: f.carbs, fat: f.fat, source: "food" }));
+        .map<Pick>((f) => withNote({ name: f.name, portion: f.portion, calories: f.calories, protein: f.protein, carbs: f.carbs, fat: f.fat, source: "food" }, f.ingredients));
       return { mine, list: popular };
     }
     return { mine, list: [...foods, ...recipes].slice(0, 30) };
-  }, [q, recent, diet, slot]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, recent, diet, slot, flags.join(",")]);
 
   const save = async (food: Pick | { name: string; calories: number; protein: number; carbs: number; fat: number; source: "quick" }, portions: number) => {
     try {

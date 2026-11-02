@@ -689,11 +689,11 @@ export default function OnboardingPage() {
                 )}
                 <Button type="submit" size="lg" className="group h-14 w-full gap-3 rounded-xl text-base font-bold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/25" disabled={upsertProfile.isPending || saved} data-testid="button-save-profile">
                   {upsertProfile.isPending ? (
-                    <><LoaderCircle className="h-5 w-5 animate-spin" /> Saving your plan…</>
+                    <><LoaderCircle className="h-5 w-5 animate-spin" /> Updating…</>
                   ) : saved ? (
-                    <><Check className="h-5 w-5" /> You’re all set</>
+                    <><Check className="h-5 w-5" /> Updated</>
                   ) : (
-                    <>Build my routine <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>
+                    <>Update <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>
                   )}
                 </Button>
               </div>

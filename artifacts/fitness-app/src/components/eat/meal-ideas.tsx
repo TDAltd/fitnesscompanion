@@ -1,3 +1,4 @@
+import { foodCaution } from "@/lib/food-safety";
 import { useMemo } from "react";
 import { Lightbulb, Plus } from "lucide-react";
 import { useGetProfile, getGetProfileQueryKey } from "@workspace/api-client-react";
@@ -24,14 +25,16 @@ export function MealIdeas({ left, date, slot }: { left: number; date: string; sl
     if (left < 150) return [];
     const fits = (kcal: number) => kcal >= 80 && kcal <= left;
     // Rotate daily through your regulars that fit, so the same two don't always show
-    const mine = dailyShuffle((recent ?? []).filter((r) => fits(r.calories)), `ideas-mine-${slot}`, date)
+    const flags = profile?.healthFlags ?? [];
+    const ok = (name: string, ingredients?: string[]) => !foodCaution(name, flags, ingredients).hide;
+    const mine = dailyShuffle((recent ?? []).filter((r) => fits(r.calories) && ok(r.name)), `ideas-mine-${slot}`, date)
       .slice(0, 2)
       .map<Idea>((r) => ({ ...r, why: "One of your regulars", source: "recent" }));
     const known = new Set(mine.map((m) => m.name.toLowerCase()));
     const slotCategory = slot === "Snack" ? "Fruit" : slot;
     const fresh = dailyShuffle(
       RECIPES.filter((r) => matchesDietaryPreference(r, profile?.dietaryPreference)).filter(
-        (r) => fits(r.calories) && r.protein >= 20 && !known.has(r.name.toLowerCase()),
+        (r) => fits(r.calories) && r.protein >= 20 && !known.has(r.name.toLowerCase()) && ok(r.name, r.ingredients),
       ),
       `ideas-new-${slot}`,
       date,
@@ -39,7 +42,7 @@ export function MealIdeas({ left, date, slot }: { left: number; date: string; sl
     // A different new idea each day, matching the meal when possible
     const pick = fresh[0] ?? null;
     return [...mine, ...(pick ? [{ name: pick.name, calories: pick.calories, protein: pick.protein, carbs: pick.carbs, fat: pick.fat, why: "Something new, high in protein", source: "recipe" as const }] : [])];
-  }, [left, recent, profile?.dietaryPreference, slot, date]);
+  }, [left, recent, profile?.dietaryPreference, profile?.healthFlags, slot, date]);
 
   if (!ideas.length) return null;
   return (

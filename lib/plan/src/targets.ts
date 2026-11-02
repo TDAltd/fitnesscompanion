@@ -77,8 +77,12 @@ export function computeTargets(p: PlanProfile, overrides: TargetOverrides = {}):
   const noDeficit = pregnantOrFeeding || habitFocus;
   const allowedPaces: Pace[] = flags.has("diabetes") ? ["gentle"] : ["gentle", "steady", "faster"];
   const paceAvailable = wantsToLose && !isMinor && !underweight && !noDeficit && goal !== "Build strength";
-  if (pregnantOrFeeding) {
-    notes.push("Pregnant or breastfeeding: the plan aims for maintenance, not weight loss. Follow your midwife's or doctor's advice on food and exercise.");
+  if (flags.has("breastfeeding") && !flags.has("pregnant")) {
+    // Making milk uses roughly 330-400 kcal a day on top of normal needs
+    adjustment = 330;
+    notes.push("Breastfeeding: about 330 kcal a day is added on top of maintenance, with no calorie cut. Follow your doctor's or midwife's advice.");
+  } else if (pregnantOrFeeding) {
+    notes.push("Pregnant: the plan aims for maintenance, not weight loss. Your midwife may suggest eating a little more later in pregnancy.");
   } else if (habitFocus) {
     notes.push("Your plan focuses on regular, balanced meals rather than cutting calories. A doctor or dietitian can help you set safe goals.");
   } else if (isMinor) {

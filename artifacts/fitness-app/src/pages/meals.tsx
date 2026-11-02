@@ -13,6 +13,7 @@ import { usePlan } from "@/lib/plan";
 import { RECIPES, matchesDietaryPreference, type Cuisine, type Recipe } from "@/lib/recipes";
 import { SLOTS, formatServings, targetFor, useAddFood, useFoodLog, useRemoveFood, useSetTreat, useTreats, type FoodEntry, type Slot } from "@/lib/food-log";
 import { LowIntakeNote, lowIntakeMessage } from "@/components/eat/low-intake-note";
+import { HealthFoodNote } from "@/components/eat/health-food-note";
 import { MealIdeas } from "@/components/eat/meal-ideas";
 import { EditFoodSheet } from "@/components/eat/edit-food-sheet";
 import { dailyShuffle } from "@/lib/daily";
@@ -200,6 +201,8 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
       </Button>
 
       <LowIntakeNote message={lowNote} />
+
+      <HealthFoodNote flags={profile?.healthFlags} />
 
       {atToday && !habitFocus && !isLoading && <MealIdeas left={left} date={date} slot={defaultSlot()} />}
 

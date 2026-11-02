@@ -39,7 +39,7 @@ export const DEFAULT_SETTINGS: ReminderSettings = {
   weighInDay: 1,
 };
 
-const PREFERENCE_TIME: Record<string, string> = { Morning: "06:30", Afternoon: "12:30", Evening: "17:30" };
+const PREFERENCE_TIME: Record<string, string> = { Morning: "06:30", Midday: "12:30", Afternoon: "12:30", Evening: "17:30" };
 export const workoutTimeFor = (s: ReminderSettings, preference: string | null | undefined) =>
   s.workoutTime ?? PREFERENCE_TIME[preference ?? ""] ?? "17:30";
 

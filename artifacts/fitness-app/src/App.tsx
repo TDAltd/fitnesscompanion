@@ -10,7 +10,7 @@ import StatsPage from "@/pages/stats";
 import MealsPage from "@/pages/meals";
 import WorkoutPage from "@/pages/workout";
 import OnboardingPage from "@/pages/onboarding";
-import AuthPage from "@/pages/auth";
+import StartPage from "@/pages/start";
 import { UpdateBanner } from "@/components/layout/update-banner";
 import PrivacyPage from "@/pages/privacy";
 import RemindersPage from "@/pages/reminders";
@@ -57,7 +57,8 @@ function AuthGate() {
       </main>
     );
   }
-  if (!user) return <AuthPage />;
+  // Not logged in: the sign-up quiz (its first screen links to Log in)
+  if (!user) return <StartPage />;
   if (user.isAdmin) return <AdminShell />;
   return <Router />;
 }
@@ -100,9 +101,9 @@ function Router() {
     );
   }
   if (location === "/privacy" && !profileComplete) return <PrivacyPage standalone />;
-  if (!isOnboarding && !isError && !profileComplete) {
-    return <Redirect to="/onboarding" />;
-  }
+  // Logged in but never finished setting up: the quiz, then straight into the app
+  if (!isError && !profileComplete && !isLoading) return <StartPage member />;
+  // Existing users change their answers on the full form
   if (isOnboarding) return <OnboardingPage />;
 
   return (

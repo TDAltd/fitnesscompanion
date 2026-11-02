@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 
 const WATER_TIMES = ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00"];
 const ICS_DAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
-const WORKOUT_TIME: Record<string, string> = { Morning: "06:30", Afternoon: "12:30", Evening: "17:30" };
+const WORKOUT_TIME: Record<string, string> = { Morning: "06:30", Midday: "12:30", Afternoon: "12:30", Evening: "17:30" };
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const stamp = (d: Date) => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;

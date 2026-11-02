@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthActions } from "@/lib/auth";
 
-export default function AuthPage() {
+/** onCreateAccount: new accounts are made at the end of the sign-up quiz, so "Create an account" goes there. */
+export default function AuthPage({ onCreateAccount }: { onCreateAccount?: () => void } = {}) {
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [consent, setConsent] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -159,12 +160,13 @@ export default function AuthPage() {
             type="button"
             className="font-semibold text-primary hover:underline"
             onClick={() => {
+              if (!isSignup && onCreateAccount) return onCreateAccount();
               setMode(isSignup ? "login" : "signup");
               setError(null);
             }}
             data-testid="button-toggle-auth-mode"
           >
-            {isSignup ? "Log in" : "Create an account"}
+            {isSignup ? "Log in" : onCreateAccount ? "Get my plan" : "Create an account"}
           </button>
         </p>
         )}

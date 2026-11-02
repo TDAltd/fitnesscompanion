@@ -528,17 +528,15 @@ function ShortcutLinkCard({ current }: { current: string | null }) {
         <details className="rounded-xl bg-muted/40 p-4">
           <summary className="cursor-pointer font-semibold">How to make the link (once, on your iPhone, about 15 minutes)</summary>
           <ol className="mt-3 list-decimal space-y-2 pl-5 text-muted-foreground">
-            <li>Log in to a normal (non-admin) account, open <b>Me → Connect your devices</b> and build the Shortcut by following steps 1-5 there. Test that it syncs.</li>
+            <li>Log in to a normal (non-admin) account, open <b>Me → Connect your devices</b> and build the Shortcut by following the guide there. Test that it syncs.</li>
+            <li>At the very <b>top</b> of the Shortcut, add a <b>Text</b> action containing <b>PASTE-YOUR-KEY</b>. Never share a Shortcut with your own key in it.</li>
+            <li>In <b>Get Contents of URL → Headers</b>, set the <b>Authorization</b> value to the <b>Text</b> variable from step 2 (the key works with or without "Bearer").</li>
             <li>
-              In the <b>Get Contents of URL</b> step, replace your real key in the Authorization header with the word <b>PASTE-YOUR-KEY</b>. Never share a Shortcut that
-              still has your own key in it.
+              Tap <b>ⓘ</b> (or the shortcut name) → <b>Setup</b> → <b>Import Questions</b> → <b>Add</b> → pick the <b>Text</b> action. Question:
+              <i> "Paste your key from the Connect page"</i>.
             </li>
-            <li>
-              Tap the <b>ⓘ</b> (or the shortcut name at the top) → <b>Setup</b> / <b>Import Questions</b> → <b>Add</b> → pick the Authorization header value. Question:
-              <i> "Paste your key from the Connect page (starts with Bearer)"</i>.
-            </li>
-            <li>Tap <b>Share</b> → <b>Copy iCloud Link</b>, paste it above and tap Save.</li>
-            <li>Check it: on another account, tap Add Shortcut on Connect, paste a fresh key when asked, and run it once.</li>
+            <li>Tap <b>Share</b> → <b>Copy iCloud Link</b>. Copy a <b>new</b> link after every change: old links don't update. Paste it above and Save.</li>
+            <li>Check it on another phone: the link should open a <b>Set Up Shortcut</b> screen asking for the key.</li>
           </ol>
         </details>
       </CardContent>

@@ -184,6 +184,7 @@
   /* No rubber-band bounce: on iPhone it drags the header and tab bar loose from the screen edges */
   html,
   body {
+    color-scheme: light; /* native inputs, pickers and scrollbars stay light too */
     overscroll-behavior-y: none;
     background-color: hsl(var(--background));
   }

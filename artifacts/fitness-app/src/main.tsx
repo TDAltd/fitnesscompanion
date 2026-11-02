@@ -26,10 +26,7 @@ window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
   return nativeFetch(input, init);
 };
 
-// Follow the phone/computer's light or dark setting
-const media = window.matchMedia("(prefers-color-scheme: dark)");
-const applyTheme = () => document.documentElement.classList.toggle("dark", media.matches);
-applyTheme();
-media.addEventListener("change", applyTheme);
+// Always light, whatever the phone/computer's dark mode setting
+document.documentElement.classList.remove("dark");
 
 createRoot(document.getElementById("root")!).render(<App />);

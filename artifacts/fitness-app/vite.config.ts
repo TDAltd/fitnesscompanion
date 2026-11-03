@@ -25,6 +25,18 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        // Libraries change rarely: keep them in their own files so phones keep them cached across app updates
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (/[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return "react";
+          if (/recharts|d3-|victory-vendor/.test(id)) return "charts";
+          if (/@radix-ui|lucide-react/.test(id)) return "ui";
+          if (/@tanstack|wouter|date-fns|zod|clsx|tailwind-merge|class-variance-authority/.test(id)) return "lib";
+        },
+      },
+    },
   },
   server: {
     port: Number(process.env.PORT ?? 5173),

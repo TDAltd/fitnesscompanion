@@ -4,26 +4,35 @@ import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-qu
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getGetProfileQueryKey, useGetProfile } from "@workspace/api-client-react";
-import NotFound from "@/pages/not-found";
-import DashboardPage from "@/pages/dashboard";
-import ProgressPage from "@/pages/progress";
-import StatsPage from "@/pages/stats";
-import MealsPage from "@/pages/meals";
-import WorkoutPage from "@/pages/workout";
-import OnboardingPage from "@/pages/onboarding";
-import StartPage from "@/pages/start";
 import { UpdateBanner } from "@/components/layout/update-banner";
-import PrivacyPage from "@/pages/privacy";
-import RemindersPage from "@/pages/reminders";
-import ResetPasswordPage from "@/pages/reset-password";
-import AccountPage from "@/pages/account";
-import MyPlanPage from "@/pages/my-plan";
-import ConnectHealthPage from "@/pages/connect-health";
-import MePage from "@/pages/me";
-import { AdminShell } from "@/components/layout/admin-layout";
 import { AUTH_QUERY_KEY, useCurrentUser } from "@/lib/auth";
 import { BASE } from "@/lib/base-path";
 import { AppLayout } from "@/components/layout/app-layout";
+import { Suspense } from "react";
+import { lazyPage } from "@/lib/lazy-page";
+
+const NotFound = lazyPage(() => import("@/pages/not-found"));
+const DashboardPage = lazyPage(() => import("@/pages/dashboard"));
+const ProgressPage = lazyPage(() => import("@/pages/progress"));
+const StatsPage = lazyPage(() => import("@/pages/stats"));
+const MealsPage = lazyPage(() => import("@/pages/meals"));
+const WorkoutPage = lazyPage(() => import("@/pages/workout"));
+const OnboardingPage = lazyPage(() => import("@/pages/onboarding"));
+const StartPage = lazyPage(() => import("@/pages/start"));
+const PrivacyPage = lazyPage(() => import("@/pages/privacy"));
+const RemindersPage = lazyPage(() => import("@/pages/reminders"));
+const ResetPasswordPage = lazyPage(() => import("@/pages/reset-password"));
+const AccountPage = lazyPage(() => import("@/pages/account"));
+const MyPlanPage = lazyPage(() => import("@/pages/my-plan"));
+const ConnectHealthPage = lazyPage(() => import("@/pages/connect-health"));
+const MePage = lazyPage(() => import("@/pages/me"));
+const AdminShell = lazyPage(() => import("@/components/layout/admin-layout").then((m) => ({ default: m.AdminShell })));
+
+const PageLoading = () => (
+  <main className="grid min-h-[60dvh] place-items-center px-6 text-sm text-muted-foreground" role="status">
+    Loading…
+  </main>
+);
 
 // If any API call says "not logged in" (e.g. session expired), send the user back to the login screen
 const queryClient: QueryClient = new QueryClient({
@@ -109,6 +118,7 @@ function Router() {
 
   return (
     <AppLayout>
+      <Suspense fallback={<PageLoading />}>
       <Switch>
         <Route path="/">
           <Redirect to="/today" />
@@ -132,6 +142,7 @@ function Router() {
         <Route path="/privacy">{() => <PrivacyPage />}</Route>
         <Route component={NotFound} />
       </Switch>
+      </Suspense>
     </AppLayout>
   );
 }
@@ -142,7 +153,9 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={BASE}>
           <ErrorBoundary>
-            <AuthGate />
+            <Suspense fallback={<PageLoading />}>
+              <AuthGate />
+            </Suspense>
           </ErrorBoundary>
           <UpdateBanner />
         </WouterRouter>

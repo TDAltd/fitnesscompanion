@@ -15,6 +15,15 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # A throwaway database for the automatic tests below
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: fitness_test
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       # Read the secret into an env var so we can skip the upload step when it isn't set yet
       FTP_SERVER: ${{ secrets.FTP_SERVER }}
@@ -45,6 +54,21 @@ jobs:
 
       - name: Build the app
         run: pnpm run build
+
+      - name: Run the automatic tests (a broken update stops here and isn't uploaded)
+        env:
+          DATABASE_URL: postgres://postgres:test@localhost:5432/fitness_test
+          PORT: "3998"
+          CRON_SECRET: ci-secret
+          REMINDERS_LOOP: "off"
+          BACKUP_DIR: /tmp/fcbk
+        run: |
+          (cd deploy && node app.js > /tmp/app.log 2>&1 &)
+          for i in $(seq 1 60); do curl -sf "http://localhost:3998${BASE_PATH}api/healthz" > /dev/null && break; sleep 1; done
+          if ! curl -sf "http://localhost:3998${BASE_PATH}api/healthz" > /dev/null; then
+            echo "::error::The app didn't start."; cat /tmp/app.log; exit 1
+          fi
+          pnpm --filter @workspace/scripts run test:consistency "http://localhost:3998${BASE_PATH%/}" || { echo "--- server log ---"; tail -50 /tmp/app.log; exit 1; }
 
       - name: Add restart marker
         # Passenger (the engine behind cPanel's "Setup Node.js App") restarts the app

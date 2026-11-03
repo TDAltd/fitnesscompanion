@@ -149,6 +149,10 @@ async function main() {
   check("push: test with no device explains itself", (await api("/push/test", { method: "POST" })).status === 409);
   check("push: public key available", ((await api<{ key: string }>("/push/public-key")).body.key ?? "").length > 40);
   check("cron: reminders need the key", (await api("/cron/reminders")).status === 403);
+  check("backup: needs the backup key", (await api("/cron/backup", { headers: { "x-backup-key": "fcb_wrong" } })).status === 403);
+  check("backup: only admins see backups", (await api("/admin/backups")).status === 403);
+  check("errors: the app can report a crash", (await api("/client-errors", { method: "POST", body: JSON.stringify({ message: "consistency test crash", page: "/today" }) })).status === 204);
+  check("errors: only admins see problems", (await api("/admin/errors")).status === 403);
 
   // Weekly review
   type WR = { partial: boolean; canGoBack: boolean; canGoForward: boolean; current: { days: number; workouts: { done: number } }; focus: string; from: string };

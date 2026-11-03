@@ -96,7 +96,7 @@ export async function dailyErrorEmail(force = false): Promise<{ sent: boolean; c
 
   let base = appUrl();
   if (!/^https?:\/\//.test(base)) base = `${(await getSetting("app_origin")) ?? ""}${base}`;
-  const link = `${base}/admin#problems`;
+  const link = `${base}/admin/problems`;
   const lines = rows.map((r) => {
     const tag = r.emailedAt ? "Still happening" : "New";
     const people = r.userIds.length ? `, ${r.userIds.length} ${r.userIds.length === 1 ? "person" : "people"}` : "";

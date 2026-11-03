@@ -19,6 +19,7 @@ import { RecipesAdmin } from "@/components/admin/recipes-admin";
 import { BackupsAdmin } from "@/components/admin/backups-admin";
 import { ProblemsAdmin } from "@/components/admin/problems-admin";
 import { QuizFunnelAdmin } from "@/components/admin/quiz-funnel-admin";
+import { AttentionCard } from "@/components/admin/attention-card";
 
 const FILTERS = ["All", "Active this week", "Admins", "Disabled"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -37,7 +38,18 @@ function Stat({ label, value, sub }: { label: string; value: number | string; su
   );
 }
 
-export default function AdminPage() {
+export type AdminSection = "overview" | "people" | "insights" | "problems" | "content" | "settings";
+
+const TITLES: Record<AdminSection, [string, string]> = {
+  overview: ["Overview", "How Fitness Companion is doing, and anything that needs you. Admin accounts aren't counted."],
+  people: ["People", "Everyone with an account. Weights, meals and health numbers stay private."],
+  insights: ["Insights", "Which parts people use, whether they come back, and where sign-up loses them."],
+  problems: ["Problems", "Errors people hit, so they can be fixed."],
+  content: ["Recipes", "What people see in Recipe ideas and meal suggestions."],
+  settings: ["Settings", "Sign-ups, AI, the health Shortcut and backups."],
+};
+
+export default function AdminPage({ section = "overview" }: { section?: AdminSection }) {
   const { data: me } = useCurrentUser();
   const { data: overview, isLoading } = useAdminOverview();
   const { data: users } = useAdminUsers();
@@ -76,20 +88,7 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <PageHeader
-        title="Admin"
-        description="Who's using Fitness Companion and which parts they use. Admin accounts aren't counted. Weights, meals and health numbers stay private."
-        action={
-          overview && (
-            <div className="flex items-center gap-3 rounded-xl border bg-card px-4 py-2.5">
-              <Switch id="signups" checked={overview.signupsOpen} onCheckedChange={toggleSignups} disabled={action.isPending} data-testid="switch-signups" />
-              <Label htmlFor="signups" className="cursor-pointer text-sm font-semibold">
-                {overview.signupsOpen ? "Sign-ups open" : "Sign-ups closed"}
-              </Label>
-            </div>
-          )
-        }
-      />
+      <PageHeader title={TITLES[section][0]} description={TITLES[section][1]} />
 
       {isLoading || !overview ? (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -97,20 +96,40 @@ export default function AdminPage() {
         </div>
       ) : (
         <>
-          <ProblemsAdmin />
-          <QuizFunnelAdmin />
-          <AiCheck />
-          <ShortcutLinkCard current={overview.shortcutLink ?? null} />
-          <RecipesAdmin />
-          <BackupsAdmin />
+          {section === "problems" && <ProblemsAdmin />}
+          {section === "content" && <RecipesAdmin />}
+          {section === "settings" && (
+            <>
+              <Card>
+                <CardContent className="flex items-center justify-between gap-4 p-4">
+                  <div className="text-sm">
+                    <p className="font-semibold">New sign-ups</p>
+                    <p className="text-muted-foreground">{overview.signupsOpen ? "Open: anyone can create an account." : "Closed: existing people can still log in."}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch id="signups" checked={overview.signupsOpen} onCheckedChange={toggleSignups} disabled={action.isPending} data-testid="switch-signups" />
+                    <Label htmlFor="signups" className="sr-only">Sign-ups open</Label>
+                  </div>
+                </CardContent>
+              </Card>
+              <AiCheck />
+              <BackupsAdmin />
+              <ShortcutLinkCard current={overview.shortcutLink ?? null} />
+            </>
+          )}
+          {section === "insights" && <QuizFunnelAdmin />}
 
+          {section === "overview" && <AttentionCard signupsOpen={overview.signupsOpen} />}
+          {section === "overview" && (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4" data-testid="admin-stats">
             <Stat label="People" value={overview.totals.users} sub={`${overview.totals.new7d} joined this week`} />
             <Stat label="Active today" value={overview.totals.active1d} />
             <Stat label="Active this week" value={overview.totals.active7d} />
             <Stat label="Active this month" value={overview.totals.active30d} />
           </div>
+          )}
 
+          {section === "overview" && (
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">Sign-ups</CardTitle>
@@ -142,7 +161,9 @@ export default function AdminPage() {
               </div>
             </CardContent>
           </Card>
+          )}
 
+          {section === "insights" && (
           <div className="grid gap-4 md:grid-cols-[1.4fr_1fr] md:gap-6">
             <Card>
               <CardHeader className="pb-3">
@@ -194,10 +215,12 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </div>
+          )}
         </>
       )}
 
       {/* People */}
+      {section === "people" && (
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">People</CardTitle>
@@ -276,6 +299,7 @@ export default function AdminPage() {
           )}
         </CardContent>
       </Card>
+      )}
 
       <UserDialog user={selected} meId={me?.id} onClose={() => setSelectedId(null)} />
     </div>

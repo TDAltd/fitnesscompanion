@@ -41,8 +41,12 @@ export default function PrivacyPage({ standalone = false }: { standalone?: boole
           <p className="mt-2">Weight, body measurements, food and the optional health questions say something about your health. We only use them to build your plan safely and show your progress, and admins can't see your health answers.</p>
         </Section>
 
+        <Section title="Where food values come from">
+          Calories and nutrients for listed foods come from the FAO/INFOODS Food Composition Table for Western Africa (2019), © Food and Agriculture Organization of the United Nations (FAO), used with acknowledgement. Nigerian dishes are calculated from a standard recipe using FAO ingredient values; brands use their pack labels. FAO does not endorse Fitness Companion.
+        </Section>
+
         <Section title="Why we use it">
-          To create your account and keep you signed in, build your personal plan and targets, show your progress, send emails you've asked for (password resets and, unless you switch it off, a weekly summary), keep the service secure, and understand which features are used so we can improve them. We rely on your consent, given when you sign up, and on running the service you asked for.
+          To create your account and keep you signed in, build your personal plan and targets, show your progress, send emails you've asked for (password resets and, unless you switch it off, a weekly summary), send occasional offers and news about Fitness Companion by email, notification or a card in the app (switch this off any time in Me → Account & data, or unsubscribe from any offer email), keep the service secure, and understand which features are used so we can improve them. We rely on your consent, given when you sign up, and on running the service you asked for.
         </Section>
 
         <Section title="Who else sees it">

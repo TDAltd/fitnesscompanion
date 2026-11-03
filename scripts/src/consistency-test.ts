@@ -153,6 +153,9 @@ async function main() {
   check("backup: only admins see backups", (await api("/admin/backups")).status === 403);
   check("errors: the app can report a crash", (await api("/client-errors", { method: "POST", body: JSON.stringify({ message: "consistency test crash", page: "/today" }) })).status === 204);
   check("errors: only admins see problems", (await api("/admin/errors")).status === 403);
+  check("marketing: only admins send messages", (await api("/admin/marketing")).status === 403);
+  check("marketing: in-app message endpoint works", (await api("/messages")).status === 200);
+  check("marketing: offers switch saves", (await api("/account/settings", { method: "PUT", body: JSON.stringify({ marketing: false }) })).status === 200);
 
   // Weekly review
   type WR = { partial: boolean; canGoBack: boolean; canGoForward: boolean; current: { days: number; workouts: { done: number } }; focus: string; from: string };

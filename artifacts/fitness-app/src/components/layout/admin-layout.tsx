@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { BarChart3, BookOpen, Bug, LayoutDashboard, LogOut, Settings, Users } from "lucide-react";
+import { BarChart3, BookOpen, Bug, LayoutDashboard, LogOut, Megaphone, Settings, Users } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { useAuthActions, useCurrentUser } from "@/lib/auth";
@@ -13,6 +13,7 @@ const NAV: { id: AdminSection; label: string; icon: typeof Users }[] = [
   { id: "people", label: "People", icon: Users },
   { id: "insights", label: "Insights", icon: BarChart3 },
   { id: "problems", label: "Problems", icon: Bug },
+  { id: "marketing", label: "Marketing", icon: Megaphone },
   { id: "content", label: "Recipes", icon: BookOpen },
   { id: "settings", label: "Settings", icon: Settings },
 ];

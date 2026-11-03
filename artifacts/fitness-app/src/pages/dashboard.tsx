@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { InstallPrompt } from "@/components/today/install-prompt";
 import { Encouragement } from "@/components/today/encouragement";
 import { NotificationNudge } from "@/components/today/notification-nudge";
+import { InAppMessage } from "@/components/today/in-app-message";
 import { BirthdayCard } from "@/components/today/birthday";
 import { WeeklyCheckIn } from "@/components/today/weekly-check-in";
 import { Link } from "wouter";
@@ -134,6 +135,7 @@ export default function DashboardPage() {
       <BirthdayCard />
 
       <Encouragement />
+      <InAppMessage />
       <NotificationNudge />
 
       <InstallPrompt />

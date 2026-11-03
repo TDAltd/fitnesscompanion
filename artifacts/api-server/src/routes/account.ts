@@ -9,11 +9,17 @@ const router = Router();
 
 router.get("/account/settings", async (req, res) => {
   const [u] = await db.select().from(usersTable).where(eq(usersTable.id, uid(req)));
-  res.json({ email: u.email, weeklyEmail: u.weeklyEmail, emailEnabled: mailConfigured(), consentAt: u.consentAt?.toISOString() ?? null });
+  res.json({ email: u.email, weeklyEmail: u.weeklyEmail, marketing: u.marketing, emailEnabled: mailConfigured(), consentAt: u.consentAt?.toISOString() ?? null });
 });
 
 router.put("/account/settings", async (req, res) => {
   const weeklyEmail = req.body?.weeklyEmail;
+  const marketing = req.body?.marketing;
+  if (typeof marketing === "boolean" && weeklyEmail === undefined) {
+    await db.update(usersTable).set({ marketing }).where(eq(usersTable.id, uid(req)));
+    res.json({ marketing });
+    return;
+  }
   if (typeof weeklyEmail !== "boolean") {
     res.status(400).json({ error: "weeklyEmail must be true or false." });
     return;

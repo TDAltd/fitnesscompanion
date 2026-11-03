@@ -12,3 +12,4 @@ export * from "./reminders";
 export * from "./recipes";
 export * from "./errors";
 export * from "./quiz";
+export * from "./marketing";

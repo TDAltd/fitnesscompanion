@@ -20,6 +20,7 @@ import { BackupsAdmin } from "@/components/admin/backups-admin";
 import { ProblemsAdmin } from "@/components/admin/problems-admin";
 import { QuizFunnelAdmin } from "@/components/admin/quiz-funnel-admin";
 import { AttentionCard } from "@/components/admin/attention-card";
+import { MarketingAdmin } from "@/components/admin/marketing-admin";
 
 const FILTERS = ["All", "Active this week", "Admins", "Disabled"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -38,13 +39,14 @@ function Stat({ label, value, sub }: { label: string; value: number | string; su
   );
 }
 
-export type AdminSection = "overview" | "people" | "insights" | "problems" | "content" | "settings";
+export type AdminSection = "overview" | "people" | "insights" | "problems" | "marketing" | "content" | "settings";
 
 const TITLES: Record<AdminSection, [string, string]> = {
   overview: ["Overview", "How Fitness Companion is doing, and anything that needs you. Admin accounts aren't counted."],
   people: ["People", "Everyone with an account. Weights, meals and health numbers stay private."],
   insights: ["Insights", "Which parts people use, whether they come back, and where sign-up loses them."],
   problems: ["Problems", "Errors people hit, so they can be fixed."],
+  marketing: ["Marketing", "Send offers and news by email, phone notification and a card on Today."],
   content: ["Recipes", "What people see in Recipe ideas and meal suggestions."],
   settings: ["Settings", "Sign-ups, AI, the health Shortcut and backups."],
 };
@@ -98,6 +100,7 @@ export default function AdminPage({ section = "overview" }: { section?: AdminSec
         <>
           {section === "problems" && <ProblemsAdmin />}
           {section === "content" && <RecipesAdmin />}
+          {section === "marketing" && <MarketingAdmin />}
           {section === "settings" && (
             <>
               <Card>

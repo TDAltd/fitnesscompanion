@@ -8,7 +8,10 @@ import { PortionInput } from "@/components/eat/portion-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { FOODS } from "@/lib/foods";
+import { FOODS, SOURCE_LABEL, type Food } from "@/lib/foods";
+
+/** "1 medium wrap · 250 g · FAO data" */
+const foodPortion = (f: Food) => [f.portion, f.grams ? `${f.grams} g` : null, SOURCE_LABEL[f.source]].filter(Boolean).join(" · ");
 import { matchesDietaryPreference } from "@/lib/recipes";
 import { useRecipeLibrary } from "@/lib/recipe-library";
 import { foodCaution } from "@/lib/food-safety";
@@ -77,7 +80,7 @@ export function AddFoodSheet({
   const results = useMemo(() => {
     const foods = FOODS.filter((f) => matchesDietaryPreference({ name: f.name, ingredients: f.ingredients, protein: f.protein }, diet))
       .filter((f) => !q || f.name.toLowerCase().includes(q))
-      .map<Pick>((f) => withNote({ name: f.name, portion: f.portion, calories: f.calories, protein: f.protein, carbs: f.carbs, fat: f.fat, source: "food" }, f.ingredients));
+      .map<Pick>((f) => withNote({ name: f.name, portion: foodPortion(f), calories: f.calories, protein: f.protein, carbs: f.carbs, fat: f.fat, source: "food" }, f.ingredients));
     const recipes = library.filter((r) => matchesDietaryPreference(r, diet))
       .filter((r) => !q || r.name.toLowerCase().includes(q))
       .map<Pick>((r) => withNote({ name: r.name, portion: "1 serving (recipe)", calories: r.calories, protein: r.protein, carbs: r.carbs, fat: r.fat, source: "recipe" }, r.ingredients));
@@ -92,7 +95,7 @@ export function AddFoodSheet({
         .filter((f) => !caution(f.name, f.ingredients).hide);
       const popular = dailyShuffle(pool, `popular-${slot}`)
         .slice(0, 8)
-        .map<Pick>((f) => withNote({ name: f.name, portion: f.portion, calories: f.calories, protein: f.protein, carbs: f.carbs, fat: f.fat, source: "food" }, f.ingredients));
+        .map<Pick>((f) => withNote({ name: f.name, portion: foodPortion(f), calories: f.calories, protein: f.protein, carbs: f.carbs, fat: f.fat, source: "food" }, f.ingredients));
       return { mine, list: popular };
     }
     return { mine, list: [...foods, ...recipes].slice(0, 30) };
@@ -239,6 +242,9 @@ export function AddFoodSheet({
                     </div>
                   </div>
                 )}
+                <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+                  Food values: FAO/INFOODS Food Composition Table for Western Africa (2019), © FAO. Nigerian dishes worked out from a standard recipe; home cooking varies.
+                </p>
               </section>
               <p className="pb-2 text-xs text-muted-foreground">Calories are estimates for a typical portion. Home cooking varies, especially the oil.</p>
             </div>

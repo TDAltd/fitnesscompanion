@@ -15,6 +15,8 @@ export const usersTable = pgTable("users", {
   consentAt: timestamp("consent_at", { withTimezone: true }),
   /** Weekly summary email opt-out */
   weeklyEmail: boolean("weekly_email").notNull().default(true),
+  /** Offers and news (email, phone notification, in-app). On unless they switch it off or unsubscribe. */
+  marketing: boolean("marketing").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

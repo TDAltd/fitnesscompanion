@@ -25,13 +25,13 @@ function transport(): Transporter {
   return transporter;
 }
 
-export async function sendMail(to: string, subject: string, text: string, html: string): Promise<boolean> {
+export async function sendMail(to: string, subject: string, text: string, html: string, headers?: Record<string, string>): Promise<boolean> {
   if (!mailConfigured()) {
     logger.warn({ to, subject }, "email not sent: SMTP is not configured");
     return false;
   }
   try {
-    await transport().sendMail({ from: process.env.MAIL_FROM || process.env.SMTP_USER, to, subject, text, html });
+    await transport().sendMail({ from: process.env.MAIL_FROM || process.env.SMTP_USER, to, subject, text, html, headers });
     return true;
   } catch (err) {
     logger.error({ err, to, subject }, "email failed");

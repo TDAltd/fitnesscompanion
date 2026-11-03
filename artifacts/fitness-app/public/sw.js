@@ -24,7 +24,7 @@ self.addEventListener("activate", (event) =>
 );
 
 // Never kept: admin, backups and exports, version checks, syncs, AI lookups
-const NO_CACHE = /\/api\/(admin|export|version|healthz|cron|health-sync|nutrition-lookup|client-errors|auth\/(login|logout|signup|forgot|reset))/;
+const NO_CACHE = /\/api\/(admin|export|version|healthz|cron|health-sync|nutrition-lookup|client-errors|m\/|messages|auth\/(login|logout|signup|forgot|reset))/;
 
 function withTimeout(promise, ms) {
   return new Promise((resolve, reject) => {

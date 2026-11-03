@@ -171,7 +171,7 @@ export default function AccountPage() {
   );
 }
 
-type AccountSettings = { email: string; weeklyEmail: boolean; emailEnabled: boolean };
+type AccountSettings = { email: string; weeklyEmail: boolean; marketing: boolean; emailEnabled: boolean };
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(withBase(path), { credentials: "same-origin", headers: { "content-type": "application/json" }, ...init });
@@ -186,34 +186,42 @@ function EmailSettings() {
   const { toast } = useToast();
   const { data } = useQuery({ queryKey: ["account-settings"], queryFn: () => call<AccountSettings>("/api/account/settings") });
   const save = useMutation({
-    mutationFn: (weeklyEmail: boolean) => call("/api/account/settings", { method: "PUT", body: JSON.stringify({ weeklyEmail }) }),
-    onSuccess: (_d, weeklyEmail) => {
-      qc.setQueryData(["account-settings"], (old: AccountSettings | undefined) => (old ? { ...old, weeklyEmail } : old));
-      toast({ title: weeklyEmail ? "Weekly summary on" : "Weekly summary off" });
+    mutationFn: (patch: Partial<Pick<AccountSettings, "weeklyEmail" | "marketing">>) => call("/api/account/settings", { method: "PUT", body: JSON.stringify(patch) }),
+    onSuccess: (_d, patch) => {
+      qc.setQueryData(["account-settings"], (old: AccountSettings | undefined) => (old ? { ...old, ...patch } : old));
+      if (patch.marketing === false) qc.setQueryData(["in-app-message"], null);
+      toast({
+        title:
+          patch.weeklyEmail !== undefined
+            ? patch.weeklyEmail ? "Weekly summary on" : "Weekly summary off"
+            : patch.marketing ? "Offers and news on" : "Offers and news off",
+      });
     },
     onError: (e) => toast({ title: "Couldn't save", description: (e as Error).message, variant: "destructive" }),
   });
-  // Hidden until the app can actually send email
-  if (!data || !data.emailEnabled) return null;
+  if (!data) return null;
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Mail className="h-5 w-5 text-primary" /> Emails</CardTitle>
-        <CardDescription>Sent to {data.email}.</CardDescription>
+        <CardTitle className="flex items-center gap-2"><Mail className="h-5 w-5 text-primary" /> Emails and offers</CardTitle>
+        {data.emailEnabled && <CardDescription>Emails go to {data.email}.</CardDescription>}
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-5">
+        {data.emailEnabled && (
+          <div className="flex items-center justify-between gap-4">
+            <Label htmlFor="weekly-email" className="cursor-pointer">
+              <span className="block font-semibold">Weekly summary</span>
+              <span className="block text-sm font-normal text-muted-foreground">Every Sunday: your workouts, food, steps, weight and milestones for the week.</span>
+            </Label>
+            <Switch id="weekly-email" checked={data.weeklyEmail} disabled={save.isPending} onCheckedChange={(v) => save.mutate({ weeklyEmail: v })} data-testid="switch-weekly-email" />
+          </div>
+        )}
         <div className="flex items-center justify-between gap-4">
-          <Label htmlFor="weekly-email" className="cursor-pointer">
-            <span className="block font-semibold">Weekly summary</span>
-            <span className="block text-sm font-normal text-muted-foreground">Every Sunday: your workouts, food, steps, weight and milestones for the week.</span>
+          <Label htmlFor="marketing" className="cursor-pointer">
+            <span className="block font-semibold">Offers and news</span>
+            <span className="block text-sm font-normal text-muted-foreground">Discounts and new features, by email, notification or a card on Today. Your reminders aren't affected.</span>
           </Label>
-          <Switch
-            id="weekly-email"
-            checked={data.weeklyEmail}
-            disabled={save.isPending}
-            onCheckedChange={(v) => save.mutate(v)}
-            data-testid="switch-weekly-email"
-          />
+          <Switch id="marketing" checked={data.marketing} disabled={save.isPending} onCheckedChange={(v) => save.mutate({ marketing: v })} data-testid="switch-marketing" />
         </div>
       </CardContent>
     </Card>

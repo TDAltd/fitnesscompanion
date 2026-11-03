@@ -16,6 +16,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { withBase } from "@/lib/base-path";
 import { RecipesAdmin } from "@/components/admin/recipes-admin";
+import { BackupsAdmin } from "@/components/admin/backups-admin";
 
 const FILTERS = ["All", "Active this week", "Admins", "Disabled"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -97,6 +98,7 @@ export default function AdminPage() {
           <AiCheck />
           <ShortcutLinkCard current={overview.shortcutLink ?? null} />
           <RecipesAdmin />
+          <BackupsAdmin />
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4" data-testid="admin-stats">
             <Stat label="People" value={overview.totals.users} sub={`${overview.totals.new7d} joined this week`} />

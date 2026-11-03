@@ -21,6 +21,7 @@ import remindersRouter, { remindersCronRouter } from "./reminders";
 import weeklyReviewRouter from "./weeklyReview";
 import { adminRecipesRouter, recipesRouter } from "./recipes";
 import { healthRouter as healthDataRouter, healthSyncPublicRouter } from "./healthSync";
+import { adminBackupRouter, backupCronRouter } from "./backup";
 import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
@@ -31,6 +32,7 @@ router.use(authRouter);
 router.use(healthSyncPublicRouter); // uses its own sync key instead of a login
 router.use(weeklyEmailRouter); // cron (secret key) + signed unsubscribe links
 router.use(remindersCronRouter); // cron (secret key)
+router.use(backupCronRouter); // nightly backup pull (backup key)
 
 // Everything below needs a logged-in user
 router.use(requireAuth);
@@ -39,6 +41,7 @@ router.use(accountRouter);
 // Admin accounts are admin-only: they get the admin API and nothing else
 router.use(adminRouter);
 router.use(adminRecipesRouter);
+router.use(adminBackupRouter);
 // Recipes (and their photos) for everyone signed in, admins included
 router.use(recipesRouter);
 router.use((req, res, next) => {

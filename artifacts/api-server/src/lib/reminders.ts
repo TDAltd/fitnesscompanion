@@ -217,6 +217,11 @@ let timer: NodeJS.Timeout | null = null;
 /** While the app is awake, check every 5 minutes. The cPanel cron job covers the times it's asleep. */
 export function startReminderLoop() {
   if (timer || process.env.REMINDERS_LOOP === "off") return;
-  timer = setInterval(() => void runReminders().catch((err) => logger.warn({ err: (err as Error).message }, "reminder loop failed")), 5 * 60 * 1000);
+  timer = setInterval(() => {
+    void runReminders().catch((err) => logger.warn({ err: (err as Error).message }, "reminder loop failed"));
+    void import("./backup")
+      .then((b) => b.dailyServerBackup())
+      .catch((err) => logger.warn({ err: (err as Error).message }, "daily server backup failed"));
+  }, 5 * 60 * 1000);
   timer.unref();
 }

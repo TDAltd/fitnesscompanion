@@ -1,3 +1,4 @@
+import { clearQueue } from "./offline-queue";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { withBase } from "./base-path";
 
@@ -44,6 +45,8 @@ export function useAuthActions() {
     // (keep the auth query itself so the screen stays subscribed to it)
     qc.removeQueries({ predicate: (q) => q.queryKey[0] !== AUTH_QUERY_KEY[0] });
     qc.setQueryData(AUTH_QUERY_KEY, user);
+    // The offline copy of screens belongs to the previous person too
+    if (typeof caches !== "undefined") void caches.delete("fc-api-v1").catch(() => undefined);
   };
 
   return {
@@ -53,6 +56,7 @@ export function useAuthActions() {
       afterAuth(await request<AuthUser>("/api/auth/signup", { method: "POST", body: JSON.stringify({ email, password, consent }) })),
     logout: async () => {
       await request("/api/auth/logout", { method: "POST" });
+      clearQueue(); // entries saved offline belong to the person logging out
       afterAuth(null);
     },
   };

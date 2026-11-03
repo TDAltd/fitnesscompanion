@@ -55,6 +55,14 @@ function keyToBytes(base64: string) {
 const swUrl = () => withBase("/sw.js");
 const swScope = () => withBase("/");
 
+/** Register at start-up so the app can open offline; harmless where not supported. */
+export function registerServiceWorker() {
+  if (!("serviceWorker" in navigator) || import.meta.env.DEV) return;
+  const go = () => void registration().catch(() => undefined);
+  if (document.readyState === "complete") go();
+  else window.addEventListener("load", go, { once: true });
+}
+
 async function registration() {
   return navigator.serviceWorker.register(swUrl(), { scope: swScope() });
 }

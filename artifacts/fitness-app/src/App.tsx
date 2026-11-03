@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getGetProfileQueryKey, useGetProfile } from "@workspace/api-client-react";
 import { UpdateBanner } from "@/components/layout/update-banner";
+import { OfflineSync } from "@/components/layout/offline-sync";
 import { AUTH_QUERY_KEY, useCurrentUser } from "@/lib/auth";
 import { BASE } from "@/lib/base-path";
 import { AppLayout } from "@/components/layout/app-layout";
@@ -158,6 +159,7 @@ function App() {
             </Suspense>
           </ErrorBoundary>
           <UpdateBanner />
+          <OfflineSync />
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

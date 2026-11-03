@@ -1,3 +1,4 @@
+import { pendingFoods, useOfflineQueue } from "./offline-queue";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { withBase } from "./base-path";
 
@@ -19,6 +20,8 @@ export type FoodEntry = {
   protein: number;
   carbs: number;
   fat: number;
+  /** Saved on this phone while offline, not sent yet */
+  pending?: boolean;
 };
 
 export type RecentFood = { name: string; slot: Slot; uses: number; calories: number; protein: number; carbs: number; fat: number };
@@ -44,8 +47,13 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export const useFoodLog = (date: string) =>
-  useQuery({ queryKey: ["food-log", date], queryFn: () => api<FoodEntry[]>(`/api/food-log?date=${date}`) });
+export function useFoodLog(date: string) {
+  const q = useQuery({ queryKey: ["food-log", date], queryFn: () => api<FoodEntry[]>(`/api/food-log?date=${date}`) });
+  const { queue } = useOfflineQueue();
+  const pending = pendingFoods(queue, date) as unknown as FoodEntry[];
+  if (!pending.length) return q;
+  return { ...q, data: [...(q.data ?? []), ...pending], isLoading: q.isLoading && !q.data && !pending.length };
+}
 
 export const useRecentFoods = () => useQuery({ queryKey: ["food-log", "recent"], queryFn: () => api<RecentFood[]>("/api/food-log/recent") });
 

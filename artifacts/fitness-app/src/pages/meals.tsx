@@ -1,3 +1,4 @@
+import { CloudOff } from "lucide-react";
 import { useMemo, useState } from "react";
 import { addDays, format, isToday, isYesterday, parseISO } from "date-fns";
 import { BookOpen, Cake, Pencil, ChevronDown, ChevronLeft, ChevronRight, Clock, Plus, Search, Trash2 } from "lucide-react";
@@ -233,6 +234,20 @@ function Diary({ date, setDate, onAdd }: { date: string; setDate: (d: string) =>
 }
 
 function EntryRow({ entry, onEdit, onRemove }: { entry: FoodEntry; onEdit: () => void; onRemove: () => void }) {
+  if (entry.pending) {
+    // Saved on this phone, not sent yet: can't be edited until it reaches the server
+    return (
+      <li className="flex items-center gap-3 py-2.5 pl-4 pr-4" data-testid="entry-row-pending">
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold">{entry.name}</span>
+          <span className="flex items-center gap-1 text-xs text-amber-700">
+            <CloudOff className="h-3 w-3" aria-hidden /> Waiting to send
+          </span>
+        </span>
+        <span className="text-sm tabular-nums">{entry.calories}</span>
+      </li>
+    );
+  }
   return (
     <li className="flex items-center">
       <button

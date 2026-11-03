@@ -72,6 +72,29 @@ export function createApp(staticDir?: string): Express {
     res.json({ build });
   });
 
+  // Entries saved offline carry an id; if the same one arrives twice (a retry after a dropped
+  // reply), answer with the first result instead of logging it again
+  const seenOffline = new Map<string, { status: number; body: unknown; at: number }>();
+  app.use("/api", (req, res, next) => {
+    const id = req.get("x-offline-id");
+    if (!id || req.method !== "POST") return next();
+    const key = `${req.get("cookie")?.match(/fit_session=([^;]+)/)?.[1]?.slice(0, 16) ?? ""}:${id}`;
+    const hit = seenOffline.get(key);
+    if (hit) return void res.status(hit.status).json(hit.body);
+    const json = res.json.bind(res);
+    res.json = (body: unknown) => {
+      if (res.statusCode < 300) {
+        seenOffline.set(key, { status: res.statusCode, body, at: Date.now() });
+        if (seenOffline.size > 5000) {
+          const cutoff = Date.now() - 24 * 3600 * 1000;
+          for (const [k, v] of seenOffline) if (v.at < cutoff || seenOffline.size > 4000) seenOffline.delete(k);
+        }
+      }
+      return json(body);
+    };
+    next();
+  });
+
   app.use("/api", router);
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: "Not found" });

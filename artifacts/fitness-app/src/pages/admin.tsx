@@ -119,7 +119,6 @@ export default function AdminPage({ section = "overview" }: { section?: AdminSec
           )}
           {section === "insights" && <QuizFunnelAdmin />}
 
-          {section === "overview" && <AttentionCard signupsOpen={overview.signupsOpen} />}
           {section === "overview" && (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4" data-testid="admin-stats">
             <Stat label="People" value={overview.totals.users} sub={`${overview.totals.new7d} joined this week`} />
@@ -128,6 +127,8 @@ export default function AdminPage({ section = "overview" }: { section?: AdminSec
             <Stat label="Active this month" value={overview.totals.active30d} />
           </div>
           )}
+
+          {section === "overview" && <AttentionCard signupsOpen={overview.signupsOpen} />}
 
           {section === "overview" && (
           <Card>

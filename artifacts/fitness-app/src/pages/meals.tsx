@@ -32,6 +32,29 @@ function defaultSlot(): Slot {
   return "Dinner";
 }
 
+/** "locust beans" (iru), "cocoa beans"... aren't the beans people mean when they search "beans". */
+const NOT_THE_FOOD = /\b(locust|cocoa|coffee|vanilla|jelly)\s+beans?\b/gi;
+
+/** Other names people use for the same food. */
+const ALSO: Record<string, string[]> = {
+  bean: ["cowpea", "black-eyed pea", "black eyed pea", "ewa", "moi moi", "moin moin", "akara"],
+  plantain: ["dodo"],
+  yam: ["asaro"],
+  cassava: ["garri", "gari", "eba", "fufu", "akpu", "abacha"],
+};
+
+/** 2 = in the recipe's name, 1 = only in its ingredients, 0 = no match. Singular and plural both match. */
+function recipeMatch(r: { name: string; ingredients: string[] }, query: string): number {
+  const raw = query.trim().toLowerCase();
+  if (!raw) return 0;
+  const stem = raw.length > 3 ? raw.replace(/(es|s)$/, "") : raw;
+  const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const terms = [stem, ...(ALSO[stem] ?? [])];
+  const re = new RegExp(`\\b(${terms.map(esc).join("|")})`, "i");
+  if (re.test(r.name)) return 2;
+  return r.ingredients.some((i) => re.test(i.replace(NOT_THE_FOOD, ""))) ? 1 : 0;
+}
+
 export default function Meals() {
   const [view, setView] = useState<"diary" | "recipes">("diary");
   const [date, setDate] = useState(() => iso(new Date()));
@@ -314,8 +337,9 @@ function Recipes({ date }: { date: string }) {
     const matches = library.filter((r) => matchesDietaryPreference(r, diet))
       .filter((r) => cuisine === "Any" || r.cuisine === cuisine || r.cuisine === "Any")
       .filter((r) => meal === "All" || (SLOT_OF[r.category] ?? "Snack") === meal)
-      .filter((r) => !q.trim() || `${r.name} ${r.ingredients.join(" ")}`.toLowerCase().includes(q.trim().toLowerCase()));
-    if (q.trim()) return matches;
+      .filter((r) => !q.trim() || recipeMatch(r, q) > 0);
+    // Searching: recipes named after it first, then ones that only use it as an ingredient
+    if (q.trim()) return [...matches].sort((a, b) => recipeMatch(b, q) - recipeMatch(a, q));
     // New order every day so the list doesn't feel stale; Nigerian dishes lead
     const shuffled = dailyShuffle(matches, "recipes");
     const rank = (c: string) => (c === "Nigerian" ? 0 : c === "International" ? 1 : 2);
@@ -355,7 +379,10 @@ function Recipes({ date }: { date: string }) {
       ) : (
         <ul className="space-y-2">
           {list.map((r) => (
-            <li key={r.id}>
+            <li key={r.id} data-testid="recipe-result">
+              {q.trim() && recipeMatch(r, q) === 1 && (
+                <p className="mb-1 px-1 text-[11px] font-semibold text-muted-foreground">Contains {q.trim().toLowerCase()}</p>
+              )}
               <Card>
                 <CardContent className="p-0">
                   <div className="flex items-center gap-3 p-4">

@@ -1,3 +1,4 @@
+import { saveFile } from "@/lib/save-file";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Eye, EyeOff, FileUp, ImagePlus, Link2, Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
@@ -369,12 +370,7 @@ const TEMPLATE_ROW = [
 function downloadTemplate() {
   const esc = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
   const csv = [TEMPLATE_HEADER, TEMPLATE_ROW].map((r) => r.map(esc).join(",")).join("\n");
-  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "fitness-companion-recipes-template.csv";
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  void saveFile(new File([csv], "fitness-companion-recipes-template.csv", { type: "text/csv" }));
 }
 
 type Preview = { recipes: Draft[]; problems: string[]; source: "file" | "document" | "sheet" };

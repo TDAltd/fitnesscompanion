@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { withBase } from "@/lib/base-path";
+import { isIOS, saveFile } from "@/lib/save-file";
 import { AUTH_QUERY_KEY, importData, useAuthActions, useCurrentUser } from "@/lib/auth";
 
 const TABLE_LABELS: Record<string, string> = {
@@ -33,6 +34,28 @@ export default function AccountPage() {
   const fileInput = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
   const [, navigate] = useLocation();
+  const [exporting, setExporting] = useState(false);
+
+  async function downloadBackup() {
+    setExporting(true);
+    try {
+      const res = await fetch(withBase("/api/export"), { credentials: "same-origin" });
+      if (!res.ok) throw new Error(`The server said ${res.status}.`);
+      const name = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? "fitness-backup.json";
+      const file = new File([await res.blob()], name, { type: "application/json" });
+      const result = await saveFile(file, { fallbackUrl: withBase("/api/export") });
+      if (result === "downloaded") toast({ title: "Backup downloaded", description: name });
+      if (result === "shared") toast({ title: "Backup saved", description: name });
+    } catch (err) {
+      toast({
+        title: "Couldn't make the backup",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  }
 
   async function onFile(file: File | undefined) {
     if (!file) return;
@@ -89,11 +112,12 @@ export default function AccountPage() {
           <CardDescription>Download everything in your account as a file you can keep or import later.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button asChild variant="outline" className="gap-2">
-            <a href={withBase("/api/export")} download data-testid="link-export">
-              <Download className="h-4 w-4" /> Download backup
-            </a>
+          <Button variant="outline" className="gap-2" onClick={downloadBackup} disabled={exporting} data-testid="link-export">
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download backup
           </Button>
+          {isIOS() && (
+            <p className="mt-2 text-xs text-muted-foreground">On iPhone, choose <strong>Save to Files</strong> in the menu that opens.</p>
+          )}
         </CardContent>
       </Card>
 

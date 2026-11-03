@@ -18,6 +18,7 @@ import { withBase } from "@/lib/base-path";
 import { RecipesAdmin } from "@/components/admin/recipes-admin";
 import { BackupsAdmin } from "@/components/admin/backups-admin";
 import { ProblemsAdmin } from "@/components/admin/problems-admin";
+import { QuizFunnelAdmin } from "@/components/admin/quiz-funnel-admin";
 
 const FILTERS = ["All", "Active this week", "Admins", "Disabled"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -97,6 +98,7 @@ export default function AdminPage() {
       ) : (
         <>
           <ProblemsAdmin />
+          <QuizFunnelAdmin />
           <AiCheck />
           <ShortcutLinkCard current={overview.shortcutLink ?? null} />
           <RecipesAdmin />

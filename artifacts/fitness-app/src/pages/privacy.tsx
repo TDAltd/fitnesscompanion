@@ -35,6 +35,8 @@ export default function PrivacyPage({ standalone = false }: { standalone?: boole
             <li><b>What you log:</b> food, workouts and sets, weight, body measurements, steps, water and habits.</li>
             <li><b>Apple Health (only if you connect it):</b> daily steps and active calories sent by your iPhone Shortcut. We don't collect sleep data from your devices.</li>
             <li><b>Usage:</b> the days you open the app, which features you use, and your device's timezone, so days start at your midnight.</li>
+            <li><b>Sign-up screens:</b> which screens of the sign-up questions were reached, with a random code instead of your name, so we can see where the questions are too long. Your answers aren't part of this.</li>
+            <li><b>Problems:</b> if the app crashes, the error message, the screen and your phone type, so we can fix it.</li>
           </ul>
           <p className="mt-2">Weight, body measurements, food and the optional health questions say something about your health. We only use them to build your plan safely and show your progress, and admins can't see your health answers.</p>
         </Section>

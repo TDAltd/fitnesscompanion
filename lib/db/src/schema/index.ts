@@ -11,3 +11,4 @@ export * from "./milestones";
 export * from "./reminders";
 export * from "./recipes";
 export * from "./errors";
+export * from "./quiz";

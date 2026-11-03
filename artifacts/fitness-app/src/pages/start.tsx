@@ -1,3 +1,4 @@
+import { trackQuizStep } from "@/lib/quiz-tracking";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -288,6 +289,9 @@ export default function StartPage({ member = false }: { member?: boolean }) {
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, [step]);
+  useEffect(() => {
+    if (!member) trackQuizStep(step);
+  }, [step, member]);
 
   const set = (patch: Partial<Answers>) => setAnswers((a) => ({ ...a, ...patch }));
   const idx = steps.indexOf(step);
@@ -1141,6 +1145,7 @@ function Account({ a, onLogin }: { a: Answers; onLogin: () => void }) {
       // Save the answers before the app switches screens, so they land straight on Today
       await saveProfile(a);
       clearSaved();
+      trackQuizStep("done");
       qc.removeQueries({ predicate: (q) => q.queryKey[0] !== AUTH_QUERY_KEY[0] });
       setLocation("/today");
       qc.setQueryData(AUTH_QUERY_KEY, user);

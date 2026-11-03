@@ -23,6 +23,7 @@ import { adminRecipesRouter, recipesRouter } from "./recipes";
 import { healthRouter as healthDataRouter, healthSyncPublicRouter } from "./healthSync";
 import { adminBackupRouter, backupCronRouter } from "./backup";
 import { adminErrorsRouter, clientErrorsRouter } from "./errors";
+import { adminQuizRouter, quizEventsRouter } from "./quiz";
 import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
@@ -35,6 +36,7 @@ router.use(weeklyEmailRouter); // cron (secret key) + signed unsubscribe links
 router.use(remindersCronRouter); // cron (secret key)
 router.use(backupCronRouter); // nightly backup pull (backup key)
 router.use(clientErrorsRouter); // the app reports crashes, signed in or not
+router.use(quizEventsRouter); // anonymous: which sign-up screens were reached
 
 // Everything below needs a logged-in user
 router.use(requireAuth);
@@ -45,6 +47,7 @@ router.use(adminRouter);
 router.use(adminRecipesRouter);
 router.use(adminBackupRouter);
 router.use(adminErrorsRouter);
+router.use(adminQuizRouter);
 // Recipes (and their photos) for everyone signed in, admins included
 router.use(recipesRouter);
 router.use((req, res, next) => {

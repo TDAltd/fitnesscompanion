@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
-import { Bell, Copy, Loader2, Mail, Megaphone, MessageSquare, Pencil, Plus, Send, Trash2, X } from "lucide-react";
+import { Bell, Copy, Eye, Loader2, Mail, Megaphone, MessageSquare, Pencil, Plus, Send, Trash2, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { withBase } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
 
-type Audience = { segment: string; goal?: string | null };
+type Audience = { segment: string; goal?: string | null; userIds?: number[] };
 type Stats = Record<string, number>;
 type Campaign = {
   id: number;
@@ -91,6 +91,7 @@ export function MarketingAdmin() {
     refetchInterval: (q) => (q.state.data?.campaigns.some((c) => c.status === "sending") ? 15_000 : 60_000),
   });
   const [editing, setEditing] = useState<Draft | null>(null);
+  const [viewing, setViewing] = useState<number | null>(null);
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin-marketing"] });
 
   const act = async (fn: () => Promise<unknown>, done: string) => {
@@ -141,7 +142,7 @@ export function MarketingAdmin() {
                             ? `Started ${formatDistanceToNow(parseISO(c.startedAt), { addSuffix: true })}`
                             : `Created ${formatDistanceToNow(parseISO(c.createdAt), { addSuffix: true })}`}
                       {" · "}
-                      {data.segments.find((s) => s.id === c.audience.segment)?.label ?? "Everyone"}
+                      {c.audience.segment === "users" ? `${c.audience.userIds?.length ?? 0} people chosen` : (data.segments.find((s) => s.id === c.audience.segment)?.label ?? "Everyone")}
                       {c.audience.goal ? `: ${c.audience.goal}` : ""}
                     </p>
                   </div>
@@ -154,6 +155,9 @@ export function MarketingAdmin() {
                 </div>
                 {c.stats && <Results c={c} s={c.stats} />}
                 <div className="flex flex-wrap justify-end gap-1">
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => setViewing(c.id)} data-testid="button-view-campaign">
+                    <Eye className="h-3.5 w-3.5" /> {["draft", "scheduled"].includes(c.status) ? "Preview" : "View"}
+                  </Button>
                   {["draft", "scheduled"].includes(c.status) && (
                     <Button size="sm" variant="outline" className="gap-1" onClick={() => setEditing(c)}>
                       <Pencil className="h-3.5 w-3.5" /> {c.status === "scheduled" ? "Edit or send now" : "Edit and send"}
@@ -189,6 +193,7 @@ export function MarketingAdmin() {
         ))}
       </ul>
 
+      {viewing && data && <CampaignView id={viewing} segments={data.segments} onClose={() => setViewing(null)} />}
       {editing && data && <Editor draft={editing} list={data} onClose={() => setEditing(null)} onDone={refresh} />}
     </div>
   );
@@ -232,7 +237,6 @@ function Editor({ draft, list, onClose, onDone }: { draft: Draft; list: ListData
   const [busy, setBusy] = useState<string | null>(null);
   const [when, setWhen] = useState<"now" | "later">("now");
   const [at, setAt] = useState(() => format(new Date(Date.now() + 60 * 60 * 1000), "yyyy-MM-dd'T'HH:00"));
-  const [preview, setPreview] = useState<"email" | "push" | "inApp">("email");
   const [counts, setCounts] = useState<{ people: number; withPush: number; optedOut: number } | null>(null);
   const set = (p: Partial<Draft>) => setD((x) => ({ ...x, ...p }));
   const custom = !!d.buttonUrl && !PAGES.some(([u]) => u === d.buttonUrl);
@@ -249,7 +253,8 @@ function Editor({ draft, list, onClose, onDone }: { draft: Draft; list: ListData
   }, [d.audience]);
 
   const save = async () => {
-    const body = JSON.stringify({ ...d, name: d.name.trim() || d.subject?.trim() || "Untitled message" });
+    const fallback = d.subject?.trim().replace(/\{\{\s*name\s*\}\}/gi, "(name)");
+    const body = JSON.stringify({ ...d, name: d.name.trim() || fallback || "Untitled message" });
     return d.id ? api<Campaign>(`/${d.id}`, { method: "PUT", body }) : api<Campaign>("", { method: "POST", body });
   };
 
@@ -283,8 +288,6 @@ function Editor({ draft, list, onClose, onDone }: { draft: Draft; list: ListData
     }
   };
 
-  const sample = (t: string) => t.replace(/\{\{\s*name\s*\}\}/gi, "Ada");
-  const paragraphs = useMemo(() => sample(d.body).split(/\n\s*\n/).map((p) => p.replace(/\s*\n\s*/g, " ").trim()).filter(Boolean), [d.body]);
   const reach = counts
     ? [
         `${counts.people} ${counts.people === 1 ? "person" : "people"}`,
@@ -333,7 +336,7 @@ function Editor({ draft, list, onClose, onDone }: { draft: Draft; list: ListData
             <div className="flex flex-col gap-2 sm:flex-row">
               <select
                 value={d.audience.segment}
-                onChange={(e) => set({ audience: { segment: e.target.value, goal: e.target.value === "goal" ? (list.goals[0] ?? null) : null } })}
+                onChange={(e) => set({ audience: { segment: e.target.value, goal: e.target.value === "goal" ? (list.goals[0] ?? null) : null, userIds: e.target.value === "users" ? (d.audience.userIds ?? []) : undefined } })}
                 className="h-11 flex-1 rounded-xl border bg-card px-3"
                 data-testid="select-segment"
               >
@@ -349,6 +352,7 @@ function Editor({ draft, list, onClose, onDone }: { draft: Draft; list: ListData
                 </select>
               )}
             </div>
+            {d.audience.segment === "users" && <PeoplePicker selected={d.audience.userIds ?? []} onChange={(ids) => set({ audience: { segment: "users", userIds: ids } })} />}
             <p className="mt-1 text-xs text-muted-foreground" data-testid="audience-count">{reach}</p>
           </Field>
 
@@ -400,38 +404,7 @@ function Editor({ draft, list, onClose, onDone }: { draft: Draft; list: ListData
             </div>
           )}
 
-          <div>
-            <div className="mb-2 flex gap-1.5">
-              {(["email", "push", "inApp"] as const)
-                .filter((k) => d[k])
-                .map((k) => (
-                  <button key={k} type="button" onClick={() => setPreview(k)} className={cn("rounded-full border px-3 py-1 text-xs font-semibold", preview === k ? "border-primary bg-primary text-primary-foreground" : "bg-card")}>
-                    Preview: {k === "email" ? "email" : k === "push" ? "notification" : "Today card"}
-                  </button>
-                ))}
-            </div>
-            <div className="rounded-2xl bg-muted/60 p-4">
-              {preview === "push" && d.push ? (
-                <div className="mx-auto max-w-sm rounded-2xl bg-card p-3 shadow-sm">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Fitness Companion · now</p>
-                  <p className="font-semibold">{sample(d.pushTitle || d.subject || "Title")}</p>
-                  <p className="text-muted-foreground">{sample(d.pushBody || "")}</p>
-                </div>
-              ) : preview === "inApp" && d.inApp ? (
-                <InAppPreview title={sample(d.subject || paragraphs[0] || "")} body={(d.subject ? paragraphs : paragraphs.slice(1)).join("\n\n")} button={d.buttonLabel} />
-              ) : (
-                <div className="mx-auto max-w-md rounded-2xl bg-card p-5 shadow-sm">
-                  <p className="mb-2 text-xs text-muted-foreground">Subject: {sample(d.subject || "")}</p>
-                  <p className="mb-2 font-display text-lg font-semibold">{paragraphs[0] ?? ""}</p>
-                  {paragraphs.slice(1).map((p, i) => (
-                    <p key={i} className="mb-2 leading-relaxed">{p}</p>
-                  ))}
-                  {d.buttonLabel && <span className="mt-2 inline-block rounded-full bg-primary px-4 py-2 font-semibold text-primary-foreground">{d.buttonLabel}</span>}
-                  <p className="mt-4 text-[11px] text-muted-foreground">Unsubscribe from offers and news</p>
-                </div>
-              )}
-            </div>
-          </div>
+          <MessagePreview d={d} />
 
           <Field label="When">
             <div className="flex flex-wrap items-center gap-2">
@@ -468,6 +441,210 @@ function Editor({ draft, list, onClose, onDone }: { draft: Draft; list: ListData
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** What people see: the email, the notification and the card on Today. */
+function MessagePreview({ d, name = "Ada" }: { d: Pick<Draft, "email" | "push" | "inApp" | "subject" | "body" | "pushTitle" | "pushBody" | "buttonLabel">; name?: string }) {
+  const channels = (["email", "push", "inApp"] as const).filter((k) => d[k]);
+  const [preview, setPreview] = useState<"email" | "push" | "inApp">(channels[0] ?? "email");
+  const sample = (t: string) => t.replace(/\{\{\s*name\s*\}\}/gi, name);
+  const paragraphs = useMemo(() => sample(d.body).split(/\n\s*\n/).map((p) => p.replace(/\s*\n\s*/g, " ").trim()).filter(Boolean), [d.body, name]); // eslint-disable-line react-hooks/exhaustive-deps
+  const show = channels.includes(preview) ? preview : channels[0];
+  return (
+    <div data-testid="message-preview">
+      <div className="mb-2 flex flex-wrap gap-1.5">
+        {channels.map((k) => (
+          <button key={k} type="button" onClick={() => setPreview(k)} className={cn("rounded-full border px-3 py-1 text-xs font-semibold", show === k ? "border-primary bg-primary text-primary-foreground" : "bg-card")}>
+            {k === "email" ? "Email" : k === "push" ? "Notification" : "Today card"}
+          </button>
+        ))}
+      </div>
+      <div className="rounded-2xl bg-muted/60 p-4">
+        {show === "push" ? (
+          <div className="mx-auto max-w-sm rounded-2xl bg-card p-3 shadow-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Fitness Companion · now</p>
+            <p className="font-semibold">{sample(d.pushTitle || d.subject || "Title")}</p>
+            <p className="text-muted-foreground">{sample(d.pushBody || "")}</p>
+          </div>
+        ) : show === "inApp" ? (
+          <InAppPreview title={sample(d.subject || paragraphs[0] || "")} body={(d.subject ? paragraphs : paragraphs.slice(1)).join("\n\n")} button={d.buttonLabel} />
+        ) : (
+          <div className="mx-auto max-w-md rounded-2xl bg-card p-5 shadow-sm">
+            <p className="mb-2 text-xs text-muted-foreground">Subject: {sample(d.subject || "")}</p>
+            <p className="mb-2 font-display text-lg font-semibold">{paragraphs[0] ?? ""}</p>
+            {paragraphs.slice(1).map((p, i) => (
+              <p key={i} className="mb-2 leading-relaxed">{p}</p>
+            ))}
+            {d.buttonLabel && <span className="mt-2 inline-block rounded-full bg-primary px-4 py-2 font-semibold text-primary-foreground">{d.buttonLabel}</span>}
+            <p className="mt-4 text-[11px] text-muted-foreground">Unsubscribe from offers and news</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type Person = { id: number; email: string; name: string | null; marketing: boolean; hasPush: boolean; lastActiveAt: string | null };
+
+/** Tick specific people. Those who switched offers off are shown but can't be picked. */
+function PeoplePicker({ selected, onChange }: { selected: number[]; onChange: (ids: number[]) => void }) {
+  const { data: people } = useQuery({ queryKey: ["marketing-people"], queryFn: () => api<Person[]>("/people") });
+  const [q, setQ] = useState("");
+  const chosen = new Set(selected);
+  const shown = (people ?? []).filter((p) => !q.trim() || `${p.name ?? ""} ${p.email}`.toLowerCase().includes(q.trim().toLowerCase()));
+  const pickable = shown.filter((p) => p.marketing);
+  const toggle = (id: number) => onChange(chosen.has(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+  return (
+    <div className="mt-2 rounded-xl border" data-testid="people-picker">
+      <div className="flex items-center gap-2 border-b p-2">
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email" className="h-10" data-testid="input-people-search" />
+        <Button size="sm" variant="ghost" className="shrink-0" onClick={() => onChange([...new Set([...selected, ...pickable.map((p) => p.id)])])}>
+          Tick all{q.trim() ? " shown" : ""}
+        </Button>
+        {selected.length > 0 && (
+          <Button size="sm" variant="ghost" className="shrink-0" onClick={() => onChange([])}>Clear</Button>
+        )}
+      </div>
+      <ul className="max-h-64 divide-y overflow-y-auto">
+        {!people && <li className="p-3 text-xs text-muted-foreground">Loading…</li>}
+        {people && shown.length === 0 && <li className="p-3 text-xs text-muted-foreground">No one matches.</li>}
+        {shown.map((p) => (
+          <li key={p.id}>
+            <label className={cn("flex items-center gap-3 px-3 py-2", p.marketing ? "cursor-pointer hover:bg-muted/50" : "opacity-60")}>
+              <input type="checkbox" className="h-4 w-4 accent-[hsl(var(--primary))]" checked={chosen.has(p.id)} disabled={!p.marketing} onChange={() => toggle(p.id)} data-testid="person-checkbox" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{p.name ?? p.email.split("@")[0]}</span>
+                <span className="block truncate text-xs text-muted-foreground">{p.email}</span>
+              </span>
+              {!p.marketing ? (
+                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold">Offers off</span>
+              ) : p.hasPush ? (
+                <Bell className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-label="Has notifications on" />
+              ) : null}
+            </label>
+          </li>
+        ))}
+      </ul>
+      <p className="border-t px-3 py-2 text-xs font-semibold">{selected.length} chosen</p>
+    </div>
+  );
+}
+
+type RecipientRow = {
+  userId: number;
+  name: string | null;
+  email: string;
+  planned?: boolean;
+  emailStatus?: string;
+  emailSentAt?: string | null;
+  pushStatus?: string;
+  openedAt?: string | null;
+  clickedAt?: string | null;
+  seenAt?: string | null;
+  dismissedAt?: string | null;
+  unsubscribedAt?: string | null;
+};
+
+/** A sent (or planned) message: exactly what it said, and who it went to. */
+function CampaignView({ id, segments, onClose }: { id: number; segments: ListData["segments"]; onClose: () => void }) {
+  const { data } = useQuery({
+    queryKey: ["admin-marketing", id],
+    queryFn: () => api<{ campaign: Campaign; recipients: RecipientRow[] }>(`/${id}`),
+    refetchInterval: (q) => (q.state.data?.campaign.status === "sending" ? 15_000 : false),
+  });
+  const [q, setQ] = useState("");
+  const [filter, setFilter] = useState("All");
+  const c = data?.campaign;
+  const planned = c && ["draft", "scheduled"].includes(c.status);
+  const FILTERS: [string, (r: RecipientRow) => boolean][] = [
+    ["All", () => true],
+    ["Opened", (r) => !!r.openedAt],
+    ["Not opened", (r) => r.emailStatus === "sent" && !r.openedAt],
+    ["Tapped", (r) => !!r.clickedAt],
+    ["Saw in app", (r) => !!r.seenAt],
+    ["Unsubscribed", (r) => !!r.unsubscribedAt],
+    ["Failed", (r) => r.emailStatus === "failed" || r.pushStatus === "failed"],
+  ];
+  const test = FILTERS.find(([k]) => k === filter)?.[1] ?? (() => true);
+  const rows = (data?.recipients ?? [])
+    .filter((r) => planned || test(r))
+    .filter((r) => !q.trim() || `${r.name ?? ""} ${r.email}`.toLowerCase().includes(q.trim().toLowerCase()));
+  const when = (iso?: string | null) => (iso ? format(parseISO(iso), "d MMM, h:mm a") : "");
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{c?.name ?? "Message"}</DialogTitle>
+          <DialogDescription>
+            {c &&
+              [
+                c.sentAt
+                  ? `Sent ${format(parseISO(c.sentAt), "EEE d MMM, h:mm a")}`
+                  : c.status === "scheduled" && c.scheduledAt
+                    ? `Scheduled for ${format(parseISO(c.scheduledAt), "EEE d MMM, h:mm a")}`
+                    : STATUS[c.status][0],
+                c.audience.segment === "users" ? `${c.audience.userIds?.length ?? 0} people chosen` : segments.find((s) => s.id === c.audience.segment)?.label,
+                c.audience.goal,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+          </DialogDescription>
+        </DialogHeader>
+        {!c ? (
+          <Loader2 className="mx-auto my-8 h-6 w-6 animate-spin text-muted-foreground" />
+        ) : (
+          <div className="space-y-5 text-sm">
+            <MessagePreview d={c} name={data.recipients[0]?.name?.split(" ")[0] || "Ada"} />
+            {c.buttonLabel && <p className="text-xs text-muted-foreground">Button "{c.buttonLabel}" opens {c.buttonUrl}</p>}
+            {c.stats && <Results c={c} s={c.stats} />}
+
+            <div>
+              <p className="mb-2 font-semibold">{planned ? `Will go to ${data.recipients.length} people` : `Sent to ${data.recipients.length} people`}</p>
+              {!planned && (
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {FILTERS.map(([k]) => (
+                    <button key={k} type="button" onClick={() => setFilter(k)} className={cn("rounded-full border px-2.5 py-1 text-xs font-semibold", filter === k ? "border-primary bg-primary text-primary-foreground" : "bg-card")}>
+                      {k}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email" className="mb-2 h-10" />
+              <ul className="max-h-80 divide-y overflow-y-auto rounded-xl border" data-testid="recipient-list">
+                {rows.length === 0 && <li className="p-3 text-xs text-muted-foreground">No one here.</li>}
+                {rows.map((r) => (
+                  <li key={r.userId} className="px-3 py-2" data-testid="recipient-row">
+                    <p className="truncate font-semibold">{r.name ?? r.email.split("@")[0]}</p>
+                    <p className="truncate text-xs text-muted-foreground">{r.email}</p>
+                    {!r.planned && (
+                      <div className="mt-1 flex flex-wrap gap-1 text-[11px]">
+                        {c.email && <Tag tone={r.emailStatus === "sent" ? "ok" : r.emailStatus === "failed" ? "bad" : "dim"}>{r.emailStatus === "sent" ? `Email sent ${when(r.emailSentAt)}` : r.emailStatus === "failed" ? "Email failed" : r.emailStatus === "skipped" ? "No email" : "Email waiting"}</Tag>}
+                        {r.openedAt && <Tag tone="ok">Opened {when(r.openedAt)}</Tag>}
+                        {c.push && <Tag tone={r.pushStatus === "sent" ? "ok" : r.pushStatus === "failed" ? "bad" : "dim"}>{r.pushStatus === "sent" ? "Notification sent" : r.pushStatus === "none" ? "No notifications on" : r.pushStatus === "failed" ? "Notification failed" : r.pushStatus === "skipped" ? "No notification" : "Notification waiting"}</Tag>}
+                        {c.inApp && <Tag tone={r.seenAt ? "ok" : "dim"}>{r.seenAt ? `Saw it in the app ${when(r.seenAt)}` : "Hasn't opened the app yet"}</Tag>}
+                        {r.dismissedAt && <Tag tone="dim">Closed the card</Tag>}
+                        {r.clickedAt && <Tag tone="ok">Tapped {when(r.clickedAt)}</Tag>}
+                        {r.unsubscribedAt && <Tag tone="bad">Unsubscribed</Tag>}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Tag({ tone, children }: { tone: "ok" | "bad" | "dim"; children: React.ReactNode }) {
+  return (
+    <span className={cn("rounded-full px-2 py-0.5 font-semibold", tone === "ok" ? "bg-primary/12 text-primary" : tone === "bad" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground")}>
+      {children}
+    </span>
   );
 }
 

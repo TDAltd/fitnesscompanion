@@ -2,9 +2,11 @@ import { pgTable, serial, text, integer, timestamp, jsonb, boolean, primaryKey, 
 import { usersTable } from "./users";
 
 export type Audience = {
-  /** all | active7 | inactive14 | new30 | goal */
+  /** all | active7 | inactive14 | new30 | goal | users */
   segment: string;
   goal?: string | null;
+  /** segment "users": the people picked by hand */
+  userIds?: number[];
 };
 
 /** One marketing message, sent on any of email, phone notification and in-app. */

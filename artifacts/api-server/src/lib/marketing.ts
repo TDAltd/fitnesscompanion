@@ -25,6 +25,7 @@ export const SEGMENTS: { id: string; label: string }[] = [
   { id: "inactive14", label: "Haven't opened it for 14+ days" },
   { id: "new30", label: "Joined in the last 30 days" },
   { id: "goal", label: "By goal" },
+  { id: "users", label: "Choose people" },
 ];
 
 /** Everyone who can get marketing: not admins, not disabled, and haven't switched it off. */
@@ -41,6 +42,7 @@ export async function audienceUsers(a: Audience): Promise<{ id: number; email: s
     conds.push(sql`(${usersTable.lastActiveAt} IS NULL OR ${usersTable.lastActiveAt} < now() - interval '14 days') AND ${usersTable.createdAt} < now() - interval '14 days'`);
   if (a.segment === "new30") conds.push(sql`${usersTable.createdAt} >= now() - interval '30 days'`);
   if (a.segment === "goal" && a.goal) conds.push(eq(userProfileTable.fitnessGoal, a.goal));
+  if (a.segment === "users") conds.push(inArray(usersTable.id, a.userIds?.length ? a.userIds : [-1]));
   return db
     .select({ id: usersTable.id, email: usersTable.email, name: userProfileTable.name })
     .from(usersTable)

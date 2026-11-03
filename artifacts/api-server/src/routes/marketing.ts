@@ -1,12 +1,13 @@
 import { Router } from "express";
 import { and, desc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { db, campaignsTable, campaignRecipientsTable, usersTable, userProfileTable } from "@workspace/db";
-import { requireAdmin, uid } from "../lib/auth";
+import { envAdmins, requireAdmin, uid } from "../lib/auth";
 import { emailHtml, mailConfigured, sendMail } from "../lib/mail";
 import { setSetting } from "../lib/backup";
 import {
   SEGMENTS,
   EMAILS_PER_HOUR,
+  audienceUsers,
   audienceCounts,
   buildEmail,
   buttonTarget,
@@ -140,7 +141,7 @@ const FIELDS = ["name", "email", "push", "inApp", "audience", "subject", "body",
 
 function clean(b: Record<string, unknown>) {
   const s = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : null);
-  const audience = (b.audience ?? {}) as { segment?: unknown; goal?: unknown };
+  const audience = (b.audience ?? {}) as { segment?: unknown; goal?: unknown; userIds?: unknown };
   const segment = SEGMENTS.some((x) => x.id === audience.segment) ? String(audience.segment) : "all";
   const url = s(b.buttonUrl, 500)?.trim() || null;
   if (url && !/^(\/[\w\-/]*|https:\/\/\S+)$/i.test(url)) throw new Error("The button link must be an app page like /eat or start with https://");
@@ -149,7 +150,13 @@ function clean(b: Record<string, unknown>) {
     email: b.email === true,
     push: b.push === true,
     inApp: b.inApp === true,
-    audience: { segment, goal: segment === "goal" && typeof audience.goal === "string" ? audience.goal : null },
+    audience: {
+      segment,
+      goal: segment === "goal" && typeof audience.goal === "string" ? audience.goal : null,
+      ...(segment === "users"
+        ? { userIds: [...new Set((Array.isArray(audience.userIds) ? audience.userIds : []).map(Number).filter((n) => Number.isInteger(n) && n > 0))].slice(0, 5000) }
+        : {}),
+    },
     subject: s(b.subject, 150),
     body: s(b.body, 5000) ?? "",
     pushTitle: s(b.pushTitle, 60),
@@ -161,6 +168,7 @@ function clean(b: Record<string, unknown>) {
 
 function problems(c: ReturnType<typeof clean>): string | null {
   if (!c.email && !c.push && !c.inApp) return "Pick at least one way to send it.";
+  if (c.audience.segment === "users" && !c.audience.userIds?.length) return "Choose at least one person.";
   if (c.email && (!c.subject?.trim() || !c.body.trim())) return "Email needs a subject and a message.";
   if (c.push && !(c.pushTitle?.trim() || c.subject?.trim())) return "The phone notification needs a title.";
   if (c.inApp && !c.body.trim()) return "The in-app message needs some text.";
@@ -183,6 +191,58 @@ adminMarketingRouter.get("/admin/marketing", async (req, res) => {
     emailOn: mailConfigured(),
     emailsPerHour: EMAILS_PER_HOUR(),
   });
+});
+
+/** Everyone who could be picked by hand, with whether they'd actually get it. */
+adminMarketingRouter.get("/admin/marketing/people", async (_req, res) => {
+  const admins = envAdmins();
+  const rows = (
+    await db.execute(sql`
+      SELECT u.id, u.email, p.name, u.marketing, u.last_active_at,
+             EXISTS (SELECT 1 FROM push_subscriptions s WHERE s.user_id = u.id) AS has_push
+      FROM ${usersTable} u LEFT JOIN ${userProfileTable} p ON p.user_id = u.id
+      WHERE u.role = 'user' AND u.disabled_at IS NULL
+      ORDER BY p.name NULLS LAST, u.email`)
+  ).rows as { id: number; email: string; name: string | null; marketing: boolean; last_active_at: string | null; has_push: boolean }[];
+  res.json(
+    rows
+      .filter((r) => !admins.includes(r.email))
+      .map((r) => ({ id: r.id, email: r.email, name: r.name, marketing: r.marketing, hasPush: r.has_push, lastActiveAt: r.last_active_at })),
+  );
+});
+
+/** One message: what it said, and who it went to (or, before sending, who it will go to). */
+adminMarketingRouter.get("/admin/marketing/:id", async (req, res, next) => {
+  if (!/^\d+$/.test(req.params.id)) return next();
+  const id = Number(req.params.id);
+  const [c] = await db.select().from(campaignsTable).where(eq(campaignsTable.id, id));
+  if (!c) return void res.status(404).json({ error: "Not found" });
+  const stats = (await campaignStats([id])).get(id) ?? null;
+  let recipients;
+  if (["draft", "scheduled"].includes(c.status)) {
+    recipients = (await audienceUsers(c.audience)).map((p) => ({ userId: p.id, name: p.name, email: p.email, planned: true }));
+  } else {
+    recipients = await db
+      .select({
+        userId: campaignRecipientsTable.userId,
+        name: userProfileTable.name,
+        email: usersTable.email,
+        emailStatus: campaignRecipientsTable.emailStatus,
+        emailSentAt: campaignRecipientsTable.emailSentAt,
+        pushStatus: campaignRecipientsTable.pushStatus,
+        openedAt: campaignRecipientsTable.openedAt,
+        clickedAt: campaignRecipientsTable.clickedAt,
+        seenAt: campaignRecipientsTable.seenAt,
+        dismissedAt: campaignRecipientsTable.dismissedAt,
+        unsubscribedAt: campaignRecipientsTable.unsubscribedAt,
+      })
+      .from(campaignRecipientsTable)
+      .innerJoin(usersTable, eq(usersTable.id, campaignRecipientsTable.userId))
+      .leftJoin(userProfileTable, eq(userProfileTable.userId, campaignRecipientsTable.userId))
+      .where(eq(campaignRecipientsTable.campaignId, id))
+      .orderBy(userProfileTable.name);
+  }
+  res.json({ campaign: { ...c, stats }, recipients });
 });
 
 adminMarketingRouter.post("/admin/marketing/audience", async (req, res) => {

@@ -222,6 +222,12 @@ export function startReminderLoop() {
     void import("./backup")
       .then((b) => b.dailyServerBackup())
       .catch((err) => logger.warn({ err: (err as Error).message }, "daily server backup failed"));
+    void import("./errors")
+      .then(async (e) => {
+        await e.dailyErrorEmail();
+        await e.pruneErrors();
+      })
+      .catch((err) => logger.warn({ err: (err as Error).message }, "daily error email failed"));
   }, 5 * 60 * 1000);
   timer.unref();
 }

@@ -9,6 +9,9 @@ import { setBaseUrl } from "@workspace/api-client-react";
 import App from "./App";
 import { BASE } from "./lib/base-path";
 import "./index.css";
+import { installErrorReporting } from "./lib/error-reporting";
+
+installErrorReporting();
 
 // All generated API calls ("/api/...") go to "<hosting folder>/api/..."
 setBaseUrl(BASE || null);

@@ -113,6 +113,13 @@
       "when": 1793632008107,
       "tag": "0015_recipes",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793700265109,
+      "tag": "0016_error_events",
+      "breakpoints": true
     }
   ]
 }

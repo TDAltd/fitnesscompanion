@@ -1,3 +1,4 @@
+import { ErrorBoundary } from "@/components/error-boundary";
 import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -140,7 +141,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={BASE}>
-          <AuthGate />
+          <ErrorBoundary>
+            <AuthGate />
+          </ErrorBoundary>
           <UpdateBanner />
         </WouterRouter>
         <Toaster />

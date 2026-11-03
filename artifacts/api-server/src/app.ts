@@ -5,6 +5,7 @@ import path from "node:path";
 import fs from "node:fs";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { recordError } from "./lib/errors";
 import { BASE_PATH } from "./lib/config";
 
 export function createApp(staticDir?: string): Express {
@@ -91,6 +92,8 @@ export function createApp(staticDir?: string): Express {
       return;
     }
     if (err?.type === "entity.parse.failed") {
+      if (req.path.includes("health-sync"))
+        void recordError({ source: "health-sync", message: "Sync body wasn't valid JSON", detail: `Content-Type: ${req.get("content-type") ?? "none"}`, page: "/api/health-sync", userAgent: req.get("user-agent") });
       // e.g. a Shortcut sending a body that isn't valid JSON: reply in JSON so it can show the message
       res.status(400).json({ ok: false, message: "The app couldn't read what was sent. In the Shortcut, set Request Body to JSON.", error: "Invalid JSON" });
       return;
@@ -100,6 +103,14 @@ export function createApp(staticDir?: string): Express {
       return;
     }
     req.log?.error({ err }, "Unhandled error");
+    void recordError({
+      source: "server",
+      message: `${req.method} ${req.path}: ${err?.message ?? String(err)}`,
+      detail: err?.stack ?? null,
+      page: req.get("x-app-page") ?? null,
+      userAgent: req.get("user-agent"),
+      userId: req.user?.id ?? null,
+    });
     res.status(500).json({ error: "Something went wrong. Please try again." });
   };
   app.use(onError);

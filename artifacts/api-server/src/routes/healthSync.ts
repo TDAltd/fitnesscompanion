@@ -1,3 +1,4 @@
+import { recordError } from "../lib/errors";
 import { Router } from "express";
 import { randomBytes, createHash } from "node:crypto";
 import { and, desc, eq, gte } from "drizzle-orm";
@@ -61,26 +62,46 @@ export function extractKey(raw: string): string {
   return (cleaned.match(/^Bearer\s+(\S+)/i)?.[1] ?? "").trim();
 }
 
+/** Log refused or empty syncs (field names and types only, never the values or the key). */
+function syncProblem(req: import("express").Request, reason: string, userId: number | null) {
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const shape = typeof req.body === "object" && req.body
+    ? Object.entries(body).filter(([k]) => k !== "key").map(([k, v]) => `${k}: ${Array.isArray(v) ? "list" : typeof v}`).join(", ")
+    : typeof req.body;
+  void recordError({
+    source: "health-sync",
+    message: reason,
+    detail: `Content-Type: ${req.get("content-type") ?? "none"}\nFields: ${shape || "none"}\nAuthorization header: ${req.get("authorization") ? "present" : "missing"}`,
+    page: "/api/health-sync",
+    userAgent: req.get("user-agent"),
+    userId,
+  });
+}
+
 healthSyncPublicRouter.post("/health-sync", async (req, res) => {
   // Forgiving about how the key was pasted: with or without "Bearer", quotes, spaces or line breaks,
   // in the header, the body ("key") or the address (?key=)
   const header = req.get("authorization") ?? "";
   const token = extractKey(header) || extractKey(String(req.body?.key ?? "")) || extractKey(String(req.query.key ?? ""));
   if (!token.startsWith("fh_") && /PASTE|YOUR[-\s]?KEY/i.test(header)) {
+    syncProblem(req, 'Shortcut still has the PASTE-YOUR-KEY placeholder', null);
     res.status(401).json({ ok: false, message: "This Shortcut doesn't have your key yet. Delete it, add it again from the Connect page and paste your key when asked." });
     return;
   }
   if (!token) {
+    syncProblem(req, 'No sync key sent', null);
     res.status(401).json({ ok: false, message: "Missing sync key. Open the Connect page in the app, make a new key and paste it into the Shortcut." });
     return;
   }
   if (!rateLimit(`health-sync:${hashToken(token).slice(0, 16)}`, 60, 60 * 60 * 1000)) {
+    syncProblem(req, 'Too many syncs in an hour', null);
     res.status(429).json({ ok: false, message: "Too many syncs this hour. Try again later." });
     return;
   }
 
   const [link] = await db.select().from(healthSyncTable).where(eq(healthSyncTable.tokenHash, hashToken(token)));
   if (!link) {
+    syncProblem(req, 'Sync key not recognised (deleted or mistyped)', null);
     res.status(401).json({ ok: false, message: "This sync key isn't valid. Create a new one on the Connect Apple Health page." });
     return;
   }
@@ -123,6 +144,10 @@ healthSyncPublicRouter.post("/health-sync", async (req, res) => {
     ...(avgHeartRate != null ? { avgHeartRate } : {}),
     ...(activeEnergyKcal != null ? { activeEnergyKcal } : {}),
   };
+
+  if (Object.keys(values).length === 0) {
+    syncProblem(req, "Sync arrived with no steps, heart rate or energy", userId);
+  }
 
   await db.transaction(async (tx) => {
     if (Object.keys(values).length > 0) {
